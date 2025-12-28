@@ -1,0 +1,134 @@
+server:
+  port: 6666
+spring:
+  application:
+    name: winter-cloud-auth
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848  # Nacos 服务器地址
+        namespace: ccfca4f0-0131-497a-95a1-3732131d59a8  # 命名空间（可选，用于环境隔离）
+        group: DEFAULT_GROUP  # 分组（可选）
+        username: nacos  # Nacos 用户名（如果开启了认证）
+        password: nacos  # Nacos 密码（如果开启了认证）
+
+# Dubbo 配置
+dubbo:
+  application:
+    name: ${spring.application.name}
+  registry:
+    address: nacos://localhost:8848
+    parameters:
+      namespace: ccfca4f0-0131-497a-95a1-3732131d59a8
+      group: DEFAULT_GROUP
+      username: nacos
+      password: nacos
+  protocol:
+    name: dubbo
+    port: 20880  # Dubbo 协议端口
+  provider:
+    timeout: 3000
+
+#spring:
+#  application:
+#    name: zt-club-auth
+#  datasource:
+#    dynamic:
+#      # 设置默认的数据源或者数据源组，默认值即为 master
+#      primary: master
+#      # 严格模式，默认false，设置为true后在未匹配到指定数据源时会抛出异常
+#      strict: false
+#      datasource:
+#        # 主数据源 - 认证数据库
+#        master:
+#          url: jdbc:mysql://localhost:3306/club_auth?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false
+#          username: root
+#          password: root
+#          driver-class-name: com.mysql.cj.jdbc.Driver
+#          type: com.alibaba.druid.pool.DruidDataSource
+#          druid:
+#            initial-size: 5
+#            min-idle: 5
+#            max-active: 20
+#            max-wait: 60000
+#            time-between-eviction-runs-millis: 60000
+#            min-evictable-idle-time-millis: 300000
+#            validation-query: SELECT 1
+#            test-while-idle: true
+#            test-on-borrow: false
+#            test-on-return: false
+#            pool-prepared-statements: true
+#            max-pool-prepared-statement-per-connection-size: 20
+#            filters: stat,wall
+#            connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+#
+#        # I18n 数据源 - 国际化数据库
+#        i18n:
+#          url: jdbc:mysql://localhost:3306/club_i18n?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false
+#          username: root
+#          password: root
+#          driver-class-name: com.mysql.cj.jdbc.Driver
+#          type: com.alibaba.druid.pool.DruidDataSource
+#          druid:
+#            initial-size: 3
+#            min-idle: 3
+#            max-active: 10
+#            max-wait: 60000
+#            time-between-eviction-runs-millis: 60000
+#            min-evictable-idle-time-millis: 300000
+#            validation-query: SELECT 1
+#            test-while-idle: true
+#            test-on-borrow: false
+#            test-on-return: false
+#            pool-prepared-statements: true
+#            max-pool-prepared-statement-per-connection-size: 20
+#            filters: stat,wall
+#            connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+#  cloud:
+#    nacos:
+#      discovery:
+#        server-addr: localhost:8848  # Nacos 服务器地址
+#        namespace: ccfca4f0-0131-497a-95a1-3732131d59a8  # 命名空间（可选，用于环境隔离）
+#        group: DEFAULT_GROUP  # 分组（可选）
+#        username: nacos  # Nacos 用户名（如果开启了认证）
+#        password: nacos  # Nacos 密码（如果开启了认证）
+#  # Redis 配置
+#  redis:
+#    host: localhost
+#    port: 6379
+#    password: redis
+#    database: 0
+#    timeout: 3000ms
+#    lettuce:
+#      pool:
+#        max-active: 8
+#        max-idle: 8
+#        min-idle: 0
+#        max-wait: -1ms
+#
+## Winter I18n 配置
+#winter-i18n:
+#  locale:
+#    default-locale: zh_CN          # 默认语言环境
+#    header-name: Language   # 请求头名称
+#    supported: # 支持的语言环境
+#      - zh_CN
+#      - en_US
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.zt.club.auth.infrastructure.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      logic-delete-field: delFlag
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+logging:
+  level:
+    com.zt.club.auth: debug
+    com.baomidou.dynamic: debug  # 动态数据源日志

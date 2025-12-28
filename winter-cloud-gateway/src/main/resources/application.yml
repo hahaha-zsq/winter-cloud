@@ -1,0 +1,90 @@
+server:
+  port: 6667
+spring:
+  application:
+    name: winter-cloud-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848  # Nacos 服务器地址
+        namespace: ccfca4f0-0131-497a-95a1-3732131d59a8  # 命名空间（可选，用于环境隔离）
+        group: DEFAULT_GROUP  # 分组（可选）
+        username: nacos  # Nacos 用户名（如果开启了认证）
+        password: nacos  # Nacos 密码（如果开启了认证）
+    gateway:
+      # 路由配置
+      routes:
+        # 认证服务路由
+        - id: winter-cloud-auth
+          uri: lb://winter-cloud-auth
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=2
+            - name: Retry
+              args:
+                retries: 1  # 减少重试次数
+                statuses: BAD_GATEWAY,GATEWAY_TIMEOUT
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackoff: 500ms
+      # 全局CORS配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+  redis:
+    host: localhost
+    database: 0
+    password: redis
+    port: 6379
+
+# Dubbo 配置
+dubbo:
+  application:
+    name: ${spring.application.name}
+  registry:
+    address: nacos://localhost:8848
+    parameters:
+      namespace: ccfca4f0-0131-497a-95a1-3732131d59a8
+      group: DEFAULT_GROUP
+      username: nacos
+      password: nacos
+  protocol:
+    name: dubbo
+    port: -1
+  consumer:
+    timeout: 3000
+    retries: 0
+    check: false  # 启动时不检查提供者是否存在
+
+winter-redis-config:
+  # 系统名称，用于动态配置中心的命名空间隔离
+  system: ${spring.application.name}
+
+  # Redisson 连接配置
+  redission:
+    host: localhost
+    port: 6379
+    database: 0
+    password: redis  # 如果没有密码可以留空
+    pool-size: 64            # 连接池大小
+    min-idle-size: 10        # 最小空闲连接数
+    idle-timeout: 10000      # 空闲连接超时时间（毫秒）
+    connect-timeout: 10000   # 连接超时时间（毫秒）
+    retry-attempts: 3        # 重试次数
+    retry-interval: 1500     # 重试间隔时间（毫秒）
+    ping-interval: 30000     # Ping 连接间隔时间（毫秒）
+    keep-alive: true         # 是否保持连接
+logging:
+  level:
+    com.winter.cloud.gateway: debug
+    com.baomidou.dynamic: debug  # 动态数据源日志
+    reactor.netty: debug  # Netty日志
+    org.springframework.cloud.gateway: debug  # Gateway日志
+    org.apache.dubbo: debug  # Dubbo日志
