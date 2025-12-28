@@ -20,11 +20,6 @@
             <artifactId>winter-cloud-auth-domain</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.winter</groupId>
-            <artifactId>winter-cloud-auth-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
