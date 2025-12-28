@@ -52,16 +52,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     private static final String USER_ROLES_HEADER = CommonConstants.Headers.USER_ROLES;
     private static final String USER_PERMISSIONS_HEADER = CommonConstants.Headers.USER_PERMISSIONS;
 
-    /** 认证白名单路径 - 这些路径不需要进行 Token 认证 */
-    private static final String[] AUTH_WHITELIST_PATHS = {
-            "/api/auth/login",      // 登录接口
-            "/api/auth/register",   // 注册接口
-            "/api/auth/validate",   // Token 验证接口（避免循环调用）
-            "/api/auth/test",       // 测试接口
-            "/actuator/",           // Spring Boot Actuator 健康检查
-            "/favicon.ico"          // 浏览器图标
-    };
-
     /** JSON 序列化工具 */
     private final ObjectMapper objectMapper;
 
@@ -88,17 +78,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         ServerHttpResponse response = exchange.getResponse();
         String path = request.getURI().getPath();
 
-        log.debug("=== 认证过滤器开始处理请求 ===");
-        log.debug("请求路径: {}", path);
-        log.debug("请求方法: {}", request.getMethod());
-
-        // 白名单路径，跳过认证
-        if (isWhitelistPath(path)) {
-            log.info("✓ 路径在白名单中，直接放行: {}", path);
-            return chain.filter(exchange);
-        }
-
-        log.debug("路径需要认证，开始 Token 验证流程");
+        log.debug("处理认证请求，路径: {}", path);
 
         return extractToken(request)               // 1. 提取 Token
                 .flatMap(this::validateTokenFormat) // 2. 校验 JWT 格式
@@ -106,29 +86,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 .flatMap(userInfo ->
                         processAuthenticatedRequest(exchange, chain, userInfo)) // 4. 构建新请求并放行
                 .onErrorResume(e -> handleAuthError(response, e)); // 5. 异常统一处理
-    }
-
-    /**
-     * 判断路径是否在白名单中
-     * <p>
-     * 白名单路径说明：
-     * 1. 登录/注册接口：用户尚未获取 Token，无法进行认证
-     * 2. Token 验证接口：避免循环调用（网关已经通过 Dubbo 验证了）
-     * 3. 健康检查接口：监控系统需要访问，不需要认证
-     * 4. 静态资源：如 favicon.ico 等
-     * 
-     * @param path 请求路径
-     * @return true 表示在白名单中，跳过认证；false 表示需要认证
-     */
-    private boolean isWhitelistPath(String path) {
-        // 遍历白名单，检查路径是否匹配
-        for (String whitelistPath : AUTH_WHITELIST_PATHS) {
-            if (path.startsWith(whitelistPath)) {
-                log.info("路径匹配白名单，跳过认证: path={}, whitelist={}", path, whitelistPath);
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

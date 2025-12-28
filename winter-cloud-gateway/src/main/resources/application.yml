@@ -47,7 +47,7 @@ spring:
 # Dubbo 配置
 dubbo:
   application:
-    name: ${spring.application.name}
+    name: winter-cloud-gateway-dubbo
   registry:
     address: nacos://localhost:8848
     parameters:
