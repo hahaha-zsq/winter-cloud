@@ -41,7 +41,6 @@ public class AuthUserController implements AuthValidationFacade {
      * @param token 待验证的 Token
      * @return 验证结果
      */
-    @PostMapping("/validate")
     @Override
     public ValidateTokenDTO validateToken(String token) {
         log.info("=== Dubbo RPC 接口调用开始 ===");
@@ -91,7 +90,7 @@ public class AuthUserController implements AuthValidationFacade {
             // List<String> permissionKeyList = authPermissionService.getPermissionsByUserId(userId);
             List<String> roleKeyList = new ArrayList<>();
             List<String> permissionKeyList = new ArrayList<>();
-            permissionKeyList.add("auth:query");
+//            permissionKeyList.add("auth:query");
 
 
             // 7. 构建返回结果

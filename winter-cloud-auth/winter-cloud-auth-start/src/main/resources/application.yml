@@ -148,6 +148,6 @@ logging:
   file:
     path: ./logs/winter
   level:
-    com.winter.auth: debug
+    com.winter.cloud.auth: debug
     com.zsq.winter.security: debug
     com.baomidou.dynamic: debug  # 动态数据源日志

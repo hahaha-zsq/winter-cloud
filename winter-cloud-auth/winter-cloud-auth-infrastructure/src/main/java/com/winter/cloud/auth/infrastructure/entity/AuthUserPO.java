@@ -64,13 +64,13 @@ public class AuthUserPO implements Serializable {
     /**
      * 密码
      */
-    @TableField(value = "`password`")
+    @TableField(value = "password")
     private String password;
 
     /**
      * 帐号状态（0正常 1停用）
      */
-    @TableField(value = "`status`")
+    @TableField(value = "status")
     private String status;
 
     /**
@@ -134,9 +134,9 @@ public class AuthUserPO implements Serializable {
     @TableField(value = "bg_img")
     private String bgImg;
 
-    /**
-     * 扩展字段
-     */
-    @TableField(value = "ext_json")
-    private String extJson;
+//    /**
+//     * 扩展字段
+//     */
+//    @TableField(value = "ext_json")
+//    private String extJson;
 }

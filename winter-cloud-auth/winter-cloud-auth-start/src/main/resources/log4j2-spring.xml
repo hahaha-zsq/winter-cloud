@@ -36,7 +36,7 @@
         <RollingRandomAccessFile name="InfoFile"
                                  fileName="${LOG_HOME}/${APP_NAME}-info.log"
                                  filePattern="${LOG_HOME}/$${date:yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log.gz"
-                                 immediateFlush="false">
+                                 immediateFlush="true">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <Policies>
                 <!-- 每天生成一个新的日志文件 -->
@@ -57,7 +57,7 @@
         <RollingRandomAccessFile name="ErrorFile"
                                  fileName="${LOG_HOME}/${APP_NAME}-error.log"
                                  filePattern="${LOG_HOME}/$${date:yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log.gz"
-                                 immediateFlush="false">
+                                 immediateFlush="true">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <!-- 仅记录ERROR及以上级别 -->
             <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>

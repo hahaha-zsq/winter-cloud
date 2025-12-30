@@ -5,13 +5,17 @@ import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.validation.ConstraintViolation;
@@ -19,6 +23,9 @@ import javax.validation.ConstraintViolationException;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
+
+import static com.winter.cloud.common.enums.ResultCodeEnum.UNAUTHENTICATED;
+import static com.winter.cloud.common.enums.ResultCodeEnum.UNAUTHORIZED;
 
 /**
  * 全局异常处理器
@@ -35,7 +42,19 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // 1. 捕获认证失败异常 (401)
+    @ExceptionHandler({AuthenticationException.class})
+    public Response<Void> handleAuthenticationException(AuthenticationException e) {
+        log.warn("捕获到认证异常: {}", e.getMessage());
+        return Response.fail(UNAUTHENTICATED); // 使用项目统一的 Response 结构
+    }
 
+    // 2. 捕获权限不足异常 (403)
+    @ExceptionHandler({AccessDeniedException.class})
+    public Response<Void> handleAccessDeniedException(AccessDeniedException e) {
+        log.warn("捕获到权限异常: {}", e.getMessage());
+        return Response.fail(UNAUTHORIZED);
+    }
     /**
      * 业务异常
      * <p>

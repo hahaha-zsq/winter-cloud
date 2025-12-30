@@ -22,6 +22,7 @@ public enum ResultCodeEnum {
     UNAUTHORIZED("0006", "未授权"),
     FORBIDDEN("0007", "禁止访问"),
     DISABLED("0008", "禁用"),
+    UNAUTHENTICATED("0009", "未认证"),
 
 
     ;
