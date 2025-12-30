@@ -35,13 +35,13 @@
         <jjwt.version>0.13.0</jjwt.version>
         <log4j2.version>2.17.2</log4j2.version>
         <mybatis.plus.version>3.5.7</mybatis.plus.version>
-        <disruptor.version.version>3.4.4</disruptor.version.version>
+        <disruptor.version>3.4.4</disruptor.version>
         <!--        <winter.i18n.version>0.0.3</winter.i18n.version>-->
 
         <winter.log.version>0.0.1</winter.log.version>
         <winter.redis.dcc.version>0.0.4</winter.redis.dcc.version>
         <winter.design.version>0.0.5</winter.design.version>
-        <winter.security.version>0.0.1</winter.security.version>
+        <winter.security.version>0.0.2</winter.security.version>
         <winter.encrypt.version>0.0.32</winter.encrypt.version>
         <dubbo.version>3.3.0</dubbo.version>
 
