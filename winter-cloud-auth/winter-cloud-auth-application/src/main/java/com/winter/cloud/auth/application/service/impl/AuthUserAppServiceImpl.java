@@ -42,7 +42,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
     public Boolean register(UserRegisterCommand command) {
         // 1. 校验是否存在重复的用户信息
         if (authUserRepository.hasDuplicateUser(command)) {
-            throw new BusinessException(DUPLICATE_KEY.getCode(), "用户名已存在！");
+            throw new BusinessException(DUPLICATE_KEY.getCode(), "用户名/邮箱/电话已存在！");
         }
         // 2. 创建领域对象
         AuthUserDO authUserDO = authUserAppAssembler.toDO(command);

@@ -18,6 +18,11 @@ public final class CommonConstants {
         public static final String NAME = "name";
     }
 
+    public static final class Order{
+        public static final String ASC = "ascend";
+        public static final String DESC = "descend";
+    }
+
 
 
     /**

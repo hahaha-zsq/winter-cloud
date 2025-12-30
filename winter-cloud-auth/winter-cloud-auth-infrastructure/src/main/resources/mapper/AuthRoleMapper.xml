@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.winter.cloud.auth.infrastructure.mapper.AuthRoleMapper">
+
+    <select id="rolePage" resultType="com.winter.cloud.auth.infrastructure.entity.AuthRolePO">
+        SELECT id, role_name, role_key, role_sort, status,
+        create_by, create_time, update_by, update_time, remark
+        FROM sys_role
+        <where>
+            <!-- 模糊查询：roleName 或 roleKey -->
+            <if test="
+            (roleQuery.roleName != null and roleQuery.roleName != '')
+            or
+            (roleQuery.roleKey != null and roleQuery.roleKey != '')
+                     ">
+                <trim prefix="(" suffix=")" prefixOverrides="OR">
+                    <if test="roleQuery.roleName != null and roleQuery.roleName != ''">
+                        role_name LIKE CONCAT('%', #{roleQuery.roleName}, '%')
+                    </if>
+                    <if test="roleQuery.roleKey != null and roleQuery.roleKey != ''">
+                        OR role_key LIKE CONCAT('%', #{roleQuery.roleKey}, '%')
+                    </if>
+                </trim>
+            </if>
+
+            <!-- 精确匹配：status -->
+            <if test="roleQuery.status != null and roleQuery.status != ''">
+                AND status = #{roleQuery.status}
+            </if>
+        </where>
+    </select>
+</mapper>

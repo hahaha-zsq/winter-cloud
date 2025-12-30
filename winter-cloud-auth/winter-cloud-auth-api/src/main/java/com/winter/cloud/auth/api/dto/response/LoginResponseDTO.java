@@ -9,6 +9,7 @@ import java.io.Serializable;
 @Data
 @Builder
 public class LoginResponseDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String token;
     private Long userId;
     private String userName;
