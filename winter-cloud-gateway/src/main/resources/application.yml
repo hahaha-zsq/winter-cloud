@@ -40,9 +40,16 @@ spring:
             maxAge: 3600
   redis:
     host: localhost
-    database: 0
-    password: redis
     port: 6379
+    password: redis
+    database: 0
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
 
 # Dubbo 配置
 dubbo:
@@ -69,10 +76,10 @@ winter-redis-config:
 
   # Redisson 连接配置
   redission:
-    host: localhost
-    port: 6379
-    database: 0
-    password: redis  # 如果没有密码可以留空
+    host: ${spring.redis.host}
+    port: ${spring.redis.port}
+    database: ${spring.redis.database}
+    password: ${spring.redis.password}
     pool-size: 64            # 连接池大小
     min-idle-size: 10        # 最小空闲连接数
     idle-timeout: 10000      # 空闲连接超时时间（毫秒）

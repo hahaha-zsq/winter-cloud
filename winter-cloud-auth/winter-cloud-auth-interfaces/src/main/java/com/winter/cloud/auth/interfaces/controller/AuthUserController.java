@@ -1,12 +1,21 @@
 package com.winter.cloud.auth.interfaces.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
+import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
+import com.winter.cloud.auth.api.dto.response.LoginResponseDTO;
 import com.winter.cloud.auth.api.dto.response.ValidateTokenDTO;
 import com.winter.cloud.auth.api.facade.AuthValidationFacade;
+import com.winter.cloud.auth.application.service.AuthUserAppService;
+import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.response.Response;
 import com.winter.cloud.common.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -23,8 +32,15 @@ import java.util.List;
 @DubboService
 @RequestMapping("/auth")
 public class AuthUserController implements AuthValidationFacade {
+    private final AuthUserAppService authUserAppService;
 
 
+    /**
+     * 验证 Token
+     *
+     * @param token 待验证的 Token
+     * @return 验证结果
+     */
     @PostMapping("/validate")
     @Override
     public ValidateTokenDTO validateToken(String token) {
@@ -33,7 +49,7 @@ public class AuthUserController implements AuthValidationFacade {
 
         log.info("应用服务：验证 Token");
 
-        ValidateTokenDTO result = new ValidateTokenDTO();
+        ValidateTokenDTO result = ValidateTokenDTO.builder().build();
 
         try {
             // 1. 验证 Token 是否为空
@@ -52,7 +68,7 @@ public class AuthUserController implements AuthValidationFacade {
 
             // 3. 解析 Token 获取用户信息
             String subject = JwtUtil.getSubject(token);
-            String userName = (String) JwtUtil.getClaim(token, "userName");
+            String userName = (String) JwtUtil.getClaim(token, CommonConstants.Claim.NAME);
 
             if (!StringUtils.hasText(subject)) {
                 result.setValid(false);
@@ -75,6 +91,7 @@ public class AuthUserController implements AuthValidationFacade {
             // List<String> permissionKeyList = authPermissionService.getPermissionsByUserId(userId);
             List<String> roleKeyList = new ArrayList<>();
             List<String> permissionKeyList = new ArrayList<>();
+            permissionKeyList.add("auth:query");
 
 
             // 7. 构建返回结果
@@ -96,8 +113,36 @@ public class AuthUserController implements AuthValidationFacade {
         }
     }
 
+    @PreAuthorize("hasAuthority('auth:query')")
     @GetMapping("/test")
     public String test() {
         return "hello world";
+    }
+
+    /**
+     * 注册
+     *
+     * @param command 注册命令
+     * @return 注册结果
+     */
+    @PostMapping("/register")
+    public Response<Boolean> register(@RequestBody @Validated UserRegisterCommand command) {
+        Boolean register = authUserAppService.register(command);
+        if (!register) {
+            return Response.fail();
+        }
+        return Response.ok(null);
+    }
+
+    /**
+     * 登录
+     *
+     * @param command 登录命令
+     * @return 登录结果
+     */
+    @PostMapping("/login")
+    public Response<LoginResponseDTO> login(@RequestBody @Validated UserLoginCommand command) throws JsonProcessingException {
+        LoginResponseDTO loginDTO = authUserAppService.login(command);
+        return Response.ok(loginDTO);
     }
 }

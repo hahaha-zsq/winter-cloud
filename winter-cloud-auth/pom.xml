@@ -16,7 +16,6 @@
     <modules>
         <module>winter-cloud-auth-api</module>
         <module>winter-cloud-auth-application</module>
-        <module>winter-cloud-auth-common</module>
         <module>winter-cloud-auth-domain</module>
         <module>winter-cloud-auth-interfaces</module>
         <module>winter-cloud-auth-infrastructure</module>

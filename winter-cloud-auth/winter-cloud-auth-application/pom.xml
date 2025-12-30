@@ -23,11 +23,6 @@
             <artifactId>winter-cloud-auth-infrastructure</artifactId>
         </dependency>
 
-        <!-- Common Module -->
-        <dependency>
-            <groupId>com.winter</groupId>
-            <artifactId>winter-cloud-common</artifactId>
-        </dependency>
 
     </dependencies>
 

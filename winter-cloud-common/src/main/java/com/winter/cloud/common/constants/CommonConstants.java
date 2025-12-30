@@ -11,7 +11,46 @@ public final class CommonConstants {
         public static final String TOKEN = "winter-cloud-token";
         /** 用户信息存入key为USER_INFO+SPLIT+用户id，value值用户信息 */
         public static final String USER_INFO = "winter-cloud-userInfo";
+        public static final long EXPIRATION_TIME = 7 * 24 * 60 * 60 * 1000L;
     }
+
+    public static final class Claim{
+        public static final String NAME = "name";
+    }
+
+
+
+    /**
+     * 构建 Redis 缓存键
+     * <p>
+     * 用途：
+     * 为用户信息生成统一格式的 Redis Key，用于缓存用户的认证信息
+     * <p>
+     * Key 格式：
+     * winter-cloud-userInfo:12345
+     * |    |    |
+     * |    |    +-- 用户 ID（变量部分）
+     * |    +------- 业务类型（info 表示用户信息）
+     * +------------ 业务模块（user 表示用户相关）
+     * <p>
+     * 设计原则：
+     * 1. 使用冒号分隔，符合 Redis Key 命名规范
+     * 2. 分层结构清晰，便于管理和批量操作
+     * 3. 常量定义在 CommonConstants 中，全局统一
+     * <p>
+     * 示例：
+     * - userId = "12345" -> "winter-cloud-userInfo:12345"
+     * - userId = "admin" -> "winter-cloud-userInfo:admin"
+     *
+     * @param userId 用户 ID
+     * @return String Redis 缓存键，格式为 "winter-cloud-userInfo:{userId}"
+     */
+    public static  String buildUserCacheKey(String userId) {
+        return CommonConstants.Redis.USER_INFO      // "winter-cloud-userInfo"
+               + CommonConstants.Redis.SPLIT        // ":"
+               + userId;                             // 用户 ID
+    }
+
     /**
      * HTTP请求头常量
      */

@@ -76,8 +76,6 @@ public class GatewayApplication {
     public static void main(String[] args) throws UnknownHostException {
         // 启动Spring Boot应用，获取应用上下文
         ConfigurableApplicationContext context = SpringApplication.run(GatewayApplication.class, args);
-        ObjectMapper objectMapper=new ObjectMapper();
-
         // 获取环境配置信息，用于构建访问URL和输出启动信息
         Environment env = context.getEnvironment();
         

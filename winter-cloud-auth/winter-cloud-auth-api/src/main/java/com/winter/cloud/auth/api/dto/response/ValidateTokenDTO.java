@@ -1,5 +1,6 @@
 package com.winter.cloud.auth.api.dto.response;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -9,6 +10,7 @@ import java.util.List;
  * Token 验证结果传输对象
  */
 @Data
+@Builder
 public class ValidateTokenDTO implements Serializable {
     
     private static final long serialVersionUID = 1L;

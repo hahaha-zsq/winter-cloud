@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+
+    <!-- ===================== 全局属性定义 ===================== -->
+    <!--        Logback	  ALL  < TRACE < DEBUG < INFO < WARN < ERROR < OFF-->
+    <!--        Log4j2	  ALL < TRACE < DEBUG < INFO < WARN < ERROR < FATAL < OFF-->
+    <Properties>
+        <!-- 日志存放路径 -->
+        <Property name="LOG_HOME">${spring:logging.file.path:-./logs}</Property>
+        <!-- 应用名，用于日志文件命名 -->
+        <Property name="APP_NAME">${spring:spring.application.name:-winter-cloud-auth}</Property>
+
+        <!--
+          标准日志格式 - 简洁清晰的日志输出
+          网关作为请求转发层，专注于路由信息记录
+      -->
+        <!-- 日志格式 - 包含traceId（来自自定义的%ttl{}转换器） -->
+        <Property name="LOG_PATTERN">
+            %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%ttl{traceId}] %logger{36} - %msg%n
+        </Property>
+        <!-- 控制台日志格式 - 彩色输出 -->
+        <Property name="CONSOLE_PATTERN">
+            %d{yyyy-MM-dd HH:mm:ss.SSS} [%style{%thread}{yellow}] %highlight{%-5level} [%style{%ttl{traceId}}{cyan}] [%style{%logger{36}}{green}] - %msg%n
+        </Property>
+    </Properties>
+
+    <!-- ===================== 日志输出器 ===================== -->
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${CONSOLE_PATTERN}"/>
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+        </Console>
+
+        <!-- info及以上日志文件 -->
+        <RollingRandomAccessFile name="InfoFile"
+                                 fileName="${LOG_HOME}/${APP_NAME}-info.log"
+                                 filePattern="${LOG_HOME}/$${date:yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log.gz"
+                                 immediateFlush="false">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <!-- 每天生成一个新的日志文件 -->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <!-- 文件超过100MB滚动 -->
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="50">
+                <!-- 自动删除30天前的日志 -->
+                <Delete basePath="${LOG_HOME}" maxDepth="2">
+                    <IfFileName glob="*/info-*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <!-- error日志文件 -->
+        <RollingRandomAccessFile name="ErrorFile"
+                                 fileName="${LOG_HOME}/${APP_NAME}-error.log"
+                                 filePattern="${LOG_HOME}/$${date:yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log.gz"
+                                 immediateFlush="false">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <!-- 仅记录ERROR及以上级别 -->
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="50 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="${LOG_HOME}" maxDepth="2">
+                    <IfFileName glob="*/error-*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+    </Appenders>
+
+    <!-- ===================== 日志器配置 ===================== -->
+    <Loggers>
+        <!-- 应用主包日志 -->
+        <AsyncLogger name="com.winter" level="DEBUG" additivity="false" includeLocation="true">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="InfoFile"/>
+            <AppenderRef ref="ErrorFile"/>
+        </AsyncLogger>
+
+        <!-- mapper包日志单独记录INFO文件 -->
+        <AsyncLogger name="com.winter.cloud.auth.infrastructure.mapper" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="InfoFile"/>
+        </AsyncLogger>
+
+        <!-- 第三方框架日志降级 -->
+        <AsyncLogger name="org.springframework" level="WARN"/>
+        <AsyncLogger name="org.apache.dubbo" level="WARN"/>
+        <AsyncLogger name="io.lettuce" level="WARN"/>
+        <AsyncLogger name="com.alibaba.nacos" level="WARN"/>
+        <AsyncLogger name="com.zaxxer" level="WARN"/>
+
+        <!-- 根日志器 -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="InfoFile"/>
+            <AppenderRef ref="ErrorFile"/>
+        </Root>
+    </Loggers>
+</Configuration>

@@ -1,6 +1,7 @@
 package com.winter.cloud.common.util;
 
 
+import com.winter.cloud.common.constants.CommonConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -166,7 +168,9 @@ public class JwtUtil {
     }
 
     public static void main(String[] args) {
-        String token = JwtUtil.generateToken("12345");
+        HashMap<String, Object> objectObjectHashMap = new HashMap<>();
+        objectObjectHashMap.put(CommonConstants.Claim.NAME, "winter");
+        String token = JwtUtil.generateToken("12345",objectObjectHashMap);
         System.err.println(token);
         Claims claims = JwtUtil.parseToken(token);
         System.err.println(claims);

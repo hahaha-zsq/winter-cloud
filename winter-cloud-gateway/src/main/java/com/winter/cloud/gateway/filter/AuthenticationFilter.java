@@ -1,4 +1,5 @@
 package com.winter.cloud.gateway.filter;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.winter.cloud.common.constants.CommonConstants.buildUserCacheKey;
 /**
  * 全局认证过滤器
  * <p>
@@ -220,22 +222,14 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     private Mono<ValidateTokenDTO> getCachedUserInfo(String cacheKey) {
 
         return Mono.fromCallable(() -> {
-
-                    // 第一步：检查 Redis 中是否存在该 Key
-                    // hasKey() 比 get() 更轻量，可以避免不必要的数据传输
-                    if (!winterRedisTemplate.hasKey(cacheKey)) {
-                        return null; // Key 不存在，返回 null 表示缓存未命中
-                    }
-
                     // 第二步：从 Redis 获取缓存数据（JSON 字符串）
                     Object cachedData = winterRedisTemplate.get(cacheKey);
-                    if (cachedData == null) {
+                    if (ObjectUtil.isEmpty(cachedData)) {
                         return null; // 数据为空（理论上不应该发生，但做防御性检查）
                     }
                     // 验证存储结果
                     log.info("从 Redis 获取的 JSON: {}", cachedData);
                     try {
-
                         // 第三步：将 JSON 字符串反序列化为 ValidateTokenDTO 对象
                         return objectMapper.readValue(
                                 cachedData.toString(), ValidateTokenDTO.class);
@@ -246,7 +240,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                         // - 人为修改了 Redis 中的数据
                         // - 序列化/反序列化版本不一致
                         log.warn("Redis 缓存数据反序列化失败，删除脏数据，key: {}", cacheKey, e);
-//                        winterRedisTemplate.delete(cacheKey); // 删除脏数据
+                        winterRedisTemplate.delete(cacheKey); // 删除脏数据
                         return null; // 返回 null，让调用方走远程服务
                     }
                 })
@@ -446,36 +440,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         return unauthorizedResponse(response, message);
     }
 
-    /**
-     * 构建 Redis 缓存键
-     * <p>
-     * 用途：
-     * 为用户信息生成统一格式的 Redis Key，用于缓存用户的认证信息
-     * <p>
-     * Key 格式：
-     * winter-cloud-userInfo:12345
-     * |    |    |
-     * |    |    +-- 用户 ID（变量部分）
-     * |    +------- 业务类型（info 表示用户信息）
-     * +------------ 业务模块（user 表示用户相关）
-     * <p>
-     * 设计原则：
-     * 1. 使用冒号分隔，符合 Redis Key 命名规范
-     * 2. 分层结构清晰，便于管理和批量操作
-     * 3. 常量定义在 CommonConstants 中，全局统一
-     * <p>
-     * 示例：
-     * - userId = "12345" -> "winter-cloud-userInfo:12345"
-     * - userId = "admin" -> "winter-cloud-userInfo:admin"
-     * 
-     * @param userId 用户 ID
-     * @return String Redis 缓存键，格式为 "winter-cloud-userInfo:{userId}"
-     */
-    private String buildUserCacheKey(String userId) {
-        return CommonConstants.Redis.USER_INFO      // "winter-cloud-userInfo"
-               + CommonConstants.Redis.SPLIT        // ":"
-               + userId;                             // 用户 ID
-    }
 
     /**
      * 返回 401 未授权响应
