@@ -17,5 +17,6 @@ public class LoginResponseDTO implements Serializable {
     private Long userId;
     private String userName;
     private String nickName;
+    private MenuAndButtonResponseDTO menuAndButton;
     // 可以包含 roleKeyList, permissionList 等
 }

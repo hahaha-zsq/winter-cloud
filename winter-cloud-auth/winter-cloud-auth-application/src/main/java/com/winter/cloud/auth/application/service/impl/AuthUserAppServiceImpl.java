@@ -5,11 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
-import com.winter.cloud.auth.api.dto.response.LoginResponseDTO;
-import com.winter.cloud.auth.api.dto.response.MenuResponseDTO;
-import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
-import com.winter.cloud.auth.api.dto.response.ValidateTokenDTO;
+import com.winter.cloud.auth.api.dto.response.*;
 import com.winter.cloud.auth.application.assembler.AuthUserAppAssembler;
+import com.winter.cloud.auth.application.service.AuthMenuAppService;
 import com.winter.cloud.auth.application.service.AuthUserAppService;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.auth.domain.repository.AuthMenuRepository;
@@ -39,6 +37,7 @@ import static com.winter.cloud.common.enums.ResultCodeEnum.*;
 public class AuthUserAppServiceImpl implements AuthUserAppService {
 
     private final AuthUserRepository authUserRepository;
+    private final AuthMenuAppService authMenuAppService;
     private final AuthRoleRepository authRoleRepository;
     private final AuthMenuRepository authMenuRepository;
     private final AuthUserAppAssembler authUserAppAssembler;
@@ -89,13 +88,20 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
         String value = objectMapper.writeValueAsString(validateTokenDTO);
         // 缓存用户信息可以设置过期时间也可以不设置，网关先校验token有没有过期，没过期才会去用用户id去缓存查找
         winterRedisTemplate.set(CommonConstants.buildUserCacheKey(authUserDO.getId().toString()), value, CommonConstants.Redis.EXPIRATION_TIME, TimeUnit.MICROSECONDS);
-        // todo 登录成功还需要返回用户有哪些菜单配置（递归父子级别）
+        // 登录成功返回用户有哪些菜单、权限配置（递归父子级别）
+        List<MenuResponseDTO> menu = authMenuAppService.getMenu(authUserDO.getId());
+        List<String> permissions = validateTokenDTO.getPermissions();
+        MenuAndButtonResponseDTO menuAndButtonResponseDTO = MenuAndButtonResponseDTO.builder()
+                .menuList(menu)
+                .buttonList(permissions)
+                .build();
 
         return LoginResponseDTO.builder()
                 .token(token)
                 .nickName(authUserDO.getNickName())
                 .userId(authUserDO.getId())
                 .userName(authUserDO.getUserName())
+                .menuAndButton(menuAndButtonResponseDTO)
                 .build();
     }
 

@@ -31,4 +31,5 @@ public interface AuthUserAppService {
 
 
     ValidateTokenDTO generateUserInfo(Long userID, String userName);
+
 }

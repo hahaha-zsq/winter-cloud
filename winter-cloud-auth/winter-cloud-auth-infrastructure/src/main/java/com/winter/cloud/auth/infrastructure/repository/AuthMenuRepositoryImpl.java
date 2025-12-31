@@ -25,4 +25,12 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
         }
         return List.of();
     }
+
+    @Override
+    public List<MenuResponseDTO> getMenu(Long id) {
+        if(ObjectUtil.isNotEmpty(id)){
+            return authMenuMapper.getMenu(id);
+        }
+        return List.of();
+    }
 }

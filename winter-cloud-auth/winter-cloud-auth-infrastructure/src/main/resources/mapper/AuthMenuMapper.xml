@@ -30,4 +30,26 @@
             </if>
         </where>
     </select>
+
+    <select id="getMenu" resultType="com.winter.cloud.auth.api.dto.response.MenuResponseDTO">
+        SELECT sm.perms,
+        sm.component,
+        sm.file_path,
+        sm.frame,
+        sm.icon,
+        sm.menu_name,
+        sm.menu_type,
+        sm.parent_id,
+        sm.status,
+        sm.path,
+        sm.visible,
+        sm.id,
+        sm.order_num
+        FROM sys_user su
+        LEFT JOIN sys_user_role sur ON su.id = sur.user_id
+        LEFT JOIN sys_role_menu srm ON srm.role_id = sur.role_id
+        LEFT JOIN sys_menu sm ON sm.id = srm.menu_id
+        WHERE su.id = #{id}
+        and sm.menu_type != 'b' order by sm.parent_id, sm.order_num
+    </select>
 </mapper>
