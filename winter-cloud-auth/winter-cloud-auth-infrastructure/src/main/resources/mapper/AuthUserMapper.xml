@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.winter.cloud.auth.infrastructure.mapper.AuthUserMapper">
+    <select id="getRoleKeyList" resultType="java.lang.String">
+        select sr.role_key
+        from sys_role sr
+                 inner join sys_user_role sur on sr.id = sur.role_id
+        where sr.status = '1'
+          and sur.user_id = #{userId};
+    </select>
+
 
 </mapper>

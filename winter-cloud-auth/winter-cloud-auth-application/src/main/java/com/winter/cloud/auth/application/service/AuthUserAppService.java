@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.response.LoginResponseDTO;
+import com.winter.cloud.auth.api.dto.response.ValidateTokenDTO;
 
 /**
  * 认证应用服务接口
@@ -27,4 +28,7 @@ public interface AuthUserAppService {
      * @return 登录成功后的响应对象（包含Token、用户信息等）
      */
     LoginResponseDTO login(UserLoginCommand command) throws JsonProcessingException;
+
+
+    ValidateTokenDTO generateUserInfo(Long userID, String userName);
 }

@@ -8,7 +8,6 @@ import com.winter.cloud.auth.application.service.AuthRoleAppService;
 import com.winter.cloud.common.response.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +18,6 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@DubboService
 @RequestMapping("/role")
 public class AuthRoleController {
     private final AuthRoleAppService authRoleAppService;

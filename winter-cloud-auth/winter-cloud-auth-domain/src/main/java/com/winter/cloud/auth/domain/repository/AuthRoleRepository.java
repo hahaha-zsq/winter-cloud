@@ -22,4 +22,6 @@ public interface AuthRoleRepository {
     Boolean deleteRole(List<Long> roleIds);
 
     PageDTO<RoleResponseDTO> rolePage(RoleQuery roleQuery);
+
+    List<RoleResponseDTO> selectRoleListByUserId(Long userId, String status);
 }

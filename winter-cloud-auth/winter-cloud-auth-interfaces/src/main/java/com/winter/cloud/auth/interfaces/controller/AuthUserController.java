@@ -36,80 +36,102 @@ public class AuthUserController implements AuthValidationFacade {
 
 
     /**
-     * 验证 Token
+     * 验证 Token 有效性并返回用户权限信息
+     * <p>
+     * 该接口用于网关层调用，验证用户请求中携带的 JWT Token 是否有效，
+     * 并返回用户的身份信息、角色和权限列表，供网关进行鉴权判断。
+     * </p>
+     * 
+     * <p>验证流程：</p>
+     * <ol>
+     *   <li>校验 Token 是否为空</li>
+     *   <li>校验 Token 格式是否正确及是否过期</li>
+     *   <li>解析 Token 获取用户 ID 和用户名</li>
+     *   <li>获取用户的角色和权限信息</li>
+     *   <li>构建并返回验证结果</li>
+     * </ol>
      *
-     * @param token 待验证的 Token
-     * @return 验证结果
+     * @param token JWT Token 字符串
+     * @return ValidateTokenDTO Token 验证结果，包含有效性、用户信息、角色和权限
      */
     @Override
     public ValidateTokenDTO validateToken(String token) {
-        log.info("=== Dubbo RPC 接口调用开始 ===");
+        log.info("=== Token 验证接口调用 ===");
         log.info("接收到 Token: {}", token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null");
 
-        log.info("应用服务：验证 Token");
-
-        ValidateTokenDTO result = ValidateTokenDTO.builder().build();
-
         try {
-            // 1. 验证 Token 是否为空
+            // 步骤1: 校验 Token 是否为空
             if (!StringUtils.hasText(token)) {
-                result.setValid(false);
-                result.setMessage("Token 为空");
-                return result;
+                log.warn("Token 验证失败: Token 为空");
+                return buildFailureResult("Token 为空");
             }
 
-            // 2. 验证 Token 有效性
+            // 步骤2: 校验 Token 格式和有效期
             if (!JwtUtil.validateToken(token)) {
-                result.setValid(false);
-                result.setMessage("Token 无效或已过期");
-                return result;
+                log.warn("Token 验证失败: Token 无效或已过期");
+                return buildFailureResult("Token 无效或已过期");
             }
 
-            // 3. 解析 Token 获取用户信息
+            // 步骤3: 解析 Token 获取用户基本信息
             String subject = JwtUtil.getSubject(token);
+
+            // 校验 Token 解析结果
+            if (!StringUtils.hasText(subject)) {
+                log.warn("Token 验证失败: 无法解析出用户 ID");
+                return buildFailureResult("Token 解析失败");
+            }
+
             String userName = (String) JwtUtil.getClaim(token, CommonConstants.Claim.NAME);
 
-            if (!StringUtils.hasText(subject)) {
-                result.setValid(false);
-                result.setMessage("Token 解析失败");
-                return result;
+            if (!StringUtils.hasText(userName)) {
+                log.warn("Token 验证失败: 获取用户名失败");
+                return buildFailureResult("Token 解析失败");
             }
 
-            Long userId = Long.parseLong(subject);
+            // 转换用户 ID
+            Long userId;
+            try {
+                userId = Long.parseLong(subject);
+            } catch (NumberFormatException e) {
+                log.error("Token 验证失败: 用户 ID 格式错误, subject: {}", subject);
+                return buildFailureResult("Token 中用户 ID 格式错误");
+            }
 
-            // 4. 验证用户状态（TODO: 从领域服务或仓储获取）
-            // AuthUserDO userDO = authUserRepository.findById(userId);
-            // if (userDO == null || userDO.getStatus() == 1) {
-            //     result.setValid(false);
-            //     result.setMessage("用户不存在或已被禁用");
-            //     return result;
-            // }
+            // 步骤4: 获取用户角色和权限信息
+            // 委托给应用服务层处理，获取完整的用户权限信息
+            ValidateTokenDTO result = authUserAppService.generateUserInfo(userId, userName);
 
-            // 5. 获取用户角色和权限（TODO: 从领域服务获取）
-            // List<String> roleKeyList = authRoleService.getRoleKeyListByUserId(userId);
-            // List<String> permissionKeyList = authPermissionService.getPermissionsByUserId(userId);
-            List<String> roleKeyList = new ArrayList<>();
-            List<String> permissionKeyList = new ArrayList<>();
-//            permissionKeyList.add("auth:query");
-
-
-            // 7. 构建返回结果
-            result.setValid(true);
-            result.setUserId(userId);
-            result.setUserName(userName);
-            result.setRoles(roleKeyList);
-            result.setPermissions(permissionKeyList);
+            // 设置验证成功消息
             result.setMessage("Token 有效");
 
-            log.info("Token 验证成功，用户ID: {}, 用户名: {}", userId, userName);
+            log.info("Token 验证成功 - 用户ID: {}, 用户名: {}, 角色数: {}, 权限数: {}", 
+                    userId, userName, 
+                    result.getRoles() != null ? result.getRoles().size() : 0,
+                    result.getPermissions() != null ? result.getPermissions().size() : 0);
             return result;
 
+        } catch (NumberFormatException e) {
+            // 数字转换异常（用户 ID 解析失败）
+            log.error("Token 验证失败: 用户 ID 解析异常", e);
+            return buildFailureResult("Token 中用户 ID 格式错误");
         } catch (Exception e) {
-            log.error("验证 Token 失败", e);
-            result.setValid(false);
-            result.setMessage("Token 验证异常: " + e.getMessage());
-            return result;
+            // 捕获所有未预期的异常，确保接口稳定性
+            log.error("Token 验证过程发生异常", e);
+            return buildFailureResult("Token 验证异常: " + e.getMessage());
         }
+    }
+
+    /**
+     * 构建 Token 验证失败的返回结果
+     *
+     * @param message 失败原因描述
+     * @return ValidateTokenDTO 失败结果对象
+     */
+    private ValidateTokenDTO buildFailureResult(String message) {
+        return ValidateTokenDTO.builder()
+                .valid(false)
+                .message(message)
+                .build();
     }
 
     @PreAuthorize("hasAuthority('auth:query')")

@@ -131,4 +131,12 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         // 5. 构造并返回分页响应
         return new PageDTO<>(dtoList, result.getTotal());
     }
+
+    @Override
+    public List<RoleResponseDTO> selectRoleListByUserId(Long userId, String status) {
+        if (ObjectUtil.isNotEmpty(userId)) {
+            return authRoleMapper.selectRoleIdListByUserId(userId, status);
+        }
+        return List.of();
+    }
 }

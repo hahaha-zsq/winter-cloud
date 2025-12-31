@@ -7,14 +7,18 @@ import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.auth.domain.repository.AuthUserRepository;
 import com.winter.cloud.auth.infrastructure.assembler.AuthUserInfraAssembler;
 import com.winter.cloud.auth.infrastructure.entity.AuthUserPO;
+import com.winter.cloud.auth.infrastructure.mapper.AuthUserMapper;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserMpService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
 public class AuthUserRepositoryImpl implements AuthUserRepository {
     private final IAuthUserMpService authUserMpService;
+    private final AuthUserMapper authUserMapper;
     private final AuthUserInfraAssembler authUserInfraAssembler;
 
     @Override
@@ -33,6 +37,12 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
         AuthUserPO po = authUserInfraAssembler.toPO(authUserDo);
         return authUserMpService.save(po);
     }
+
+    @Override
+    public List<String> getRoleKeyList(Long userId) {
+        return authUserMapper.getRoleKeyList(userId);
+    }
+
 
     @Override
     public void deleteById(Long id) {

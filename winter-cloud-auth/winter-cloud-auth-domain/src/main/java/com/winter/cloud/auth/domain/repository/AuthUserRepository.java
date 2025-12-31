@@ -3,6 +3,8 @@ package com.winter.cloud.auth.domain.repository;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 
+import java.util.List;
+
 /**
  * 用户仓储接口 (面向领域)
  */
@@ -22,6 +24,12 @@ public interface AuthUserRepository {
      * 保存或更新用户
      */
     Boolean save(AuthUserDO authUser);
+
+    /**
+     * 获取用户角色列表
+     */
+    List<String> getRoleKeyList(Long userId);
+
 
     /**
      * 删除用户

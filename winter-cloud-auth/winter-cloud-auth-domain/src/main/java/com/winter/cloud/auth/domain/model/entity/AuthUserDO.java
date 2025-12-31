@@ -32,7 +32,6 @@ public class AuthUserDO {
     private String countryId;
     private String introduction;
     private String bgImg;
-    private String extJson;
 
     // --- 可以添加领域行为方法 ---
     
