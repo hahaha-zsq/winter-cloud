@@ -1,5 +1,6 @@
 package com.winter.cloud.auth.application.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
@@ -105,13 +106,13 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
         // 获取角色正常的信息
         List<RoleResponseDTO> roleResponseDTOList = authRoleRepository.selectRoleListByUserId(userID, "1");
         // 获取角色正常的权限标识
-        List<String> roleKeyList = roleResponseDTOList.stream().map(RoleResponseDTO::getRoleKey).distinct().collect(Collectors.toList());
+        List<String> roleKeyList = roleResponseDTOList.stream().map(RoleResponseDTO::getRoleKey).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
         // 获取角色正常的角色id
-        List<Long> roleIdList = roleResponseDTOList.stream().map(RoleResponseDTO::getId).distinct().collect(Collectors.toList());
+        List<Long> roleIdList = roleResponseDTOList.stream().map(RoleResponseDTO::getId).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
         // 根据角色id查询状态正常的权限并去重复
         List<MenuResponseDTO> menuResponseDTOList = authMenuRepository.selectMenuListByRoleIdList(roleIdList, "1");
         // 获取权限标识并去重复
-        List<String> permissionsList = menuResponseDTOList.stream().map(MenuResponseDTO::getPerms).distinct().collect(Collectors.toList());
+        List<String> permissionsList = menuResponseDTOList.stream().map(MenuResponseDTO::getPerms).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
 
         return ValidateTokenDTO.builder()
                 .valid(true)

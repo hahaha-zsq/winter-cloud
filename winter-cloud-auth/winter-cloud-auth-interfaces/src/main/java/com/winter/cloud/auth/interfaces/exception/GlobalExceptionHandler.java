@@ -45,14 +45,14 @@ public class GlobalExceptionHandler {
     // 1. 捕获认证失败异常 (401)
     @ExceptionHandler({AuthenticationException.class})
     public Response<Void> handleAuthenticationException(AuthenticationException e) {
-        log.warn("捕获到认证异常: {}", e.getMessage());
+        log.error("捕获到认证异常: {}", e.getMessage());
         return Response.fail(UNAUTHENTICATED); // 使用项目统一的 Response 结构
     }
 
     // 2. 捕获权限不足异常 (403)
     @ExceptionHandler({AccessDeniedException.class})
     public Response<Void> handleAccessDeniedException(AccessDeniedException e) {
-        log.warn("捕获到权限异常: {}", e.getMessage());
+        log.error("捕获到权限异常: {}", e.getMessage());
         return Response.fail(UNAUTHORIZED);
     }
     /**
