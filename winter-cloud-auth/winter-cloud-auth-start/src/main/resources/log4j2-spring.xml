@@ -6,7 +6,7 @@
     <!--        Log4j2	  ALL < TRACE < DEBUG < INFO < WARN < ERROR < FATAL < OFF-->
     <Properties>
         <!-- 日志存放路径 -->
-        <Property name="LOG_HOME">${spring:logging.file.path:-./logs}</Property>
+        <Property name="LOG_HOME">${spring:logging.file.path:-./logs/winter-cloud-auth}</Property>
         <!-- 应用名，用于日志文件命名 -->
         <Property name="APP_NAME">${spring:spring.application.name:-winter-cloud-auth}</Property>
 

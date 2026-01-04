@@ -1,4 +1,4 @@
-package com.winter.cloud.starter.config;
+package com.winter.cloud.auth.starter.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

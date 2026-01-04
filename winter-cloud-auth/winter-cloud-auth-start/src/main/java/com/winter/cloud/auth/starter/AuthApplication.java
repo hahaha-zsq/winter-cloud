@@ -1,4 +1,4 @@
-package com.winter.cloud.starter;
+package com.winter.cloud.auth.starter;
 
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.boot.SpringApplication;
