@@ -29,6 +29,21 @@ spring:
                 backoff:
                   firstBackoff: 50ms
                   maxBackoff: 500ms
+        # 认证服务路由
+        - id: winter-cloud-dict
+          uri: lb://winter-cloud-dict
+          predicates:
+            - Path=/api/dict/**
+          filters:
+            - StripPrefix=2
+            - name: Retry
+              args:
+                retries: 1  # 减少重试次数
+                statuses: BAD_GATEWAY,GATEWAY_TIMEOUT
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackoff: 500ms
       # 全局CORS配置
       globalcors:
         cors-configurations:
@@ -55,6 +70,9 @@ spring:
 dubbo:
   application:
     name: winter-cloud-gateway-dubbo
+    qos-enable: true
+    qos-port: 22223
+    qos-accept-foreign-ip: false
   registry:
     address: nacos://localhost:8848
     parameters:
@@ -64,7 +82,7 @@ dubbo:
       password: nacos
   protocol:
     name: dubbo
-    port: -1
+    port: 20881
   consumer:
     timeout: 3000
     retries: 0

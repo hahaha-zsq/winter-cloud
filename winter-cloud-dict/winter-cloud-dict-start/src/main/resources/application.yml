@@ -1,8 +1,8 @@
 server:
-  port: 6666
+  port: 6668
 spring:
   application:
-    name: winter-cloud-auth
+    name: winter-cloud-dict
   cloud:
     nacos:
       discovery:
@@ -25,29 +25,8 @@ spring:
         max-wait: -1ms
   datasource:
     dynamic:
-      primary: winter-cloud-auth
+      primary: winter-cloud-dict
       datasource:
-        winter-cloud-auth:
-          url: jdbc:postgresql://127.0.0.1:5432/winter-cloud-auth
-          username: pgvector
-          password: pgvector
-          driver-class-name: org.postgresql.Driver
-          type: com.alibaba.druid.pool.DruidDataSource
-          druid:
-            initial-size: 8
-            min-idle: 5
-            max-active: 8
-            max-wait: 60000
-            time-between-eviction-runs-millis: 60000
-            min-evictable-idle-time-millis: 300000
-            validation-query: SELECT 1
-            test-while-idle: true
-            test-on-borrow: true
-            test-on-return: false
-            pool-prepared-statements: true
-            max-pool-prepared-statement-per-connection-size: 20
-            filters: stat,wall
-            connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
         winter-cloud-dict:
           url: jdbc:mysql://127.0.0.1:3306/winter-cloud-dict?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false
           username: root
@@ -74,9 +53,9 @@ spring:
 # Dubbo 配置
 dubbo:
   application:
-    name: winter-cloud-auth-dubbo
+    name: winter-cloud-dict-dubbo
     qos-enable: true
-    qos-port: 22222
+    qos-port: 22224
     qos-accept-foreign-ip: false
   registry:
     address: nacos://localhost:8848
@@ -87,10 +66,12 @@ dubbo:
       password: nacos
   protocol:
     name: dubbo
-    port: 20880  # Dubbo 协议端口
+    port: 20882  # Dubbo 协议端口(避免与auth服务的20880冲突)
   provider:
     timeout: 3000
-
+  consumer:
+    timeout: 3000
+    retries: 0  # 根据业务幂等性决定
 
 # MyBatis-Plus 配置
 mybatis-plus:
@@ -132,25 +113,9 @@ winter-redis-config:
     retry-interval: 1500     # 重试间隔时间（毫秒）
     ping-interval: 30000     # Ping 连接间隔时间（毫秒）
     keep-alive: true         # 是否保持连接
-winter-crypto:
-  aes:
-    key: 346a3f9f4c1988cb7a507cc177923ac7
-    iv: 1234567887654321
-    auto-adjust-iv: true
-  des:
-    key: 12345678
-    iv: 87654321
-    auto-adjust-iv: true
-  # RSA配置
-  rsa:
-    private-key: "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQD5h8hFPBgYCJaF/nN1uHwWhJG8jYJrHyx3yy0tb0Gnt3K+MWCmU8pnG5yhgiA3eIYdRIFA11oKH69lhxznWn+goT0upFhO/cfJiGRSqIoyrM3zhghV3XVa0wNi1MJpcK+2oSltjQwacYDHmgWcx1yD20Tfiv5IeFKaHYTOrtc1011A9lVdx5A3vw57DJl91l9jpeBR362cpUx3+vibtnRc9owNrIOdvyAJUgzkvDiF6b5WWrQus3RXdiBCQ+2e/c7dvUfJF3KOIbVlbIVy4JXzERjRsrmjJTMDGdeCDoZTZE/RDC49BS4wuo10u23buNg7VCowVdKxSEnhJe50Q+5BAgMBAAECggEANEq2N3weeHrkQHRQce0VZAqoF+F34UcJJJmZgBn+ok0ZaK4kWPbaRb1Nl7MTWUySnnOKurHmlpSJRzeHYRxf/qOLlMiwEO2x/pPsoj3bqD76cfw2pvff7gamgQGhNEN/L0Ca0/BpBumeWTX30yEcTC2ZQ1d3bmx4sv9Yo4+UXhzhUU95jPbVm2QBLN+eORN0slxTHF68LLB8dL1vemsM8IJAfLGkYHJkAYaqGY6JNhCgz2M6xKnlfqvlKAJQ2nDvbsMQG1l6tagPnX+Qhbly+I2KlUsptnAbilFfeaCYtdgCMPrcnIvyF4yrLa864QevdDULQyjuh+aqdPO8YQwPmQKBgQD9I1bVOupQrW9xUmVZEhuj3p2WjK05n3r4UUTBtsGFkmUD/mBUquOT3n8UCTIGj5l/elve7pFzgdO74ZU2DY7QFaCTlvTGH93tii48Q+Li1KXGwdJcVxYA+7YQn1hEq53AkaBT7+pTE0/YrbZBig7rw5ONQaBAGB8kmcg2C1C1LwKBgQD8WgBf4Yr/mfA95IdIT6nsbyFQDsC9Xb6uRVIKKVFmBSZogOL1wodchnuFUtK6K9AZR/TzcvhSUUPtrkV/X5gxE+SB0r6KABa5GhMwqq+MYpglm+dkPROFMSnPjZnXz1pymTVlB7eH4O9Ve9tMJqtxclZptM9pzHj9/jg6ubCXjwKBgEiFz2LXtjnW9o6o5JBYN8MDDHMNarOPlVN/NQuqqFb0UiyKvF6Fdx3uKMo8uDBZA8kZ7Sg5gUJud5LkVjNePwQurgqavRXmG1bqt8RcTqxd8AC5luMNsCgn9Uld3ZQO9usszZo+qguTBNU3L3gnbY7uQV++5YJ3ZrS9ujaBl2XRAoGAD+ImVeKfWhk5Wtvwe+evvVb9VMmo7gJhhxyL3mHdYrt+QGOkZW2aEYPRcIHXC6rITV8PFueso5nD2cj3TN4aeTRUVKuMHKmGxJ3UiWKk7AQkqXFXriJ+AQsoI405GrFNcxsblkFXFvFcfxftpKxmbByTPdIIoBMjpnEC3wdjCxcCgYEA4yRNes5Of3DISNnLwvkUX3keHwCMfdMupQmp6lxUDvNATKRRydCsTR8mOJ2I/qfUrvsiPziBsBhQxP8dX9XI/dpaFpuGJoO4j3LOG2C+Ty+RjUyfZcf2gYKoYYxj7fJrLXurabAEpkRf58WCVhmt7V/bxB+U0/7k8CmHQCqO4bk="
-    public-key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+YfIRTwYGAiWhf5zdbh8FoSRvI2Cax8sd8stLW9Bp7dyvjFgplPKZxucoYIgN3iGHUSBQNdaCh+vZYcc51p/oKE9LqRYTv3HyYhkUqiKMqzN84YIVd11WtMDYtTCaXCvtqEpbY0MGnGAx5oFnMdcg9tE34r+SHhSmh2Ezq7XNdNdQPZVXceQN78OewyZfdZfY6XgUd+tnKVMd/r4m7Z0XPaMDayDnb8gCVIM5Lw4hem+Vlq0LrN0V3YgQkPtnv3O3b1HyRdyjiG1ZWyFcuCV8xEY0bK5oyUzAxnXgg6GU2RP0QwuPQUuMLqNdLtt27jYO1QqMFXSsUhJ4SXudEPuQQIDAQAB"
-  is-print: true
 
 logging:
   file:
     path: ./logs/winter
   level:
-    com.winter.cloud.auth: debug
-    com.zsq.winter.security: debug
-    com.baomidou.dynamic: debug  # 动态数据源日志
+    com.winter.cloud.dict: debug

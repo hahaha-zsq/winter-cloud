@@ -18,9 +18,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * 认证控制器
  * DDD Interfaces Layer - HTTP 协议适配层

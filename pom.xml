@@ -12,6 +12,7 @@
         <module>winter-cloud-auth</module>
         <module>winter-cloud-gateway</module>
         <module>winter-cloud-common</module>
+        <module>winter-cloud-dict</module>
     </modules>
 
     <properties>

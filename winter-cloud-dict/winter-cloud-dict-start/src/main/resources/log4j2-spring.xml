@@ -6,9 +6,9 @@
     <!--        Log4j2	  ALL < TRACE < DEBUG < INFO < WARN < ERROR < FATAL < OFF-->
     <Properties>
         <!-- 日志存放路径 -->
-        <Property name="LOG_HOME">${spring:logging.file.path:-./logs/winter-cloud-auth}</Property>
+        <Property name="LOG_HOME">${spring:logging.file.path:-./logs/winter-cloud-dict}</Property>
         <!-- 应用名，用于日志文件命名 -->
-        <Property name="APP_NAME">${spring:spring.application.name:-winter-cloud-auth}</Property>
+        <Property name="APP_NAME">${spring:spring.application.name:-winter-cloud-dict}</Property>
 
         <!--
           标准日志格式 - 简洁清晰的日志输出
@@ -84,7 +84,7 @@
         </AsyncLogger>
 
         <!-- mapper包日志单独记录INFO文件 -->
-        <AsyncLogger name="com.winter.cloud.auth.infrastructure.mapper" level="DEBUG" additivity="false">
+        <AsyncLogger name="com.winter.cloud.dict.infrastructure.mapper" level="DEBUG" additivity="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="InfoFile"/>
         </AsyncLogger>

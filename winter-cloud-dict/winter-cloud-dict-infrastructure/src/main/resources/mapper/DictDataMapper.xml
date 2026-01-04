@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.winter.cloud.dict.infrastructure.mapper.DictDataMapper">
+
+    <select id="getDictDataByType" resultType="com.winter.cloud.dict.domain.model.entity.DictDataDO">
+        select sdd.id,
+               sdd.dict_type_id,
+               sdd.status,
+               sdd.dict_label,
+               sdd.dict_value,
+               sdd.dict_sort,
+               sdd.remark,
+               sdd.update_by,
+               sdd.create_by,
+               sdd.create_time,
+               sdd.update_time,
+               sdt.dict_name
+        from sys_dict_type sdt
+                 left join sys_dict_data sdd on sdt.id = sdd.dict_type_id
+        <where>
+            and sdd.dict_type_id is not null
+            <if test="status != null and status != ''">
+                and sdd.status = #{status}
+            </if>
+            <if test="dictType !=null and dictType !=''">
+                and sdd.dict_type_id = #{dictType}
+            </if>
+        </where>
+    </select>
+</mapper>
