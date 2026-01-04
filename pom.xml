@@ -264,6 +264,7 @@
                     <version>${maven.surefire.plugin.version}</version>
                     <configuration>
                         <skipTests>false</skipTests>
+<!--                        只执行以下命名的测试类：-->
                         <includes>
                             <include>**/*Test.java</include>
                             <include>**/*Tests.java</include>
