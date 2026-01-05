@@ -12,6 +12,8 @@ public final class CommonConstants {
         /** 用户信息存入key为USER_INFO+SPLIT+用户id，value值用户信息 */
         public static final String USER_INFO = "winter-cloud-userInfo";
         public static final long EXPIRATION_TIME = 7 * 24 * 60 * 60 * 1000L;
+        /** 字典缓存键 */
+        public static final String DICT_KEY = "winter-cloud-dict";
     }
 
     public static final class Claim{

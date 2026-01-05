@@ -78,11 +78,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Jakarta Validation API for SPEL validation annotations -->
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.lmax</groupId>

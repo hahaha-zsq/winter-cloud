@@ -20,6 +20,10 @@
             <artifactId>winter-cloud-auth-interfaces</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.winter</groupId>
+            <artifactId>winter-cloud-dict-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <exclusions>

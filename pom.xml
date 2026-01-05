@@ -40,6 +40,7 @@
         <!--        <winter.i18n.version>0.0.3</winter.i18n.version>-->
 
         <winter.log.version>0.0.1</winter.log.version>
+        <winter.validator.version>0.0.1</winter.validator.version>
         <winter.redis.dcc.version>0.0.4</winter.redis.dcc.version>
         <winter.design.version>0.0.5</winter.design.version>
         <winter.security.version>0.0.2</winter.security.version>
@@ -185,6 +186,12 @@
 
             <dependency>
                 <groupId>io.github.hahaha-zsq</groupId>
+                <artifactId>winter-validation-spring-boot-starter</artifactId>
+                <version>${winter.validator.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.hahaha-zsq</groupId>
                 <artifactId>winter-security-spring-boot-starter</artifactId>
                 <version>${winter.security.version}</version>
             </dependency>
@@ -196,6 +203,13 @@
             </dependency>
 
             <!-- 项目内部模块依赖管理 -->
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!--            鉴权服务-->
+
             <dependency>
                 <groupId>com.winter</groupId>
                 <artifactId>winter-cloud-auth-api</artifactId>
@@ -227,6 +241,39 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!--        字典服务-->
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-dict-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-dict-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-dict-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-dict-application</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-dict-infrastructure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-dict-interfaces</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+
         </dependencies>
     </dependencyManagement>
 
@@ -246,6 +293,28 @@
                         <compilerArgs>
                             <arg>-parameters</arg>
                         </compilerArgs>
+                        <annotationProcessorPaths>
+                            <!-- mapstruct与lombok同时使用的时候必须要加这个，否则某些使用lombok注解的类会在编译的时候报错 -->
+                            <!-- 注意：lombok一定要放到mapstruct之前，否则在编译的时候某些字段可能无法被mapstruct正确处理 -->
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <!-- mapstruct 处理器 -->
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${mapstruct.version}</version>
+                            </path>
+                            <!-- additional annotation processor required as of Lombok 1.18.16 -->
+                            <!-- 从 Lombok 1.18.16 开始需要额外的注解处理器，这个版本之前的不用加 -->
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok-mapstruct-binding</artifactId>
+                                <version>0.2.0</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
 
@@ -264,7 +333,7 @@
                     <version>${maven.surefire.plugin.version}</version>
                     <configuration>
                         <skipTests>false</skipTests>
-<!--                        只执行以下命名的测试类：-->
+                        <!--                        只执行以下命名的测试类：-->
                         <includes>
                             <include>**/*Test.java</include>
                             <include>**/*Tests.java</include>

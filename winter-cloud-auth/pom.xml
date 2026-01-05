@@ -53,11 +53,6 @@
             </dependency>
             <dependency>
                 <groupId>com.winter</groupId>
-                <artifactId>winter-cloud-auth-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.winter</groupId>
                 <artifactId>winter-cloud-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
