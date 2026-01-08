@@ -37,7 +37,7 @@ public class DatabaseDictProvider implements DictDataProvider {
 
     @Override
     public Collection<String> getDictValues(String dictType) {
-        // todo 从redis中获取字典内容，没有在远程调用。字典微服务初始化时，会预先加载一份字典数据，下次查询时，会从缓存中获取。
+        //  从redis中获取字典内容，没有在远程调用。字典微服务初始化时，会预先加载一份字典数据，下次查询时，会从缓存中获取。
         Object o = winterRedisTemplate.get(CommonConstants.Redis.DICT_KEY + CommonConstants.Redis.SPLIT + dictType);
         if (ObjectUtil.isNotEmpty(o)) {
             try {
