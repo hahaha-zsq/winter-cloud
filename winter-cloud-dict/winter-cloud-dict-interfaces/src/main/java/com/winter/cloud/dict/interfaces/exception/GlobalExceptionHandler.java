@@ -22,8 +22,6 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 
-import static com.winter.cloud.common.enums.ResultCodeEnum.UNAUTHENTICATED;
-import static com.winter.cloud.common.enums.ResultCodeEnum.UNAUTHORIZED;
 
 /**
  * 全局异常处理器
@@ -44,14 +42,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({AuthenticationException.class})
     public Response<Void> handleAuthenticationException(AuthenticationException e) {
         log.error("捕获到认证异常: {}", e.getMessage());
-        return Response.fail(UNAUTHENTICATED); // 使用项目统一的 Response 结构
+        return Response.fail(ResultCodeEnum.UNAUTHENTICATED); // 使用项目统一的 Response 结构
     }
 
     // 2. 捕获权限不足异常 (403)
     @ExceptionHandler({AccessDeniedException.class})
     public Response<Void> handleAccessDeniedException(AccessDeniedException e) {
         log.error("捕获到权限异常: {}", e.getMessage());
-        return Response.fail(UNAUTHORIZED);
+        return Response.fail(ResultCodeEnum.UNAUTHORIZED);
     }
     /**
      * 业务异常

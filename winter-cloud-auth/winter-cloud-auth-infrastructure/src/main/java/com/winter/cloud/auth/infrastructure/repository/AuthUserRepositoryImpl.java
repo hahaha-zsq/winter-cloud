@@ -27,8 +27,8 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
     }
 
     @Override
-    public AuthUserDO findByUserName(String userName) {
-        AuthUserPO po = authUserMpService.getOne(new LambdaQueryWrapper<AuthUserPO>().eq(AuthUserPO::getUserName, userName));
+    public AuthUserDO findByEmail(String email) {
+        AuthUserPO po = authUserMpService.getOne(new LambdaQueryWrapper<AuthUserPO>().eq(AuthUserPO::getEmail, email));
         return authUserInfraAssembler.toDO(po);
     }
 

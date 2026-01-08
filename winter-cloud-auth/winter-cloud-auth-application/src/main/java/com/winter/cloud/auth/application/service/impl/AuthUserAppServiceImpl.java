@@ -66,8 +66,8 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
 
     @Override
     public LoginResponseDTO login(UserLoginCommand command) throws JsonProcessingException {
-        AuthUserDO authUserDO = authUserRepository.findByUserName(command.getUserName());
-        // 查询用户名是否存在，不存在抛出异常，存在进行密码校验
+        AuthUserDO authUserDO = authUserRepository.findByEmail(command.getEmail());
+        // 查询邮箱是否存在，不存在抛出异常，存在进行密码校验
         if (ObjectUtils.isEmpty(authUserDO)) {
             throw new BusinessException(NOT_FOUND);
         }

@@ -14,18 +14,18 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static com.winter.cloud.common.constants.CommonConstants.buildUserCacheKey;
 /**
@@ -69,16 +69,40 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         this.objectMapper = objectMapper;
         this.winterRedisTemplate = winterRedisTemplate;
     }
+    // 1. 确保白名单配置正确（必须包含 /api/auth/login）
+    private static final List<String> IGNORE_URLS = Arrays.asList(
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/doc.html",
+            "/api/swagger-resources/**"
+            // 注意：如果你的日志打印是 /api/...，这里必须带 /api
+    );
 
+    private AntPathMatcher pathMatcher = new AntPathMatcher();
     /**
      * Gateway 核心过滤方法
      */
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-
         ServerHttpRequest request = exchange.getRequest();
-        ServerHttpResponse response = exchange.getResponse();
         String path = request.getURI().getPath();
+        // =================================================================
+        // ✅ 修复点 1：如果是 OPTIONS 请求，直接放行 (非常重要！)
+        // =================================================================
+        if (request.getMethod() == HttpMethod.OPTIONS) {
+            return chain.filter(exchange);
+        }
+
+        // =================================================================
+        // ✅ 修复点 2：检查白名单
+        // =================================================================
+        for (String ignoreUrl : IGNORE_URLS) {
+            // 使用 AntPathMatcher 进行模糊匹配 (支持 /api/** 这种写法)
+            if (pathMatcher.match(ignoreUrl, path)) {
+                return chain.filter(exchange);
+            }
+        }
+        ServerHttpResponse response = exchange.getResponse();
 
         log.debug("处理认证请求，路径: {}", path);
 

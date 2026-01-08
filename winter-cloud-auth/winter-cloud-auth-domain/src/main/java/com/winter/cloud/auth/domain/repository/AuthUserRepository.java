@@ -18,7 +18,7 @@ public interface AuthUserRepository {
     /**
      * 根据用户名查询用户
      */
-    AuthUserDO findByUserName(String userName);
+    AuthUserDO findByEmail(String email);
 
     /**
      * 保存或更新用户

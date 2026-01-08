@@ -23,8 +23,6 @@ public enum ResultCodeEnum {
     FORBIDDEN("0007", "禁止访问"),
     DISABLED("0008", "禁用"),
     UNAUTHENTICATED("0009", "未认证"),
-
-
     ;
 
     private String code;

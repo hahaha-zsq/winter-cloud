@@ -37,21 +37,4 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/**")  // 拦截所有请求
                 .order(0);  // 设置为最高优先级，确保最先执行
     }
-
-    /**
-     * 配置全局跨域
-     * <p>
-     * 允许所有来源的跨域请求，支持常用的 HTTP 方法和请求头。
-     * 生产环境建议根据实际需求限制允许的来源。
-     * </p>
-     */
-    @Override
-    public void addCorsMappings(@NonNull CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOriginPatterns("*")  // 允许所有来源，生产环境建议配置具体域名
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 允许的 HTTP 方法
-                .allowedHeaders("*")  // 允许所有请求头
-                .allowCredentials(true)  // 允许携带凭证（如 Cookie）
-                .maxAge(3600);  // 预检请求的缓存时间（秒）
-    }
 }

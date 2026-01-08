@@ -14,6 +14,7 @@ public final class CommonConstants {
         public static final long EXPIRATION_TIME = 7 * 24 * 60 * 60 * 1000L;
         /** 字典缓存键 */
         public static final String DICT_KEY = "winter-cloud-dict";
+        public static final String BLACK_IP_LIST_KEY = "winter-cloud-black-ip-list";
     }
 
     public static final class Claim{

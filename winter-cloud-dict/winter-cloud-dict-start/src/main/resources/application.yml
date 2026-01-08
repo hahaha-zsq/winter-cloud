@@ -1,5 +1,5 @@
 server:
-  port: 6668
+  port: 9998
 spring:
   application:
     name: winter-cloud-dict

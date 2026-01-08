@@ -1,5 +1,5 @@
 server:
-  port: 6667
+  port: 9997
 spring:
   application:
     name: winter-cloud-gateway
@@ -12,15 +12,26 @@ spring:
         username: nacos  # Nacos 用户名（如果开启了认证）
         password: nacos  # Nacos 密码（如果开启了认证）
     gateway:
+
+      # 1. 全局跨域配置 (新增部分)
+      globalcors:
+        add-to-simple-url-handler-mapping: true # 解决 OPTIONS 请求被拦截问题
+        cors-configurations:
+          '[/**]':
+            allowed-origin-patterns: # 👈 注意是 patterns，不是 origins
+              - "http://localhost:*"
+            allowedMethods: "*"         # 允许所有方法
+            allowedHeaders: "*"         # 允许所有头
+            allowCredentials: true      # 允许携带 Cookie
       # 路由配置
       routes:
         # 认证服务路由
         - id: winter-cloud-auth
           uri: lb://winter-cloud-auth
           predicates:
-            - Path=/api/auth/**
+            - Path=/api/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=1
             - name: Retry
               args:
                 retries: 1  # 减少重试次数
@@ -33,9 +44,9 @@ spring:
         - id: winter-cloud-dict
           uri: lb://winter-cloud-dict
           predicates:
-            - Path=/api/dict/**
+            - Path=/api/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=1
             - name: Retry
               args:
                 retries: 1  # 减少重试次数
@@ -44,15 +55,6 @@ spring:
                 backoff:
                   firstBackoff: 50ms
                   maxBackoff: 500ms
-      # 全局CORS配置
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOriginPatterns: "*"
-            allowedMethods: "*"
-            allowedHeaders: "*"
-            allowCredentials: true
-            maxAge: 3600
   redis:
     host: localhost
     port: 6379
@@ -112,4 +114,4 @@ logging:
     com.baomidou.dynamic: debug  # 动态数据源日志
     reactor.netty: debug  # Netty日志
     org.springframework.cloud.gateway: debug  # Gateway日志
-    org.apache.dubbo: debug  # Dubbo日志
+#    org.apache.dubbo: debug  # Dubbo日志

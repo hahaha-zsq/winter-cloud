@@ -6,6 +6,7 @@ import com.winter.cloud.gateway.common.enums.ResultCodeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -19,47 +20,6 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
-/**
- * 网关安全防护过滤器
- *
- * <p>该过滤器是网关安全体系的第一道防线，专门负责防范各种Web安全攻击，解决了以下核心安全问题：</p>
- * <ul>
- *   <li>XSS攻击防护：检测和阻止跨站脚本攻击，防止恶意脚本注入</li>
- *   <li>恶意请求识别：检测异常User-Agent和恶意工具请求</li>
- *   <li>请求头安全检查：验证HTTP请求头的安全性</li>
- *   <li>URL参数安全验证：检查URL参数中的恶意内容</li>
- *   <li>基础防刷保护：提供简单的请求频率控制机制</li>
- * </ul>
- *
- * <p>实现该过滤器带来的具体好处：</p>
- * <ul>
- *   <li>安全防护：在网关层统一拦截各种Web攻击，保护后端服务安全</li>
- *   <li>性能优化：在请求到达业务服务前就拦截恶意请求，节省系统资源</li>
- *   <li>统一管理：集中管理安全规则，便于维护和升级安全策略</li>
- *   <li>实时监控：记录安全事件，便于安全分析和威胁情报收集</li>
- *   <li>合规要求：满足Web应用安全标准和合规性要求</li>
- *   <li>用户保护：防止用户数据被恶意脚本窃取或篡改</li>
- * </ul>
- *
- * <p>与其他组件的调用关系：</p>
- * <ul>
- *   <li>作为WebFilter在Spring WebFlux层面执行，拥有最高优先级</li>
- *   <li>在所有Gateway过滤器之前执行，提供基础安全保障</li>
- *   <li>与AuditLogFilter配合记录安全事件和攻击尝试</li>
- *   <li>为后续的认证和授权过滤器提供安全的请求环境</li>
- *   <li>可与外部安全系统集成，如WAF、安全监控平台等</li>
- * </ul>
- *
- * <p>核心安全检查逻辑：</p>
- * <ol>
- *   <li>请求头安全检查：扫描所有HTTP头中的恶意内容</li>
- *   <li>URL参数安全验证：检查查询参数中的攻击代码</li>
- *   <li>User-Agent验证：识别恶意工具和异常客户端</li>
- *   <li>攻击模式匹配：使用正则表达式匹配已知攻击模式</li>
- * </ol>
- *
- * @author zsq
- */
 @Slf4j
 @Component
 public class SecurityFilter implements WebFilter, Ordered {
@@ -106,34 +66,12 @@ public class SecurityFilter implements WebFilter, Ordered {
     };
 
 
-    /**
-     * 过滤器核心处理方法 - 执行全面的安全检查
-     *
-     * <p>该方法实现了多层次的安全检查机制，包括：</p>
-     * <ol>
-     *   <li>请求头安全检查：扫描HTTP头中的恶意内容</li>
-     *   <li>URL参数安全验证：检查查询参数的安全性</li>
-     *   <li>User-Agent验证：识别恶意工具和异常客户端</li>
-     *   <li>请求频率控制：防止恶意刷量和暴力攻击</li>
-     *   <li>请求头标识验证：检查必要的安全标识头</li>
-     * </ol>
-     *
-     * <p>实现原理：</p>
-     * <ul>
-     *   <li>WebFilter优先级：作为最高优先级过滤器首先执行</li>
-     *   <li>模式匹配：使用预编译正则表达式进行高效攻击检测</li>
-     *   <li>快速失败：一旦检测到攻击立即返回错误响应</li>
-     *   <li>日志记录：记录所有安全事件便于后续分析</li>
-     * </ul>
-     *
-     * @param exchange 服务器Web交换对象，包含请求和响应信息
-     * @param chain    Web过滤器链，用于传递到下一个过滤器
-     * @return Mono<Void> 异步处理结果，表示过滤器处理完成
-     */
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
-
+        if (request.getMethod() == HttpMethod.OPTIONS) {
+            return chain.filter(exchange);
+        }
         // 记录安全检查开始，便于问题追踪
         log.info("安全过滤器检查请求: {} {}", request.getMethod(), request.getURI());
 
@@ -431,12 +369,7 @@ public class SecurityFilter implements WebFilter, Ordered {
         }
 
         // 验证客户端ID格式：8-32位字母数字组合
-        if (!clientId.matches("^[a-zA-Z0-9]{8,32}$")) {
-            return false;
-        }
-
-        // 目前允许所有符合格式的客户端ID
-        return true;
+        return clientId.matches("^[a-zA-Z0-9]{8,32}$");
     }
 
     /**
