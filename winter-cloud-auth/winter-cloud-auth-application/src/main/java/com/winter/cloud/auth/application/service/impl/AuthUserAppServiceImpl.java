@@ -96,13 +96,11 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
                 .buttonList(permissions)
                 .build();
 
-        return LoginResponseDTO.builder()
-                .token(token)
-                .nickName(authUserDO.getNickName())
-                .userId(authUserDO.getId())
-                .userName(authUserDO.getUserName())
-                .menuAndButton(menuAndButtonResponseDTO)
-                .build();
+        LoginResponseDTO responseDTO = authUserAppAssembler.toResponseDTO(authUserDO);
+        responseDTO.setToken(token);
+        responseDTO.setMenuAndButton(menuAndButtonResponseDTO);
+        return responseDTO;
+
     }
 
 

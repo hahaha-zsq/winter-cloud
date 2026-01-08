@@ -4,7 +4,6 @@ import com.winter.cloud.common.constants.CommonConstants;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
