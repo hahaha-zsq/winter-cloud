@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.winter.cloud.auth.infrastructure.mapper.IconValueMapper">
+    <resultMap id="iconMap" type="com.winter.cloud.auth.api.dto.response.IconResponseDTO">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="prefix" column="prefix"/>
+        <result property="url" column="url"/>
+        <!-- 配置user对象中accounts集合的映射 -->
+        <collection property="children" ofType="com.winter.cloud.auth.api.dto.response.IconValue" javaType="java.util.List">
+            <id column="sid" property="id"/>
+            <result column="value" property="value"/>
+            <result column="status" property="status"/>
+            <result column="icon_type_id" property="iconTypeId"/>
+        </collection>
+    </resultMap>
+<!--    mysql版本-->
+<!--    <insert id="batchInsertOrUpdateIconValue">-->
+<!--        <if test="list != null and list.size() != 0">-->
+<!--            INSERT INTO sys_icon_value (value, icon_type_id)  VALUES-->
+<!--            <foreach collection="list" item="iconValue" separator=",">-->
+<!--                (#{iconValue.value}, #{iconValue.iconTypeId})-->
+<!--            </foreach>-->
+<!--            ON DUPLICATE KEY UPDATE value=VALUES(value),-->
+<!--            icon_type_id=VALUES(icon_type_id)-->
+<!--        </if>-->
+<!--    </insert>-->
+
+
+    <!--    pgsql版本-->
+    <insert id="batchInsertOrUpdateIconValue">
+        <if test="list != null and list.size() != 0">
+            INSERT INTO sys_icon_value (value, icon_type_id)
+            VALUES
+            <foreach collection="list" item="iconValue" separator=",">
+                (#{iconValue.value}, #{iconValue.iconTypeId})
+            </foreach>
+            ON CONFLICT (value)
+            DO UPDATE SET
+            icon_type_id = EXCLUDED.icon_type_id
+            WHERE sys_icon_value.icon_type_id != EXCLUDED.icon_type_id
+        </if>
+    </insert>
+
+    <select id="getIconList" resultType="com.winter.cloud.auth.api.dto.response.IconResponseDTO" resultMap="iconMap">
+        select sit.id,
+        sit.name,
+        sit.prefix,
+        sit.url,
+        siv.id as sid,
+        siv.value,
+        siv.icon_type_id,
+        siv.status
+
+        from sys_icon_type sit
+        left join sys_icon_value siv on sit.id = siv.icon_type_id
+        <where>
+            <if test="name != null and name != ''">
+                siv.value like concat('%', #{name}, '%')
+            </if>
+        </where>
+    </select>
+</mapper>

@@ -37,6 +37,7 @@
         <log4j2.version>2.17.2</log4j2.version>
         <mybatis.plus.version>3.5.7</mybatis.plus.version>
         <disruptor.version>3.4.4</disruptor.version>
+        <xxljob.version>2.4.2</xxljob.version>
         <!--        <winter.i18n.version>0.0.3</winter.i18n.version>-->
 
         <winter.log.version>0.0.1</winter.log.version>
@@ -165,6 +166,11 @@
                 <version>${disruptor.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.xuxueli</groupId>
+                <artifactId>xxl-job-core</artifactId>
+                <version>${xxljob.version}</version>
+            </dependency>
             <!--开源winter系列-->
             <dependency>
                 <groupId>io.github.hahaha-zsq</groupId>

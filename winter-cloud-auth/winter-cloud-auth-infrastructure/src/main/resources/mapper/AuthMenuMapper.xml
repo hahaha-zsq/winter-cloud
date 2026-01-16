@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.winter.cloud.auth.infrastructure.mapper.AuthMenuMapper">
-
     <select id="selectMenuListByRoleIdList" resultType="com.winter.cloud.auth.api.dto.response.MenuResponseDTO">
         select sm.perms,
                sm.component,
@@ -29,27 +28,41 @@
                 and sm.status = #{status}
             </if>
         </where>
+        order by sm.parent_id, sm.order_num
     </select>
 
     <select id="getMenu" resultType="com.winter.cloud.auth.api.dto.response.MenuResponseDTO">
         SELECT sm.perms,
-        sm.component,
-        sm.file_path,
-        sm.frame,
-        sm.icon,
-        sm.menu_name,
-        sm.menu_type,
-        sm.parent_id,
-        sm.status,
-        sm.path,
-        sm.visible,
-        sm.id,
-        sm.order_num
+               sm.component,
+               sm.file_path,
+               sm.frame,
+               sm.icon,
+               sm.menu_name,
+               sm.menu_type,
+               sm.parent_id,
+               sm.status,
+               sm.path,
+               sm.visible,
+               sm.id,
+               sm.order_num
         FROM sys_user su
-        LEFT JOIN sys_user_role sur ON su.id = sur.user_id
-        LEFT JOIN sys_role_menu srm ON srm.role_id = sur.role_id
-        LEFT JOIN sys_menu sm ON sm.id = srm.menu_id
-        WHERE su.id = #{id}
-        and sm.menu_type != 'b' order by sm.parent_id, sm.order_num
+                 LEFT JOIN sys_user_role sur ON su.id = sur.user_id
+                 LEFT JOIN sys_role_menu srm ON srm.role_id = sur.role_id
+                 LEFT JOIN sys_menu sm ON sm.id = srm.menu_id
+        <where>
+            <if test="id != null">
+                and su.id = #{id}
+            </if>
+            <if test="status != null and status != ''">
+                and sm.status = #{status}
+            </if>
+            <if test="menuTypeList != null and menuTypeList.size() > 0">
+                and sm.menu_type in
+                <foreach collection="menuTypeList" item="menuType" open="(" separator="," close=")">
+                    #{menuType}
+                </foreach>
+            </if>
+        </where>
+        order by sm.parent_id, sm.order_num
     </select>
 </mapper>

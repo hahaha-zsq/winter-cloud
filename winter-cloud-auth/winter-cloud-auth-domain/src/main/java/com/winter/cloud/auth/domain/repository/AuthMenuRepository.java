@@ -1,6 +1,7 @@
 package com.winter.cloud.auth.domain.repository;
 
 
+import cn.hutool.core.lang.Opt;
 import com.winter.cloud.auth.api.dto.response.MenuResponseDTO;
 
 import java.util.List;
@@ -26,4 +27,6 @@ public interface AuthMenuRepository {
      * @return 菜单列表
      */
     List<MenuResponseDTO> getMenu(Long userId);
+
+    List<MenuResponseDTO> getDynamicRouting(Long id);
 }

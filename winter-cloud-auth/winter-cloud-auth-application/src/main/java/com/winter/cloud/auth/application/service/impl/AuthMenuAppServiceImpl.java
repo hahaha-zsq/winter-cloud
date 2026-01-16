@@ -34,6 +34,11 @@ public class AuthMenuAppServiceImpl implements AuthMenuAppService {
         return builderMenuTree(menu);
     }
 
+    @Override
+    public List<MenuResponseDTO> getDynamicRouting(Long id) {
+        return authMenuRepository.getDynamicRouting(id).stream().distinct().collect(Collectors.toList());
+    }
+
     /**
      * 构建菜单树形结构
      * <p>

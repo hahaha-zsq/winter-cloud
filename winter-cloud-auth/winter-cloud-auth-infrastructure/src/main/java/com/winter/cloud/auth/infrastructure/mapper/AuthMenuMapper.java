@@ -14,6 +14,5 @@ import java.util.List;
 public interface AuthMenuMapper extends BaseMapper<AuthMenuPO> {
     List<MenuResponseDTO> selectMenuListByRoleIdList(@Param("roleIdList") List<Long> roleIdList,@Param("status") String status);
 
-    List<MenuResponseDTO> getMenu(Long id);
-    // 如果有复杂的自定义 SQL，可以在这里定义方法并在 XML 中实现
+    List<MenuResponseDTO> getMenu(@Param("id") Long id,@Param("status") String status,@Param("menuTypeList") List<String> menuTypeList);
 }

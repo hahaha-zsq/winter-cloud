@@ -14,6 +14,7 @@ import com.winter.cloud.auth.domain.repository.AuthMenuRepository;
 import com.winter.cloud.auth.domain.repository.AuthRoleRepository;
 import com.winter.cloud.auth.domain.repository.AuthUserRepository;
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.enums.StatusEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.util.JwtUtil;
 import com.zsq.winter.encrypt.util.CryptoUtil;
@@ -57,7 +58,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
         String encryptedPwd = CryptoUtil.winterMd5Hex16(authUserDO.getPassword());
         authUserDO.setPassword(encryptedPwd);
 
-        authUserDO.setStatus("1"); // 正常
+        authUserDO.setStatus(StatusEnum.ENABLE.getCode()); // 正常
         authUserDO.setDelFlag("0"); // 未删除
 
         // 4. 保存
@@ -76,7 +77,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
             throw new BusinessException(LOGIN_FAILED);
         }
         // 账号状态校验
-        if (!authUserDO.getStatus().equals("1")) {
+        if (!StatusEnum.ENABLE.getCode().equals(authUserDO.getStatus())) {
             throw new BusinessException(DISABLED.getCode(), "用户已停用");
         }
         // 生成token
@@ -108,7 +109,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
     public ValidateTokenDTO generateUserInfo(Long userID,String userName) {
         // 数据库获取用户的角色和权限信息
         // 获取角色正常的信息
-        List<RoleResponseDTO> roleResponseDTOList = authRoleRepository.selectRoleListByUserId(userID, "1");
+        List<RoleResponseDTO> roleResponseDTOList = authRoleRepository.selectRoleListByUserId(userID, StatusEnum.ENABLE.getCode());
         // 获取角色正常的权限标识
         List<String> roleKeyList = roleResponseDTOList.stream().map(RoleResponseDTO::getRoleKey).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
         // 获取角色正常的角色id
