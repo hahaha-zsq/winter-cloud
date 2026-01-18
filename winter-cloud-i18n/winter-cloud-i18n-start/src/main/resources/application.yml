@@ -1,8 +1,8 @@
 server:
-  port: 9998
+  port: 9996
 spring:
   application:
-    name: winter-cloud-dict
+    name: winter-cloud-i18n
   cloud:
     nacos:
       discovery:
@@ -25,10 +25,10 @@ spring:
         max-wait: -1ms
   datasource:
     dynamic:
-      primary: winter-cloud-dict
+      primary: winter-cloud-i18n
       datasource:
         winter-cloud-dict:
-          url: jdbc:mysql://127.0.0.1:3306/winter-cloud-dict?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false
+          url: jdbc:mysql://127.0.0.1:3306/winter-cloud-i18n?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false
           username: root
           password: root
           driver-class-name: com.mysql.cj.jdbc.Driver
@@ -48,14 +48,12 @@ spring:
             max-pool-prepared-statement-per-connection-size: 20
             filters: stat,wall
             connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
-
-
 # Dubbo 配置
 dubbo:
   application:
-    name: winter-cloud-dict-dubbo
+    name: winter-cloud-i18n-dubbo
     qos-enable: true
-    qos-port: 22224
+    qos-port: 2225
     qos-accept-foreign-ip: false
   registry:
     address: nacos://localhost:8848
@@ -66,7 +64,7 @@ dubbo:
       password: nacos
   protocol:
     name: dubbo
-    port: 20882  # Dubbo 协议端口(避免与auth服务的20880冲突)
+    port: 20883  # Dubbo 协议端口(避免与auth服务的20880冲突)
   provider:
     timeout: 3000
   consumer:
@@ -78,7 +76,7 @@ mybatis-plus:
   #，如果在 Mapper 中有自定义方法，需要配置此项 mapper-locations 用来告诉 MyBatis-Plus 到哪里加载 Mapper XML 文件
   mapper-locations: classpath:mapper/**/*.xml
   # 指定 MyBatis 别名包扫描路径，用于给包中的类注册别名。注册后，在 Mapper 对应的 XML 文件中可以直接使用类名，无需使用全限定类名
-  type-aliases-package: com.winter.cloud.dict.infrastructure.entity
+  type-aliases-package: com.winter.cloud.i18n.infrastructure.entity
   # 原生 MyBatis 所支持的配置
   configuration:
     # 开启自动驼峰命名规则（camel case）映射，即从经典数据库列名 A_COLUMN（下划线命名） 到经典 Java 属性名 aColumn（驼峰命名） 的类似映射
@@ -118,4 +116,4 @@ logging:
   file:
     path: ./logs/winter
   level:
-    com.winter.cloud.dict: debug
+    com.winter.cloud.i18n: debug

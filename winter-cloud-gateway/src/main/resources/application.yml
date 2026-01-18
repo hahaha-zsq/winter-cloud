@@ -40,9 +40,24 @@ spring:
                 backoff:
                   firstBackoff: 50ms
                   maxBackoff: 500ms
-        # 认证服务路由
+        # 字典服务路由
         - id: winter-cloud-dict
           uri: lb://winter-cloud-dict
+          predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=1
+            - name: Retry
+              args:
+                retries: 1  # 减少重试次数
+                statuses: BAD_GATEWAY,GATEWAY_TIMEOUT
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackoff: 500ms
+        # 国际化服务路由
+        - id: winter-cloud-i18n
+          uri: lb://winter-cloud-i18n
           predicates:
             - Path=/api/**
           filters:

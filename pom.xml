@@ -13,6 +13,7 @@
         <module>winter-cloud-gateway</module>
         <module>winter-cloud-common</module>
         <module>winter-cloud-dict</module>
+        <module>winter-cloud-i18n</module>
     </modules>
 
     <properties>
@@ -38,13 +39,13 @@
         <mybatis.plus.version>3.5.7</mybatis.plus.version>
         <disruptor.version>3.4.4</disruptor.version>
         <xxljob.version>2.4.2</xxljob.version>
-        <!--        <winter.i18n.version>0.0.3</winter.i18n.version>-->
 
         <winter.log.version>0.0.1</winter.log.version>
         <winter.validator.version>0.0.1</winter.validator.version>
         <winter.redis.dcc.version>0.0.4</winter.redis.dcc.version>
         <winter.design.version>0.0.5</winter.design.version>
         <winter.security.version>0.0.2</winter.security.version>
+        <winter.i18n.version>0.0.3</winter.i18n.version>
         <winter.encrypt.version>0.0.32</winter.encrypt.version>
         <dubbo.version>3.3.0</dubbo.version>
 
@@ -188,6 +189,12 @@
                 <groupId>io.github.hahaha-zsq</groupId>
                 <artifactId>winter-encrypt-spring-boot-starter</artifactId>
                 <version>${winter.encrypt.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.hahaha-zsq</groupId>
+                <artifactId>winter-i18n-spring-boot-starter</artifactId>
+                <version>${winter.i18n.version}</version>
             </dependency>
 
             <dependency>
