@@ -27,7 +27,7 @@ spring:
     dynamic:
       primary: winter-cloud-i18n
       datasource:
-        winter-cloud-dict:
+        winter-cloud-i18n:
           url: jdbc:mysql://127.0.0.1:3306/winter-cloud-i18n?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false
           username: root
           password: root
@@ -111,7 +111,17 @@ winter-redis-config:
     retry-interval: 1500     # 重试间隔时间（毫秒）
     ping-interval: 30000     # Ping 连接间隔时间（毫秒）
     keep-alive: true         # 是否保持连接
-
+winter-i18n:
+  locale:
+    default-locale: zh_CN              # 默认语言
+    supported:                         # 支持的语言列表
+      - zh_CN                          # 中文	中国大陆
+      - en_US                          # 英语	美国
+      - es_ES                          # 西班牙语	西班牙
+      - fr_FR                          # 法语	法国
+      - ru_RU                          # 俄语	俄罗斯
+      - ar_SA                          # 阿拉伯语	沙特阿拉伯(通用)
+    header-name: Accept-Language       # HTTP 请求头名称
 logging:
   file:
     path: ./logs/winter

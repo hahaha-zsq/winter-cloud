@@ -1,5 +1,7 @@
 package com.winter.cloud.common.constants;
 
+import org.springframework.beans.factory.annotation.Value;
+
 public final class CommonConstants {
     private CommonConstants() {
         // 私有构造函数，防止实例化
@@ -24,6 +26,64 @@ public final class CommonConstants {
     public static final class Order{
         public static final String ASC = "ascend";
         public static final String DESC = "descend";
+    }
+
+    public static final class I18nMessage{
+        public static final String I18N_KEY = "winter-cloud-i18n";
+        public static final String I18N_MESSAGE_KEY = I18N_KEY + Redis.SPLIT + "message";
+        /**
+         * I18n 空值缓存标识
+         */
+        public static final String I18N_NULL_VALUE = "NULL";
+        /**
+         * I18n 布隆过滤器预期元素数量
+         */
+        public static final long I18N_BLOOM_EXPECTED_INSERTIONS = 10000L;
+
+        /**
+         * I18n 布隆过滤器误判率
+         */
+        public static final double I18N_BLOOM_FALSE_PROBABILITY = 0.01;
+
+        /**
+         * 默认语言环境
+         */
+        public static final String DEFAULT_LOCALE = "zh_CN";
+
+        /**
+         * I18n 缓存过期时间（秒）- 1小时
+         */
+        public static final long I18N_CACHE_EXPIRE_SECONDS = 3600L;
+
+        /**
+         * I18n 空值缓存过期时间（秒）- 5分钟
+         */
+        public static final long I18N_NULL_CACHE_EXPIRE_SECONDS = 300L;
+
+        /**
+         * I18n 缓存随机过期时间范围（秒）- 0-300秒
+         */
+        public static final long I18N_CACHE_RANDOM_EXPIRE_SECONDS = 300L;
+
+        /**
+         * I18n 互斥锁前缀：winter-cloud-i18n:lock
+         */
+        public static final String I18N_LOCK_PREFIX = I18N_KEY + CommonConstants.Redis.SPLIT + "lock";
+
+        /**
+         * I18n 互斥锁过期时间（秒）- 10秒
+         */
+        public static final long I18N_LOCK_EXPIRE_SECONDS = 10L;
+
+        /**
+         * I18n 布隆过滤器名称：winter-cloud-i18n:bloom
+         */
+        public static final String I18N_BLOOM_FILTER_NAME = I18N_KEY + CommonConstants.Redis.SPLIT + "bloom";
+
+        /**
+         * I18n 缓存预热线程名称：i18n-cache-warmup
+         */
+        public static final String I18N_CACHE_WARMUP_THREAD_NAME = "i18n-cache-warmup";
     }
 
 
@@ -58,6 +118,37 @@ public final class CommonConstants {
                + CommonConstants.Redis.SPLIT        // ":"
                + userId;                             // 用户 ID
     }
+
+    /**
+     * 构建i18n消息Redis缓存键
+     */
+    public static String buildI18nMessageKey(String messageKey, String locale) {
+        return CommonConstants.I18nMessage.I18N_MESSAGE_KEY + CommonConstants.Redis.SPLIT  + messageKey + CommonConstants.Redis.SPLIT  + locale;
+    }
+
+    /**
+     * 构建布隆过滤器元素键
+     *
+     * @param messageKey 消息键
+     * @param locale     语言环境
+     * @return 布隆过滤器元素键
+     */
+    public static String buildI18nBloomKey(String messageKey, String locale) {
+        return messageKey + CommonConstants.Redis.SPLIT + locale;
+    }
+
+
+    /**
+     * 构建 I18n 互斥锁键
+     *
+     * @param messageKey 消息键
+     * @param locale     语言环境
+     * @return 锁键
+     */
+    public static String buildI18nLockKey(String messageKey, String locale) {
+        return CommonConstants.I18nMessage.I18N_LOCK_PREFIX +  CommonConstants.Redis.SPLIT + messageKey +  CommonConstants.Redis.SPLIT + locale;
+    }
+
 
     /**
      * HTTP请求头常量
