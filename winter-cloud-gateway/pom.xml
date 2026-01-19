@@ -68,6 +68,13 @@
         <dependency>
             <groupId>com.winter</groupId>
             <artifactId>winter-cloud-auth-api</artifactId>
+            <exclusions>
+                <!-- 必须排除，这个使用了Spring mvc 和网关不兼容-->
+                <exclusion>
+                    <groupId>io.github.hahaha-zsq</groupId>
+                    <artifactId>winter-i18n-spring-boot-starter</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
