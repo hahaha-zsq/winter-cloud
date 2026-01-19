@@ -4,6 +4,7 @@ package com.winter.cloud.i18n.interfaces.exception;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.Response;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,6 +15,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.validation.ConstraintViolation;
@@ -22,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 
+import static com.winter.cloud.common.enums.ResultCodeEnum.*;
 
 /**
  * 全局异常处理器
@@ -37,19 +40,28 @@ import java.util.List;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    /**
+     * 业务异常处理
+     */
+    public final WinterI18nTemplate winterI18nTemplate;
+
+    public GlobalExceptionHandler(WinterI18nTemplate winterI18nTemplate) {
+        this.winterI18nTemplate = winterI18nTemplate;
+    }
+
 
     // 1. 捕获认证失败异常 (401)
     @ExceptionHandler({AuthenticationException.class})
     public Response<Void> handleAuthenticationException(AuthenticationException e) {
         log.error("捕获到认证异常: {}", e.getMessage());
-        return Response.fail(ResultCodeEnum.UNAUTHENTICATED); // 使用项目统一的 Response 结构
+        return Response.fail(UNAUTHENTICATED_LANG.getCode(),winterI18nTemplate.message(UNAUTHENTICATED_LANG.getMessage())); // 使用项目统一的 Response 结构
     }
 
     // 2. 捕获权限不足异常 (403)
     @ExceptionHandler({AccessDeniedException.class})
     public Response<Void> handleAccessDeniedException(AccessDeniedException e) {
         log.error("捕获到权限异常: {}", e.getMessage());
-        return Response.fail(ResultCodeEnum.UNAUTHORIZED);
+        return Response.fail(UNAUTHORIZED_LANG.getCode(),winterI18nTemplate.message(UNAUTHORIZED_LANG.getMessage())); // 使用项目统一的 Response 结构
     }
     /**
      * 业务异常
@@ -79,18 +91,33 @@ public class GlobalExceptionHandler {
      * @return 聚合所有校验错误信息的标准错误响应
      */
     @ExceptionHandler(BindException.class)
+    @ResponseBody
     public Response<?> BindExceptionHandler(BindException e) {
         StringBuilder stringBuilder = new StringBuilder();
         List<ObjectError> errors = e.getBindingResult().getAllErrors();
         for (ObjectError error : errors) {
             String message = error.getDefaultMessage();
-            stringBuilder.append(message).append("; ");
+            // 检查消息是否为国际化键格式 {key}
+            if (message != null && message.startsWith("{") && message.endsWith("}")) {
+                // 提取消息键
+                String messageKey = message.substring(1, message.length() - 1);
+                try {
+                    // 尝试获取国际化消息
+                    String i18nMessage = winterI18nTemplate.message(messageKey, new Object[]{}, message);
+                    stringBuilder.append(i18nMessage).append("; ");
+                } catch (Exception ex) {
+                    // 如果获取国际化消息失败，使用原始消息
+                    stringBuilder.append(message).append("; ");
+                }
+            } else {
+                // 不是国际化键格式，直接使用原始消息
+                stringBuilder.append(message).append("; ");
+            }
         }
         String finalMessage = stringBuilder.toString();
         log.error(finalMessage);
         return Response.fail(ResultCodeEnum.FAIL.getCode(), finalMessage);
     }
-
 
     /**
      * 约束违反异常（方法参数级）
@@ -103,16 +130,33 @@ public class GlobalExceptionHandler {
      * @return 聚合所有违反约束信息的标准错误响应
      */
     @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseBody
     public Response<?> ConstraintViolationExceptionHandler(ConstraintViolationException e) {
         StringBuilder stringBuilder = new StringBuilder();
         for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
             String message = violation.getMessage();
-            stringBuilder.append(message).append("; ");
+            // 检查消息是否为国际化键格式 {key}
+            if (message != null && message.startsWith("{") && message.endsWith("}")) {
+                // 提取消息键
+                String messageKey = message.substring(1, message.length() - 1);
+                try {
+                    // 尝试获取国际化消息
+                    String i18nMessage = winterI18nTemplate.message(messageKey, new Object[]{}, message);
+                    stringBuilder.append(i18nMessage).append("; ");
+                } catch (Exception ex) {
+                    // 如果获取国际化消息失败，使用原始消息
+                    stringBuilder.append(message).append("; ");
+                }
+            } else {
+                // 不是国际化键格式，直接使用原始消息
+                stringBuilder.append(message).append("; ");
+            }
         }
         String finalMessage = stringBuilder.toString();
         log.error(finalMessage);
         return Response.fail(ResultCodeEnum.FAIL.getCode(), finalMessage);
     }
+
 
 
     /**
@@ -126,16 +170,33 @@ public class GlobalExceptionHandler {
      * @return 聚合所有 Bean 字段校验错误信息的标准错误响应
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseBody
     public Response<?> MethodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
         StringBuilder stringBuilder = new StringBuilder();
         e.getBindingResult().getAllErrors().forEach(err -> {
             String message = err.getDefaultMessage();
-            stringBuilder.append(message).append("; ");
+            // 检查消息是否为国际化键格式 {key}
+            if (message != null && message.startsWith("{") && message.endsWith("}")) {
+                // 提取消息键
+                String messageKey = message.substring(1, message.length() - 1);
+                try {
+                    // 尝试获取国际化消息
+                    String i18nMessage = winterI18nTemplate.message(messageKey, new Object[]{}, message);
+                    stringBuilder.append(i18nMessage).append("; ");
+                } catch (Exception ex) {
+                    // 如果获取国际化消息失败，使用原始消息
+                    stringBuilder.append(message).append("; ");
+                }
+            } else {
+                // 不是国际化键格式，直接使用原始消息
+                stringBuilder.append(message).append("; ");
+            }
         });
         String finalMessage = stringBuilder.toString();
         log.error(finalMessage);
-        return Response.fail(ResultCodeEnum.FAIL.getCode(), finalMessage);
+        return Response.fail(ResultCodeEnum.FAIL_LANG.getCode(), finalMessage);
     }
+
 
     /**
      * 请求参数缺失异常
@@ -149,7 +210,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Response<?> parameterMissingExceptionHandler(MissingServletRequestParameterException e) {
         log.error("请求参数异常", e);
-        return Response.fail(ResultCodeEnum.REQUEST_PARAMETER_ERROR);
+        return Response.fail(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getMessage(), e.getParameterName()));
     }
 
     /**
@@ -164,7 +225,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Response<?> parameterBodyMissingExceptionHandler(HttpMessageNotReadableException e) {
         log.error("参数体不能为空", e);
-        return Response.fail(ResultCodeEnum.BODY_PARAMETER_ERROR);
+        return Response.fail(ResultCodeEnum.BODY_PARAMETER_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.BODY_PARAMETER_ERROR_LANG.getMessage()));
+
     }
 
     /**
@@ -179,7 +241,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({HttpRequestMethodNotSupportedException.class})
     public Response<?> handleException(HttpRequestMethodNotSupportedException e) {
         log.error(e.getMessage(), e);
-        return Response.fail(ResultCodeEnum.METHOD_ERROR);
+        return Response.fail(ResultCodeEnum.METHOD_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.METHOD_ERROR_LANG.getMessage(), e.getMethod()));
     }
 
 
@@ -195,7 +257,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SQLException.class)
     public Response<?> handleSQLException(SQLException e) {
         log.error("SQL执行异常: {}", e.getMessage(), e);
-        return Response.fail(ResultCodeEnum.FAIL.getCode(), "SQL执行异常");
+        return Response.fail(ResultCodeEnum.SQL_EXECUTE_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SQL_EXECUTE_ERROR_LANG.getMessage()));
     }
 
     /**
@@ -210,7 +272,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({NullPointerException.class, IndexOutOfBoundsException.class, ClassCastException.class})
     public Response<?> handleNullPointerException(RuntimeException e) {
         log.error("运行时异常", e);
-        return Response.fail(ResultCodeEnum.FAIL.getCode(), "系统内部错误");
+        return Response.fail(INTERNAL_SYSTEM_ERROR_LANG.getCode(), winterI18nTemplate.message(INTERNAL_SYSTEM_ERROR_LANG.getMessage()));
     }
 
     /**
@@ -225,7 +287,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SQLIntegrityConstraintViolationException .class)
     public Response<Void> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException e) {
         log.error("数据库完整性约束违反异常: {}", e.getMessage(), e);
-        return Response.fail(ResultCodeEnum.FAIL.getCode(), "数据操作违反数据库约束");
+        return Response.fail(DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR.getCode(), winterI18nTemplate.message(DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR.getMessage()));
     }
 
 

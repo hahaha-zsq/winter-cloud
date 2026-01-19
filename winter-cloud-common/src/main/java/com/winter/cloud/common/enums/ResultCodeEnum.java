@@ -27,6 +27,11 @@ public enum ResultCodeEnum {
     BODY_PARAMETER_ERROR_LANG("413", "result.code.body.parameter.error"),
     METHOD_ERROR_LANG("414", "result.code.method.error"),
 
+    SQL_EXECUTE_ERROR_LANG("415", "result.code.sql.execute.error"),
+    INTERNAL_SYSTEM_ERROR_LANG("416", "result.code.internal.system.error"),
+    DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR("417", "result.code.database.operation.violates.integrity.constraints.error"),
+
+
 
     UN_ERROR("0001", "未知失败"),
     ILLEGAL_PARAMETER("0002", "非法参数"),

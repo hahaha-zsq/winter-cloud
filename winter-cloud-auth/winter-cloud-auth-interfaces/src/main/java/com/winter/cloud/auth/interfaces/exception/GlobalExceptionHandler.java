@@ -5,7 +5,6 @@ import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.Response;
 import com.zsq.i18n.template.WinterI18nTemplate;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -258,7 +257,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SQLException.class)
     public Response<?> handleSQLException(SQLException e) {
         log.error("SQL执行异常: {}", e.getMessage(), e);
-        return Response.fail(ResultCodeEnum.FAIL.getCode(), "SQL执行异常");
+        return Response.fail(ResultCodeEnum.SQL_EXECUTE_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SQL_EXECUTE_ERROR_LANG.getMessage()));
     }
 
     /**
@@ -273,7 +272,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({NullPointerException.class, IndexOutOfBoundsException.class, ClassCastException.class})
     public Response<?> handleNullPointerException(RuntimeException e) {
         log.error("运行时异常", e);
-        return Response.fail(ResultCodeEnum.FAIL.getCode(), "系统内部错误");
+        return Response.fail(INTERNAL_SYSTEM_ERROR_LANG.getCode(), winterI18nTemplate.message(INTERNAL_SYSTEM_ERROR_LANG.getMessage()));
     }
 
     /**
@@ -288,7 +287,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SQLIntegrityConstraintViolationException .class)
     public Response<Void> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException e) {
         log.error("数据库完整性约束违反异常: {}", e.getMessage(), e);
-        return Response.fail(ResultCodeEnum.FAIL.getCode(), "数据操作违反数据库约束");
+        return Response.fail(DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR.getCode(), winterI18nTemplate.message(DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR.getMessage()));
     }
 
 
