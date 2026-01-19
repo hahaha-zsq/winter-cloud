@@ -6,9 +6,11 @@ import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.Response;
 import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -23,6 +25,7 @@ import javax.validation.ConstraintViolationException;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
+import java.util.Locale;
 
 import static com.winter.cloud.common.enums.ResultCodeEnum.*;
 
@@ -44,6 +47,8 @@ public class GlobalExceptionHandler {
      * 业务异常处理
      */
     public final WinterI18nTemplate winterI18nTemplate;
+    @Value("${winter-i18n.locale.default-locale}")
+    public String DEFAULT_LOCALE;
 
     public GlobalExceptionHandler(WinterI18nTemplate winterI18nTemplate) {
         this.winterI18nTemplate = winterI18nTemplate;
@@ -51,10 +56,21 @@ public class GlobalExceptionHandler {
 
 
     // 1. 捕获认证失败异常 (401)
+    /*
+     * 如果用户没有传递token，Spring Security 会抛出 AuthenticationException 异常，由于Spring Security 过滤器链的执行顺序早于 Spring MVC 的 DispatcherServlet，导致处理国际化（Locale）的上下文尚未被初始化,
+     * 所以这里需要手动使用默认的 Locale 进行处理
+     * */
     @ExceptionHandler({AuthenticationException.class})
     public Response<Void> handleAuthenticationException(AuthenticationException e) {
+        Locale locale = null;
         log.error("捕获到认证异常: {}", e.getMessage());
-        return Response.fail(UNAUTHENTICATED_LANG.getCode(),winterI18nTemplate.message(UNAUTHENTICATED_LANG.getMessage())); // 使用项目统一的 Response 结构
+        if (DEFAULT_LOCALE.contains("_")) {
+            String[] parts = DEFAULT_LOCALE.split("_", 2);
+            if (parts.length == 2 && StringUtils.hasText(parts[0]) && StringUtils.hasText(parts[1])) {
+                locale = new Locale(parts[0], parts[1]);
+            }
+        }
+        return Response.fail(UNAUTHENTICATED_LANG.getCode(),winterI18nTemplate.message(UNAUTHENTICATED_LANG.getMessage(),locale)); // 使用项目统一的 Response 结构
     }
 
     // 2. 捕获权限不足异常 (403)
