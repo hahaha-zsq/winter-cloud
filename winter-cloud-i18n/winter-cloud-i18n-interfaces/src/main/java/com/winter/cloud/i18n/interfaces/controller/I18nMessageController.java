@@ -44,4 +44,10 @@ public class I18nMessageController implements I18nMessageFacade {
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
     }
 
+    @Override
+    public Response<String> findMessageByKeyAndLocale(String messageKey, String locale) {
+        String data= i18nMessageAppService.findMessageByKeyAndLocale(messageKey,locale);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
+    }
+
 }

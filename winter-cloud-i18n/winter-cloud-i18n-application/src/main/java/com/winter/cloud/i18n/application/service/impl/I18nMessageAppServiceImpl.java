@@ -25,4 +25,9 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
         List<I18nMessageDO> data = i18nMessageRepository.getI18nMessageInfo(query);
         return i18nMessageAppAssembler.toI18nMessageDTOList(data);
     }
+
+    @Override
+    public String findMessageByKeyAndLocale(String messageKey, String locale) {
+        return i18nMessageRepository.findMessageByKeyAndLocale(messageKey, locale);
+    }
 }

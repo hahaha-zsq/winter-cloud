@@ -9,4 +9,6 @@ import java.util.List;
 public interface I18nMessageAppService {
 
     List<I18nMessageDTO> getI18nMessageInfo(I18nMessageQuery query);
+
+    String findMessageByKeyAndLocale(String messageKey, String locale);
 }

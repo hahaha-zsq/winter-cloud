@@ -11,6 +11,7 @@
         <module>winter-cloud-i18n-infrastructure</module>
         <module>winter-cloud-i18n-start</module>
         <module>winter-cloud-i18n-interfaces</module>
+        <module>winter-cloud-i18n-client</module>
     </modules>
 
     <parent>
@@ -63,6 +64,11 @@
                 <groupId>com.winter</groupId>
                 <artifactId>winter-cloud-common</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-i18n-client</artifactId>
+                <version>1.0-SNAPSHOT</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

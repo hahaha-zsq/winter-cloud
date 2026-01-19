@@ -286,6 +286,43 @@
                 <version>${project.version}</version>
             </dependency>
 
+<!--            国际化服务-->
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-i18n-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-i18n-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-i18n-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-i18n-application</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-i18n-infrastructure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-i18n-interfaces</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-i18n-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
         </dependencies>
     </dependencyManagement>

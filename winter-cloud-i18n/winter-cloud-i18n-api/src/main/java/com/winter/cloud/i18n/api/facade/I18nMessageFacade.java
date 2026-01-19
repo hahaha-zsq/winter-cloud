@@ -12,4 +12,5 @@ public interface I18nMessageFacade {
      * 根据查询条件查询国际化消息信息
      */
     Response<List<I18nMessageDTO>>  getI18nMessageInfo(I18nMessageQuery query);
+    Response<String>  findMessageByKeyAndLocale(String messageKey, String locale);
 }
