@@ -84,6 +84,10 @@ public final class CommonConstants {
          * I18n 缓存预热线程名称：i18n-cache-warmup
          */
         public static final String I18N_CACHE_WARMUP_THREAD_NAME = "i18n-cache-warmup";
+        /**
+         * I18n 缓存预热线程锁名称：i18n:warmup:lock
+         */
+        public static final String I18N_CACHE_WARMUP_LOCK_NAME = "i18n:warmup:lock";
     }
 
 
