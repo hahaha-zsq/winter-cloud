@@ -11,7 +11,7 @@ import org.mybatis.spring.annotation.MapperScan;
  * 认证服务启动类
  */
 @SpringBootApplication
-@ComponentScan("com.winter.cloud.auth")
+@ComponentScan("com.winter.cloud")
 @MapperScan("com.winter.**.mapper")
 @EnableDiscoveryClient
 @EnableDubbo(scanBasePackages = {"com.winter.cloud.auth"})
