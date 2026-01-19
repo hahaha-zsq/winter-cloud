@@ -162,6 +162,18 @@ winter:
     permissions-header: "X-User-Permissions"
     bearerPrefix: "Bearer "
     gateway-role-and-permission-separator: ","
+
+winter-i18n:
+  locale:
+    default-locale: zh_CN              # 默认语言
+    supported:                         # 支持的语言列表
+      - zh_CN                          # 中文	中国大陆
+      - en_US                          # 英语	美国
+      - es_ES                          # 西班牙语	西班牙
+      - fr_FR                          # 法语	法国
+      - ru_RU                          # 俄语	俄罗斯
+      - ar_SA                          # 阿拉伯语	沙特阿拉伯(通用)
+    header-name: Accept-Language       # HTTP 请求头名称
 xxl:
   job:
     admin:

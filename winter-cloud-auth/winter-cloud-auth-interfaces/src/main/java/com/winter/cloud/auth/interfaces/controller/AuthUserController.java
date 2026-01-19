@@ -8,12 +8,13 @@ import com.winter.cloud.auth.api.dto.response.ValidateTokenDTO;
 import com.winter.cloud.auth.api.facade.AuthValidationFacade;
 import com.winter.cloud.auth.application.service.AuthUserAppService;
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.common.util.JwtUtil;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthUserController implements AuthValidationFacade {
     private final AuthUserAppService authUserAppService;
+    private final WinterI18nTemplate winterI18nTemplate;
 
 
     /**
@@ -131,11 +133,6 @@ public class AuthUserController implements AuthValidationFacade {
                 .build();
     }
 
-    @PreAuthorize("hasAuthority('auth:query')")
-    @GetMapping("/test")
-    public String test() {
-        return "hello world";
-    }
 
     /**
      * 注册
@@ -147,9 +144,9 @@ public class AuthUserController implements AuthValidationFacade {
     public Response<Boolean> register(@RequestBody @Validated UserRegisterCommand command) {
         Boolean register = authUserAppService.register(command);
         if (!register) {
-            return Response.fail();
+            return Response.fail(ResultCodeEnum.FAIL_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.FAIL_LANG.getMessage()));
         }
-        return Response.ok(null);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),null);
     }
 
     /**
@@ -161,6 +158,6 @@ public class AuthUserController implements AuthValidationFacade {
     @PostMapping("/login")
     public Response<LoginResponseDTO> login(@RequestBody @Validated UserLoginCommand command) throws JsonProcessingException {
         LoginResponseDTO loginDTO = authUserAppService.login(command);
-        return Response.ok(loginDTO);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),loginDTO);
     }
 }

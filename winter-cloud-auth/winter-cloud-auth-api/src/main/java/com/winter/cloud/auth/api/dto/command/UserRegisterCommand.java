@@ -34,12 +34,12 @@ public class UserRegisterCommand implements Serializable {
      * 1. 长度 8-15
      * 2. 必须包含：大小写字母、数字、特殊字符
      */
-    @NotNull(message = "密码不能为空")
+    @NotNull(message = "{UserRegisterCommand.password.notBlank}")
     @SpelValid(
             // 逻辑：正则断言分别检查小写、大写、数字、特殊字符，总长度8-15
             // 注意：在Java字符串中，正则表达式的 \ 需要转义为 \\
             value = "#this matches '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,15}$'",
-            message = "密码长度需在8-15之间，且必须包含大小写字母、数字和特殊字符"
+            message = "{UserRegisterCommand.password.pattern}"
     )
     private String password;
 
