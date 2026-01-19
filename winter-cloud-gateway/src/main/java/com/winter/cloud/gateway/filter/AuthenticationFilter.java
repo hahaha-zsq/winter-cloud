@@ -61,7 +61,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     private final WinterRedisTemplate winterRedisTemplate;
 
     /** Dubbo 远程认证服务 */
-    @DubboReference
+    @DubboReference(check = false)
     private AuthValidationFacade authValidationFacade;
 
     public AuthenticationFilter(ObjectMapper objectMapper,

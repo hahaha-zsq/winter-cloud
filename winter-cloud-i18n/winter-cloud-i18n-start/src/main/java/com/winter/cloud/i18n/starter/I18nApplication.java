@@ -9,10 +9,10 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan("com.winter.cloud")
+@ComponentScan("com.winter.cloud.i18n")
 @MapperScan("com.winter.**.mapper")
 @EnableDiscoveryClient
-@EnableDubbo(scanBasePackages = {"com.winter.cloud.dict"})
+@EnableDubbo(scanBasePackages = {"com.winter.cloud.i18n"})
 @Slf4j
 public class I18nApplication {
 

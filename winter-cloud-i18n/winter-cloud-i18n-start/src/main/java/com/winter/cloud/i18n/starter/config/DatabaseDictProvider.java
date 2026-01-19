@@ -26,7 +26,7 @@ public class DatabaseDictProvider implements DictDataProvider {
     /**
      * Dubbo 远程认证服务
      */
-    @DubboReference
+    @DubboReference(check = false)
     private DictFacade dictFacade;
 
     /**

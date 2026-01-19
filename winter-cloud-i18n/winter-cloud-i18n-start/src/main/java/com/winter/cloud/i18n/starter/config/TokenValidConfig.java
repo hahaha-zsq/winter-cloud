@@ -32,7 +32,7 @@ public class TokenValidConfig implements TokenAuthenticator {
     private final WinterRedisTemplate winterRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    @DubboReference
+    @DubboReference(check = false)
     private AuthValidationFacade authValidationFacade;
 
     /**

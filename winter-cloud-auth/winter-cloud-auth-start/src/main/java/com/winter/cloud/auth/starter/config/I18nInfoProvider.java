@@ -11,7 +11,7 @@ public class I18nInfoProvider implements I18nMessageInfo {
     /**
      * Dubbo 远程认证服务
      */
-    @DubboReference
+    @DubboReference(check = false)
     private I18nMessageFacade i18nMessageFacade;
 
 
