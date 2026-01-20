@@ -21,7 +21,7 @@ public class AuthDeptRepositoryImpl implements AuthDeptRepository {
     @Override
     public List<AuthDeptDO> selectAllDept(String deptName, String status) {
         LambdaQueryWrapper<AuthDeptPO> queryWrapper = new LambdaQueryWrapper<AuthDeptPO>()
-                .like(AuthDeptPO::getDeptName, deptName)
+                .like(ObjectUtil.isNotEmpty(deptName), AuthDeptPO::getDeptName, deptName)
                 .eq(ObjectUtil.isNotEmpty(status), AuthDeptPO::getStatus, status);
         List<AuthDeptPO> list = authDeptMPService.list(queryWrapper);
         return authdeptInfraAssembler.toDOList(list);
