@@ -139,4 +139,14 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         }
         return List.of();
     }
+
+    @Override
+    public List<AuthRoleDO> getAllRoleInfo(String roleName, String status) {
+        LambdaQueryWrapper<AuthRolePO> queryWrapper = new LambdaQueryWrapper<AuthRolePO>()
+                .like(AuthRolePO::getRoleName, roleName)
+                .eq(ObjectUtil.isNotEmpty(status), AuthRolePO::getStatus, status);
+        List<AuthRolePO> list = authRoleMpService.list(queryWrapper);
+        return authRoleInfraAssembler.toDOList(list);
+
+    }
 }

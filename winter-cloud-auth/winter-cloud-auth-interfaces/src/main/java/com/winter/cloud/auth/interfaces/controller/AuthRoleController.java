@@ -33,7 +33,21 @@ public class AuthRoleController {
     @PostMapping("/rolePage")
     public Response<PageDTO<RoleResponseDTO>> rolePage(@RequestBody RoleQuery roleQuery) {
         PageDTO<RoleResponseDTO> data = authRoleAppService.rolePage(roleQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+    }
+
+    /**
+     * 根据状态和角色名称获取角色信息
+     *
+     * @param roleName 角色名
+     * @param status   状态
+     */
+    @GetMapping("/getAllRoleInfo")
+    public Response<List<RoleResponseDTO>> getAllRoleInfo(@RequestParam(value = "roleName") String roleName,
+                                                          @RequestParam(value = "status") String status) {
+        List<RoleResponseDTO> data = authRoleAppService.getAllRoleInfo(roleName, status);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+
     }
 
     /**
@@ -44,7 +58,7 @@ public class AuthRoleController {
     @PostMapping("/saveRole")
     public Response<Boolean> saveRole(@RequestBody RoleCommand command) {
         Boolean data = authRoleAppService.saveRole(command);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
     }
 
     /**
@@ -55,7 +69,7 @@ public class AuthRoleController {
     @PutMapping("/updateRole")
     public Response<Boolean> updateRole(@RequestBody RoleCommand command) {
         Boolean data = authRoleAppService.updateRole(command);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
     }
 
     /**
@@ -66,6 +80,6 @@ public class AuthRoleController {
     @DeleteMapping("/deleteRole")
     public Response<Boolean> deleteRole(@RequestBody List<Long> roleIds) {
         Boolean data = authRoleAppService.deleteRole(roleIds);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
     }
 }

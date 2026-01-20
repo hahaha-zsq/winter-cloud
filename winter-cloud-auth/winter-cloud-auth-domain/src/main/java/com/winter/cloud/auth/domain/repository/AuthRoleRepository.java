@@ -24,4 +24,6 @@ public interface AuthRoleRepository {
     PageDTO<RoleResponseDTO> rolePage(RoleQuery roleQuery);
 
     List<RoleResponseDTO> selectRoleListByUserId(Long userId, String status);
+
+    List<AuthRoleDO> getAllRoleInfo(String roleName, String status);
 }

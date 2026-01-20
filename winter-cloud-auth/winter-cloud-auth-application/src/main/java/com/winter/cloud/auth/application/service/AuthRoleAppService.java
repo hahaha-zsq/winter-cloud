@@ -43,4 +43,5 @@ public interface AuthRoleAppService {
      */
     PageDTO<RoleResponseDTO> rolePage(RoleQuery roleQuery);
 
+    List<RoleResponseDTO> getAllRoleInfo(String roleName, String status);
 }

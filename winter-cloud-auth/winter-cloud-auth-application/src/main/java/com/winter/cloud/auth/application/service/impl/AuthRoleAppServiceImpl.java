@@ -52,4 +52,11 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
         log.info("分页查询角色信息，roleQuery={}", roleQuery);
        return authRoleRepository.rolePage(roleQuery);
     }
+
+    @Override
+    public List<RoleResponseDTO> getAllRoleInfo(String roleName, String status) {
+        log.info("根据角色名和状态查询角色信息，roleName={}, status={}", roleName, status);
+        List<AuthRoleDO> allRoleInfo = authRoleRepository.getAllRoleInfo(roleName, status);
+        return authRoleAppAssembler.toDTOList(allRoleInfo);
+    }
 }

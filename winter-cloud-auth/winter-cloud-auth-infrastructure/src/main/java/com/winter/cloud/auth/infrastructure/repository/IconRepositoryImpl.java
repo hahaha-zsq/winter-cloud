@@ -10,7 +10,7 @@ import com.winter.cloud.auth.infrastructure.assembler.IconInfraAssembler;
 import com.winter.cloud.auth.infrastructure.entity.IconTypePO;
 import com.winter.cloud.auth.infrastructure.entity.IconValuePO;
 import com.winter.cloud.auth.infrastructure.mapper.IconValueMapper;
-import com.winter.cloud.auth.infrastructure.service.IconTypeService;
+import com.winter.cloud.auth.infrastructure.service.IconTypeMPService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -19,7 +19,7 @@ import java.util.List;
 @Repository
 @RequiredArgsConstructor
 public class IconRepositoryImpl implements IconRepository {
-    private final IconTypeService iconTypeService;
+    private final IconTypeMPService iconTypeService;
     private final IconValueMapper iconValueMapper;
 
     private final IconInfraAssembler iconInfraAssembler;
