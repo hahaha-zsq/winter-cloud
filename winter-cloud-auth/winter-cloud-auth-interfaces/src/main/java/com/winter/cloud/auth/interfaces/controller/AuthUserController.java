@@ -3,12 +3,17 @@ package com.winter.cloud.auth.interfaces.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
+import com.winter.cloud.auth.api.dto.query.RoleQuery;
+import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.api.dto.response.LoginResponseDTO;
+import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
+import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
 import com.winter.cloud.auth.api.dto.response.ValidateTokenDTO;
 import com.winter.cloud.auth.api.facade.AuthValidationFacade;
 import com.winter.cloud.auth.application.service.AuthUserAppService;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.ResultCodeEnum;
+import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.common.util.JwtUtil;
 import com.zsq.i18n.template.WinterI18nTemplate;
@@ -159,5 +164,15 @@ public class AuthUserController implements AuthValidationFacade {
     public Response<LoginResponseDTO> login(@RequestBody @Validated UserLoginCommand command) throws JsonProcessingException {
         LoginResponseDTO loginDTO = authUserAppService.login(command);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),loginDTO);
+    }
+
+
+    @PostMapping("/userPage")
+    public Response<PageDTO<UserResponseDTO>> userPage(@RequestBody UserQuery userQuery) {
+        // 我需要实现用户查询条件的分页查询，用户名称和用户昵称是模糊查询，手机号码、邮箱、性别、所属部门、用户状态、角色、职位是精确查询
+        // 是动态查询，当内容为空时，忽略这个查询条件，对于部门和角色，只有用户包含所选的才展示，比如搜索，角色是管理员和开发，那么只有用户同时有着两个角色才行
+        // 查询的返回结果对于部门需要注意，需要返回父子结果，比如用户查询开发部，那么结果返回时需要返回开发部的上级和它的下级。
+//        PageDTO<UserResponseDTO> data = authUserAppService.userPage(userQuery);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), null);
     }
 }

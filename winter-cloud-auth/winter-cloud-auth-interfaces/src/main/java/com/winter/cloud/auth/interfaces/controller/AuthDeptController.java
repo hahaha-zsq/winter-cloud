@@ -1,9 +1,7 @@
 package com.winter.cloud.auth.interfaces.controller;
 
 import com.winter.cloud.auth.api.dto.response.DeptResponseDTO;
-import com.winter.cloud.auth.api.dto.response.MenuResponseDTO;
 import com.winter.cloud.auth.application.service.AuthDeptAppService;
-import com.winter.cloud.auth.application.service.AuthMenuAppService;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.Response;
 import com.zsq.i18n.template.WinterI18nTemplate;

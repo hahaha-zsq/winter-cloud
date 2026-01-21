@@ -24,7 +24,7 @@ public class AuthPostRepositoryImpl implements AuthPostRepository {
     @Override
     public List<AuthPostDO> getAllPostInfo(String postName, String status) {
         LambdaQueryWrapper<AuthPostPO> queryWrapper = new LambdaQueryWrapper<AuthPostPO>()
-                .like(AuthPostPO::getPostName, postName)
+                .like(ObjectUtil.isNotEmpty(ObjectUtil.isNotEmpty(postName)),AuthPostPO::getPostName,postName)
                 .eq(ObjectUtil.isNotEmpty(status), AuthPostPO::getStatus, status);
         List<AuthPostPO> list = authPostMpService.list(queryWrapper);
         return authPostInfraAssembler.toDOList(list);

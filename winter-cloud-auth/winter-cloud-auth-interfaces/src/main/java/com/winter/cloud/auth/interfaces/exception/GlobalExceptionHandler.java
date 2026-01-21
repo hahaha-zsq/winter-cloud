@@ -226,7 +226,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Response<?> parameterMissingExceptionHandler(MissingServletRequestParameterException e) {
         log.error("请求参数异常", e);
-        return Response.fail(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getMessage(), e.getParameterName()));
+        return Response.fail(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getMessage(),"", e.getParameterName()));
     }
 
     /**
@@ -257,7 +257,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({HttpRequestMethodNotSupportedException.class})
     public Response<?> handleException(HttpRequestMethodNotSupportedException e) {
         log.error(e.getMessage(), e);
-        return Response.fail(ResultCodeEnum.METHOD_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.METHOD_ERROR_LANG.getMessage(), e.getMethod()));
+        return Response.fail(ResultCodeEnum.METHOD_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.METHOD_ERROR_LANG.getMessage(),"", e.getMethod()));
     }
 
 
