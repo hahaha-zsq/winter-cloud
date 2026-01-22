@@ -28,6 +28,15 @@ public final class CommonConstants {
         public static final String DESC = "descend";
     }
 
+    public static final class DateTime{
+        /** 默认日期时间格式 */
+        public static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+        /** 默认日期格式 */
+        public static final String DATE_PATTERN = "yyyy-MM-dd";
+        /** 默认时间格式 */
+        public static final String TIME_PATTERN = "HH:mm:ss";
+    }
+
     public static final class I18nMessage{
         public static final String I18N_KEY = "winter-cloud-i18n";
         public static final String I18N_MESSAGE_KEY = I18N_KEY + Redis.SPLIT + "message";

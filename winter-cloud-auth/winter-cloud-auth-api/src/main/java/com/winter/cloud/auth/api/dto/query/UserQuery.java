@@ -19,5 +19,5 @@ public class UserQuery extends PageAndOrderDTO {
     private List<Long>  roleIds;
     private String sex;
     private String status;
-    private String username;
+    private String userName;
 }

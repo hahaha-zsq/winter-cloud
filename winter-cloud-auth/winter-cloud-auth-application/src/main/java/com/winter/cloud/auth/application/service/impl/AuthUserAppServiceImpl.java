@@ -20,8 +20,10 @@ import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.auth.domain.repository.*;
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.enums.StatusEnum;
 import com.winter.cloud.common.exception.BusinessException;
+import com.winter.cloud.common.response.PageAndOrderDTO;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.util.JwtUtil;
 import com.zsq.winter.encrypt.util.CryptoUtil;
@@ -141,6 +143,39 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
 
     @Override
     public PageDTO<UserResponseDTO> userPage(UserQuery userQuery) {
+        List<PageAndOrderDTO.OrderDTO> orderDTOList = userQuery.getOrders();
+        List<String> allowSortColumnList = List.of("sex", "status", "create_time");
+        List<String> allowSortValue = List.of("ascend", "asc", "descend", "desc", "ASCEND", "ASC", "DESCEND", "DESC");
+        // 判断排序字段是否在允许的字段列表中，只要有一个不在，就抛出异常
+        orderDTOList.forEach(orderDTO -> {
+            if (!allowSortColumnList.contains(orderDTO.getField())) {
+                throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(), "非法的排序字段！");
+            }
+            if (!allowSortValue.contains(orderDTO.getOrder())) {
+                throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(), "非法的排序方式！");
+            }
+        });
+        // 对排序字段进行排序
+        List<PageAndOrderDTO.OrderDTO> collect = orderDTOList.stream().sorted((o1, o2) -> o1.getSequence().compareTo(o2.getSequence()))
+                .map(dto -> {
+                    String newOrder = dto.getOrder();
+                    if (newOrder != null) {
+                        String lower = newOrder.toLowerCase();
+                        if ("ascend".equals(lower)) {
+                            newOrder = "asc";
+                        } else if ("descend".equals(lower)) {
+                            newOrder = "desc";
+                        }
+                    }
+                    PageAndOrderDTO.OrderDTO orderDTO = new PageAndOrderDTO.OrderDTO();
+                    orderDTO.setField(dto.getField());
+                    orderDTO.setOrder(newOrder);
+                    orderDTO.setSequence(dto.getSequence());
+                    return orderDTO;
+                }).collect(Collectors.toList());
+
+        userQuery.setOrders(collect);
+
         PageDTO<AuthUserDO> doPage = authUserRepository.userPage(userQuery);
         List<UserResponseDTO> userResponseDTOList = authUserAppAssembler.toUserResponseDTOList(doPage.getRecords());
 
