@@ -2,9 +2,12 @@ package com.winter.cloud.auth.application.assembler;
 
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.response.LoginResponseDTO;
+import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
+
+import java.util.List;
 
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
@@ -15,4 +18,5 @@ public interface AuthUserAppAssembler {
      */
     AuthUserDO toDO(UserRegisterCommand command);
     LoginResponseDTO toResponseDTO(AuthUserDO authUserDO);
+    List<UserResponseDTO> toUserResponseDTOList(List<AuthUserDO> authUserDOList);
 }

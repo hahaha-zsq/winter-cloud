@@ -2,13 +2,17 @@ package com.winter.cloud.auth.infrastructure.repository;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
+import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.auth.domain.repository.AuthUserRepository;
 import com.winter.cloud.auth.infrastructure.assembler.AuthUserInfraAssembler;
 import com.winter.cloud.auth.infrastructure.entity.AuthUserPO;
 import com.winter.cloud.auth.infrastructure.mapper.AuthUserMapper;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserMpService;
+import com.winter.cloud.common.response.PageDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -69,5 +73,19 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
                 .ne(ObjectUtil.isNotEmpty(command.getId()), AuthUserPO::getId, command.getId());
         long count = authUserMpService.count(authUserPOLambdaQueryWrapper);
         return count > 0;
+    }
+
+
+
+    @Override
+    public PageDTO<AuthUserDO> userPage(UserQuery userQuery) {
+        // 1. 构建分页对象
+        Page<AuthUserPO> page = new Page<>(userQuery.getPageNum(), userQuery.getPageSize());
+
+        // 2. 调用 Mapper 执行自定义的复杂 SQL 查询
+        // 注意：这里不能简单使用 MyBatis-Plus 的 Wrapper，因为涉及"同时拥有多个角色/部门"的 HAVING 逻辑
+        IPage<AuthUserPO> userPage = authUserMapper.selectUserPage(page, userQuery);
+        List<AuthUserDO> doList = authUserInfraAssembler.toDOList(userPage.getRecords());
+        return new PageDTO<>(doList, userPage.getTotal());
     }
 }

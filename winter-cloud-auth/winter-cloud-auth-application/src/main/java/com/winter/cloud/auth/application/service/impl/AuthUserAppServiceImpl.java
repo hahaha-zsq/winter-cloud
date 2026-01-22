@@ -5,17 +5,24 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
+import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.api.dto.response.*;
+import com.winter.cloud.auth.application.assembler.AuthDeptAppAssembler;
+import com.winter.cloud.auth.application.assembler.AuthRoleAppAssembler;
 import com.winter.cloud.auth.application.assembler.AuthUserAppAssembler;
 import com.winter.cloud.auth.application.service.AuthMenuAppService;
 import com.winter.cloud.auth.application.service.AuthUserAppService;
+import com.winter.cloud.auth.domain.model.entity.AuthDeptDO;
+import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
+import com.winter.cloud.auth.domain.repository.AuthDeptRepository;
 import com.winter.cloud.auth.domain.repository.AuthMenuRepository;
 import com.winter.cloud.auth.domain.repository.AuthRoleRepository;
 import com.winter.cloud.auth.domain.repository.AuthUserRepository;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.StatusEnum;
 import com.winter.cloud.common.exception.BusinessException;
+import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.util.JwtUtil;
 import com.zsq.winter.encrypt.util.CryptoUtil;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate; // 使用你的 Redis 工具
@@ -38,12 +45,15 @@ import static com.winter.cloud.common.enums.ResultCodeEnum.*;
 public class AuthUserAppServiceImpl implements AuthUserAppService {
 
     private final AuthUserRepository authUserRepository;
+    private final AuthDeptRepository authDeptRepository;
     private final AuthMenuAppService authMenuAppService;
     private final AuthRoleRepository authRoleRepository;
     private final AuthMenuRepository authMenuRepository;
     private final AuthUserAppAssembler authUserAppAssembler;
     private final WinterRedisTemplate winterRedisTemplate;
     private final ObjectMapper objectMapper;
+    private final AuthRoleAppAssembler authRoleAppAssembler;
+    private final AuthDeptAppAssembler authDeptAppAssembler;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -106,14 +116,14 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
 
 
     @Override
-    public ValidateTokenDTO generateUserInfo(Long userID,String userName) {
+    public ValidateTokenDTO generateUserInfo(Long userID, String userName) {
         // 数据库获取用户的角色和权限信息
         // 获取角色正常的信息
-        List<RoleResponseDTO> roleResponseDTOList = authRoleRepository.selectRoleListByUserId(userID, StatusEnum.ENABLE.getCode());
+        List<AuthRoleDO> roleResponseDOList = authRoleRepository.selectRoleListByUserId(userID, StatusEnum.ENABLE.getCode());
         // 获取角色正常的权限标识
-        List<String> roleKeyList = roleResponseDTOList.stream().map(RoleResponseDTO::getRoleKey).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
+        List<String> roleKeyList = roleResponseDOList.stream().map(AuthRoleDO::getRoleKey).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
         // 获取角色正常的角色id
-        List<Long> roleIdList = roleResponseDTOList.stream().map(RoleResponseDTO::getId).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
+        List<Long> roleIdList = roleResponseDOList.stream().map(AuthRoleDO::getId).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
         // 根据角色id查询状态正常的权限并去重复
         List<MenuResponseDTO> menuResponseDTOList = authMenuRepository.selectMenuListByRoleIdList(roleIdList, "1");
         // 获取权限标识并去重复
@@ -125,5 +135,33 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
                 .userName(userName)
                 .roles(roleKeyList)
                 .permissions(permissionsList).build();
+    }
+
+    @Override
+    public PageDTO<UserResponseDTO> userPage(UserQuery userQuery) {
+        PageDTO<AuthUserDO> doPage = authUserRepository.userPage(userQuery);
+        List<UserResponseDTO> userResponseDTOList = authUserAppAssembler.toUserResponseDTOList(doPage.getRecords());
+
+        // 2. 遍历用户，填充关联的角色和部门信息
+        List<UserResponseDTO> dtoList = userResponseDTOList.stream().map(userDTO -> {
+            // 2.2 填充角色信息
+            // 注意：AuthRoleRepository 现有的实现是直接返回 DTO List，所以不需要 Assembler 转换
+            List<AuthRoleDO> authRoleDOList = authRoleRepository.selectRoleListByUserId(userDTO.getId(), "");
+            // DO->DTO
+            List<RoleResponseDTO> roleDTOList = authRoleAppAssembler.toDTOList(authRoleDOList);
+            userDTO.setRoleListDTO(roleDTOList);
+
+
+            // 2.3 填充部门信息(要求部门新增时，入库时，所有的部门都需要入库。100-200-300，100-200-301)
+            // 步骤 A: 从仓储获取 DO List (这是纯净的领域对象)
+            List<AuthDeptDO> deptDOs = authDeptRepository.selectDeptListByUserId(userDTO.getId(), "");
+            // 步骤 B: 使用 MapStruct 将 DO List 转换为 DTO List
+            List<DeptResponseDTO> deptDTOList = authDeptAppAssembler.toDTOList(deptDOs);
+            userDTO.setDeptListDTO(deptDTOList);
+
+            return userDTO;
+        }).collect(Collectors.toList());
+
+        return new PageDTO<>(dtoList, doPage.getTotal());
     }
 }

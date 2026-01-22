@@ -1,8 +1,8 @@
 package com.winter.cloud.auth.application.service.impl;
 
 
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.winter.cloud.auth.api.dto.query.DeptQuery;
 import com.winter.cloud.auth.api.dto.response.DeptResponseDTO;
 import com.winter.cloud.auth.application.assembler.AuthDeptAppAssembler;
 import com.winter.cloud.auth.application.service.AuthDeptAppService;
@@ -28,7 +28,7 @@ public class AuthDeptAppServiceImpl implements AuthDeptAppService {
     @Override
     public List<DeptResponseDTO> selectAllRecursionDept(String deptName, String status) {
         // 1. 获取全量数据 (不传 name 过滤，只传 status，保证能构建完整树结构)
-        List<AuthDeptDO> allDeptDOs = authDeptRepository.selectAllDept(null, status);
+        List<AuthDeptDO> allDeptDOs = authDeptRepository.deptDynamicQuery(DeptQuery.builder().status(status).deptName(deptName).build());
         // 转换 DO 为 DTO
         List<DeptResponseDTO> allDTOs = authDeptAppAssembler.toDTOList(allDeptDOs);
 

@@ -4,8 +4,11 @@ package com.winter.cloud.auth.application.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
+import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.api.dto.response.LoginResponseDTO;
+import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
 import com.winter.cloud.auth.api.dto.response.ValidateTokenDTO;
+import com.winter.cloud.common.response.PageDTO;
 
 /**
  * 认证应用服务接口
@@ -32,4 +35,5 @@ public interface AuthUserAppService {
 
     ValidateTokenDTO generateUserInfo(Long userID, String userName);
 
+    PageDTO<UserResponseDTO> userPage(UserQuery userQuery);
 }

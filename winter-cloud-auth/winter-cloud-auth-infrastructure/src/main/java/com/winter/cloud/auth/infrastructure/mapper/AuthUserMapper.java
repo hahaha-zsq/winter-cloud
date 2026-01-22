@@ -1,6 +1,9 @@
 package com.winter.cloud.auth.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.infrastructure.entity.AuthUserPO;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,5 +15,7 @@ import java.util.List;
  */
 public interface AuthUserMapper extends BaseMapper<AuthUserPO> {
     List<String> getRoleKeyList(@Param("userId") Long userId);
+
+    IPage<AuthUserPO> selectUserPage(Page<AuthUserPO> page, @Param("query") UserQuery userQuery);
     // 如果有复杂的自定义 SQL，可以在这里定义方法并在 XML 中实现
 }

@@ -9,5 +9,45 @@
           and sur.user_id = #{userId};
     </select>
 
+    <select id="selectUserPage" resultType="com.winter.cloud.auth.infrastructure.entity.AuthUserPO">
+        SELECT u.*
+        FROM sys_user u
+        <where>
+            u.del_flag = '0'
 
+            <if test="query.username != null and query.username != ''">
+                AND u.username LIKE CONCAT('%', #{query.username}, '%')
+            </if>
+            <if test="query.roleIds != null and query.roleIds.size() > 0">
+                <bind name="roleSize" value="query.roleIds.size()"/>
+
+                AND u.id IN (
+                SELECT user_id
+                FROM sys_user_role
+                WHERE role_id IN
+                <foreach collection="query.roleIds" item="roleId" open="(" separator="," close=")">
+                    #{roleId}
+                </foreach>
+                GROUP BY user_id
+                HAVING COUNT(DISTINCT role_id) = #{roleSize}
+                )
+            </if>
+
+            <if test="query.deptIds != null and query.deptIds.size() > 0">
+                <bind name="deptSize" value="query.deptIds.size()"/>
+
+                AND u.id IN (
+                SELECT user_id
+                FROM sys_user_dept
+                WHERE dept_id IN
+                <foreach collection="query.deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+                GROUP BY user_id
+                HAVING COUNT(DISTINCT dept_id) = #{deptSize}
+                )
+            </if>
+        </where>
+        ORDER BY u.create_time DESC
+    </select>
 </mapper>

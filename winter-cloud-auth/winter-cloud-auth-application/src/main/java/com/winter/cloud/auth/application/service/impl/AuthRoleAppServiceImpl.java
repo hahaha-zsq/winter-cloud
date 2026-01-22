@@ -50,7 +50,10 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
     @Override
     public PageDTO<RoleResponseDTO> rolePage(RoleQuery roleQuery) {
         log.info("分页查询角色信息，roleQuery={}", roleQuery);
-       return authRoleRepository.rolePage(roleQuery);
+        PageDTO<AuthRoleDO> authRoleDOPageDO = authRoleRepository.rolePage(roleQuery);
+        //        DO->DTO
+        List<RoleResponseDTO> dtoList = authRoleAppAssembler.toDTOList(authRoleDOPageDO.getRecords());
+        return new PageDTO<>(dtoList, authRoleDOPageDO.getTotal());
     }
 
     @Override

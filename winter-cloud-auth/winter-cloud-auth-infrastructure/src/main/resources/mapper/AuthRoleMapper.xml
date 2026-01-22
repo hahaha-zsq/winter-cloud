@@ -35,7 +35,7 @@
         </where>
     </select>
 
-    <select id="selectRoleIdListByUserId" resultType="com.winter.cloud.auth.api.dto.response.RoleResponseDTO">
+    <select id="selectRoleIdListByUserId" resultType="com.winter.cloud.auth.infrastructure.entity.AuthRolePO">
         select sr.id, sr.role_key,sr.role_name,sr.role_sort,sr.status,sr.remark
         from sys_role sr
         left join sys_user_role sur on sr.id = sur.role_id

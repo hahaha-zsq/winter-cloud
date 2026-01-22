@@ -1,7 +1,9 @@
 package com.winter.cloud.auth.domain.repository;
 
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
+import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
+import com.winter.cloud.common.response.PageDTO;
 
 import java.util.List;
 
@@ -38,4 +40,6 @@ public interface AuthUserRepository {
 
     // 检查用户名是否存在
     boolean hasDuplicateUser(UserRegisterCommand command);
+
+    PageDTO<AuthUserDO> userPage(UserQuery userQuery);
 }

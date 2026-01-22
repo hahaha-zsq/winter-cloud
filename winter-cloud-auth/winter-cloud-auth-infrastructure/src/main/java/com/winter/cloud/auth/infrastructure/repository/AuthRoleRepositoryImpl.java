@@ -84,7 +84,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
      * @param roleQuery 查询条件（包含分页参数、排序规则、搜索关键字等）
      * @return 分页结果，封装为 {@link PageDTO<RoleResponseDTO>}
      */
-    public PageDTO<RoleResponseDTO> rolePage(RoleQuery roleQuery) {
+    public PageDTO<AuthRoleDO> rolePage(RoleQuery roleQuery) {
         // 1. 初始化分页对象（防御性处理 null 值）
         long pageNum = roleQuery.getPageNum();
         long pageSize = roleQuery.getPageSize();
@@ -125,17 +125,18 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         // 3. 执行数据库分页查询
         IPage<AuthRolePO> result = authRoleMapper.rolePage(page, roleQuery);
 
-        // 4. 转换数据：PO 列表 → DTO 列表
-        List<RoleResponseDTO> dtoList = authRoleInfraAssembler.toDTOList(result.getRecords());
+        // 4. 转换数据：PO 列表 → DO列表
+        List<AuthRoleDO> doList = authRoleInfraAssembler.toDOList(result.getRecords());
 
         // 5. 构造并返回分页响应
-        return new PageDTO<>(dtoList, result.getTotal());
+        return new PageDTO<>(doList, result.getTotal());
     }
 
     @Override
-    public List<RoleResponseDTO> selectRoleListByUserId(Long userId, String status) {
+    public List<AuthRoleDO> selectRoleListByUserId(Long userId, String status) {
         if (ObjectUtil.isNotEmpty(userId)) {
-            return authRoleMapper.selectRoleIdListByUserId(userId, status);
+            List<AuthRolePO> authRolePOList = authRoleMapper.selectRoleIdListByUserId(userId, status);
+            return authRoleInfraAssembler.toDOList(authRolePOList);
         }
         return List.of();
     }

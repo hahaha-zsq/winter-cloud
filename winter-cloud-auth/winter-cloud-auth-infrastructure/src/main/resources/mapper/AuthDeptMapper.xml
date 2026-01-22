@@ -2,5 +2,15 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.winter.cloud.auth.infrastructure.mapper.AuthDeptMapper">
 
-
+    <select id="selectDeptListByUserId" resultType="com.winter.cloud.auth.infrastructure.entity.AuthDeptPO">
+        select sd.id, sd.parent_id,sd.dept_name,sd.order_num,sd.status
+        from sys_dept sd
+        left join sys_user_dept sud on sd.id = sud.dept_id
+        <where>
+            sud.user_id = #{userId}
+            <if test="status != null and status != ''">
+                and sd.status = #{status}
+            </if>
+        </where>
+    </select>
 </mapper>

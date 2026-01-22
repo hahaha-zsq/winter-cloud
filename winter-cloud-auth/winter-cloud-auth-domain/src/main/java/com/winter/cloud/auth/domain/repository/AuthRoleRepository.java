@@ -2,7 +2,6 @@ package com.winter.cloud.auth.domain.repository;
 
 
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
-import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
 import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
 import com.winter.cloud.common.response.PageDTO;
 
@@ -21,9 +20,9 @@ public interface AuthRoleRepository {
 
     Boolean deleteRole(List<Long> roleIds);
 
-    PageDTO<RoleResponseDTO> rolePage(RoleQuery roleQuery);
+    PageDTO<AuthRoleDO> rolePage(RoleQuery roleQuery);
 
-    List<RoleResponseDTO> selectRoleListByUserId(Long userId, String status);
+    List<AuthRoleDO> selectRoleListByUserId(Long userId, String status);
 
     List<AuthRoleDO> getAllRoleInfo(String roleName, String status);
 }

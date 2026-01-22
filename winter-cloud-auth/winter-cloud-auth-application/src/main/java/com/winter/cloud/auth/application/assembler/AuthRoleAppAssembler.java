@@ -13,5 +13,5 @@ public interface AuthRoleAppAssembler {
 
     AuthRoleDO toDO(RoleCommand command);
 
-    List<RoleResponseDTO> toDTOList(List<AuthRoleDO> authRolePOList);
+    List<RoleResponseDTO> toDTOList(List<AuthRoleDO> authRoleDOList);
 }
