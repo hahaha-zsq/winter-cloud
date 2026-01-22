@@ -34,7 +34,7 @@
                 AND u.status = #{query.status}
             </if>
             <if test="query.postId != null">
-                AND u.postId = #{query.postId}
+                AND u.post_id = #{query.postId}
             </if>
             <if test="query.roleIds != null and query.roleIds.size() > 0">
                 <!--                MyBatis 的 #{} 只能引用：传入参数或 <bind> 声明的变量 ， #{roleSize}不是传入的参数，所以需要使用bind处理-->
