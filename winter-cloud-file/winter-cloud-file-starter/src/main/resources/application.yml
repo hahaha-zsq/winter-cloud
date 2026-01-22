@@ -1,0 +1,136 @@
+server:
+  port: 9995
+spring:
+  application:
+    name: winter-cloud-file
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848  # Nacos 服务器地址
+        namespace: ccfca4f0-0131-497a-95a1-3732131d59a8  # 命名空间（可选，用于环境隔离）
+        group: DEFAULT_GROUP  # 分组（可选）
+        username: nacos  # Nacos 用户名（如果开启了认证）
+        password: nacos  # Nacos 密码（如果开启了认证）
+  redis:
+    host: localhost
+    port: 6379
+    password: redis
+    database: 7
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+  datasource:
+    dynamic:
+      primary: winter-cloud-file
+      datasource:
+        winter-cloud-file:
+          url: jdbc:mysql://127.0.0.1:3306/winter-cloud-file?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false
+          username: root
+          password: root
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          type: com.alibaba.druid.pool.DruidDataSource
+          druid:
+            initial-size: 8
+            min-idle: 5
+            max-active: 8
+            max-wait: 30000
+            time-between-eviction-runs-millis: 60000
+            min-evictable-idle-time-millis: 300000
+            validation-query: SELECT 1
+            test-while-idle: true
+            test-on-borrow: true
+            test-on-return: false
+            pool-prepared-statements: true
+            max-pool-prepared-statement-per-connection-size: 20
+            filters: stat,wall
+            connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+# Dubbo 配置
+dubbo:
+  application:
+    name: winter-cloud-file-dubbo
+    qos-enable: true
+    qos-port: 2226
+    qos-accept-foreign-ip: false
+  registry:
+    address: nacos://localhost:8848
+    parameters:
+      namespace: ccfca4f0-0131-497a-95a1-3732131d59a8
+      group: DEFAULT_GROUP
+      username: nacos
+      password: nacos
+  protocol:
+    name: dubbo
+    port: 20884  # Dubbo 协议端口(避免与auth服务的20880冲突)
+  provider:
+    timeout: 3000
+  consumer:
+    timeout: 3000
+    retries: 0  # 根据业务幂等性决定
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  #，如果在 Mapper 中有自定义方法，需要配置此项 mapper-locations 用来告诉 MyBatis-Plus 到哪里加载 Mapper XML 文件
+  mapper-locations: classpath:mapper/**/*.xml
+  # 指定 MyBatis 别名包扫描路径，用于给包中的类注册别名。注册后，在 Mapper 对应的 XML 文件中可以直接使用类名，无需使用全限定类名
+  type-aliases-package: com.winter.cloud.file.infrastructure.entity
+  # 原生 MyBatis 所支持的配置
+  configuration:
+    # 开启自动驼峰命名规则（camel case）映射，即从经典数据库列名 A_COLUMN（下划线命名） 到经典 Java 属性名 aColumn（驼峰命名） 的类似映射
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  # MyBatis-Plus 提供的全局策略配置
+  global-config:
+    # MyBatis-Plus 全局策略中的 DB 策略配置
+    db-config:
+      # 全局的 Entity 逻辑删除字段属性名，仅在逻辑删除功能打开时有效。
+      logic-delete-field: delFlag
+      # 逻辑已删除值
+      logic-delete-value: 1
+      # 逻辑未删除值
+      logic-not-delete-value: 0
+    banner: false
+winter-redis-config:
+  # 系统名称，用于动态配置中心的命名空间隔离
+  system: ${spring.application.name}
+
+  # Redisson 连接配置
+  redission:
+    host: ${spring.redis.host}
+    port: ${spring.redis.port}
+    database: ${spring.redis.database}
+    password: ${spring.redis.password}
+    pool-size: 64            # 连接池大小
+    min-idle-size: 10        # 最小空闲连接数
+    idle-timeout: 10000      # 空闲连接超时时间（毫秒）
+    connect-timeout: 10000   # 连接超时时间（毫秒）
+    retry-attempts: 3        # 重试次数
+    retry-interval: 1500     # 重试间隔时间（毫秒）
+    ping-interval: 30000     # Ping 连接间隔时间（毫秒）
+    keep-alive: true         # 是否保持连接
+winter-i18n:
+  locale:
+    default-locale: zh_CN              # 默认语言
+    supported:                         # 支持的语言列表
+      - zh_CN                          # 中文	中国大陆
+      - en_US                          # 英语	美国
+      - es_ES                          # 西班牙语	西班牙
+      - fr_FR                          # 法语	法国
+      - ru_RU                          # 俄语	俄罗斯
+      - ar_SA                          # 阿拉伯语	沙特阿拉伯(通用)
+    header-name: Accept-Language       # HTTP 请求头名称
+winter-aws:
+  access-key: ${MINIO-ACCESSKEY:zsqyyds}
+  endpoint: ${MINIO-ENDPOINT:http://127.0.0.1:9886}
+  secret-key: ${MINIO-ACCESSSECRET:zsqyyds123456789}
+  bucket: ${MINIO-BUCKET:minio-springboot}
+  path-style-access: true
+  region: ap-east-1
+logging:
+  file:
+    path: ./logs/winter
+  level:
+    com.winter.cloud.i18n: debug

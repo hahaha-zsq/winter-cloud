@@ -14,7 +14,7 @@
         <module>winter-cloud-common</module>
         <module>winter-cloud-dict</module>
         <module>winter-cloud-i18n</module>
-        <module>winter-cloud-ai</module>
+        <module>winter-cloud-file</module>
     </modules>
 
     <properties>
@@ -45,6 +45,7 @@
         <winter.validator.version>0.0.1</winter.validator.version>
         <winter.redis.dcc.version>0.0.4</winter.redis.dcc.version>
         <winter.design.version>0.0.5</winter.design.version>
+        <winter.minio.version>0.0.2</winter.minio.version>
         <winter.security.version>0.0.2</winter.security.version>
         <winter.i18n.version>0.0.3</winter.i18n.version>
         <winter.encrypt.version>0.0.32</winter.encrypt.version>
@@ -216,6 +217,12 @@
                 <version>${winter.design.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>io.github.hahaha-zsq</groupId>
+                <artifactId>winter-minio-spring-boot-starter</artifactId>
+                <version>${winter.minio.version}</version>
+            </dependency>
+
             <!-- 项目内部模块依赖管理 -->
             <dependency>
                 <groupId>com.winter</groupId>
@@ -227,11 +234,6 @@
             <dependency>
                 <groupId>com.winter</groupId>
                 <artifactId>winter-cloud-auth-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.winter</groupId>
-                <artifactId>winter-cloud-auth-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -263,11 +265,6 @@
             </dependency>
             <dependency>
                 <groupId>com.winter</groupId>
-                <artifactId>winter-cloud-dict-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.winter</groupId>
                 <artifactId>winter-cloud-dict-domain</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -291,11 +288,6 @@
             <dependency>
                 <groupId>com.winter</groupId>
                 <artifactId>winter-cloud-i18n-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.winter</groupId>
-                <artifactId>winter-cloud-i18n-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -324,6 +316,32 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- 文件服务内部模块依赖 -->
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-file-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-file-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-file-application</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-file-infrastructure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.winter</groupId>
+                <artifactId>winter-cloud-file-interfaces</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
