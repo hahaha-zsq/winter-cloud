@@ -1,6 +1,7 @@
 package com.winter.cloud.auth.application.service.impl;
 
 
+import com.winter.cloud.auth.api.dto.query.PostQuery;
 import com.winter.cloud.auth.api.dto.response.PostResponseDTO;
 import com.winter.cloud.auth.application.assembler.AuthPostAppAssembler;
 import com.winter.cloud.auth.application.service.AuthPostAppService;
@@ -22,9 +23,9 @@ public class AuthPostAppServiceImpl implements AuthPostAppService {
 
 
     @Override
-    public List<PostResponseDTO> getAllPostInfo(String postName, String status) {
-        log.info("根据职位名和状态查询职位信息，postName={}, status={}", postName, status);
-        List<AuthPostDO> allPostInfo = authPostRepository.getAllPostInfo(postName, status);
+    public List<PostResponseDTO> postDynamicQueryList(PostQuery postQuery) {
+        log.info("根据职位名和状态查询职位信息，postName={}, status={}", postQuery.getPostName(), postQuery.getStatus());
+        List<AuthPostDO> allPostInfo = authPostRepository.postDynamicQueryList(postQuery);
         return authPostAppAssembler.toDTOList(allPostInfo);
     }
 }

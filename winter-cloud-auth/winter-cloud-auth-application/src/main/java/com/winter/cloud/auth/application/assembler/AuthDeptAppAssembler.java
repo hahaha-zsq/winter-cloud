@@ -12,4 +12,6 @@ public interface AuthDeptAppAssembler {
 
 
     List<DeptResponseDTO> toDTOList(List<AuthDeptDO> authDeptDOList);
+    DeptResponseDTO toDTO(AuthDeptDO authDeptDO);
+
 }

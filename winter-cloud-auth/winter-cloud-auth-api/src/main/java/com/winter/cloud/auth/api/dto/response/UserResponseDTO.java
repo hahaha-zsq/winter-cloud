@@ -25,6 +25,7 @@ public class UserResponseDTO implements Serializable {
     private String remark;
     private String introduction;
     private String bgImg;
+    private Long postId;
     private PostResponseDTO postDTO;
     private List<DeptResponseDTO> deptListDTO;
     private List<RoleResponseDTO> roleListDTO;

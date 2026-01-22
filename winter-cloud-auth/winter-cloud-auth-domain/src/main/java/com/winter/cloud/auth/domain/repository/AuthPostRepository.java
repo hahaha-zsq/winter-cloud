@@ -1,6 +1,7 @@
 package com.winter.cloud.auth.domain.repository;
 
 
+import com.winter.cloud.auth.api.dto.query.PostQuery;
 import com.winter.cloud.auth.domain.model.entity.AuthPostDO;
 
 import java.util.List;
@@ -10,5 +11,6 @@ import java.util.List;
  */
 public interface AuthPostRepository {
 
-    List<AuthPostDO> getAllPostInfo(String postName, String status);
+    List<AuthPostDO> postDynamicQueryList(PostQuery postQuery);
+    AuthPostDO postDynamicQuery(PostQuery postQuery);
 }

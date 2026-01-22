@@ -17,6 +17,6 @@ public interface AuthPostInfraAssembler {
 
     // 也可以定义 List 的转换
     List<AuthPostDO> toDOList(List<AuthPostPO> authPostPOList);
+    AuthPostDO toDO(AuthPostPO authPostPO);
 
-    List<PostResponseDTO> toDTOList(List<AuthPostPO> authPostPOList);
 }

@@ -26,9 +26,9 @@ public class AuthDeptAppServiceImpl implements AuthDeptAppService {
     private final AuthDeptAppAssembler authDeptAppAssembler;
 
     @Override
-    public List<DeptResponseDTO> selectAllRecursionDept(String deptName, String status) {
+    public List<DeptResponseDTO> selectAllRecursionDept(DeptQuery deptQuery) {
         // 1. 获取全量数据 (不传 name 过滤，只传 status，保证能构建完整树结构)
-        List<AuthDeptDO> allDeptDOs = authDeptRepository.deptDynamicQuery(DeptQuery.builder().status(status).deptName(deptName).build());
+        List<AuthDeptDO> allDeptDOs = authDeptRepository.deptDynamicQueryList(deptQuery);
         // 转换 DO 为 DTO
         List<DeptResponseDTO> allDTOs = authDeptAppAssembler.toDTOList(allDeptDOs);
 
@@ -47,10 +47,10 @@ public class AuthDeptAppServiceImpl implements AuthDeptAppService {
             }
         });
         // 4. 根据查询条件返回结果
-        if (StrUtil.isNotEmpty(deptName)) {
+        if (StrUtil.isNotEmpty(deptQuery.getDeptName())) {
             // 如果有搜索关键词，返回名字匹配的节点（它们的 children 已经在第3步被挂载好了）
             return allDTOs.stream()
-                    .filter(dept -> dept.getDeptName().contains(deptName))
+                    .filter(dept -> dept.getDeptName().contains(deptQuery.getDeptName()))
                     .collect(Collectors.toList());
         } else {
             // 如果没有搜索条件，返回顶级节点 (parentId 为 0 或 null 的)

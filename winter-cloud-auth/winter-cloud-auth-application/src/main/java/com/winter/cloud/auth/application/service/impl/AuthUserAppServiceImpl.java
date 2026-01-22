@@ -5,20 +5,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
+import com.winter.cloud.auth.api.dto.query.PostQuery;
 import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.api.dto.response.*;
 import com.winter.cloud.auth.application.assembler.AuthDeptAppAssembler;
+import com.winter.cloud.auth.application.assembler.AuthPostAppAssembler;
 import com.winter.cloud.auth.application.assembler.AuthRoleAppAssembler;
 import com.winter.cloud.auth.application.assembler.AuthUserAppAssembler;
 import com.winter.cloud.auth.application.service.AuthMenuAppService;
 import com.winter.cloud.auth.application.service.AuthUserAppService;
 import com.winter.cloud.auth.domain.model.entity.AuthDeptDO;
+import com.winter.cloud.auth.domain.model.entity.AuthPostDO;
 import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
-import com.winter.cloud.auth.domain.repository.AuthDeptRepository;
-import com.winter.cloud.auth.domain.repository.AuthMenuRepository;
-import com.winter.cloud.auth.domain.repository.AuthRoleRepository;
-import com.winter.cloud.auth.domain.repository.AuthUserRepository;
+import com.winter.cloud.auth.domain.repository.*;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.StatusEnum;
 import com.winter.cloud.common.exception.BusinessException;
@@ -46,6 +46,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
 
     private final AuthUserRepository authUserRepository;
     private final AuthDeptRepository authDeptRepository;
+    private final AuthPostRepository authPostRepository;
     private final AuthMenuAppService authMenuAppService;
     private final AuthRoleRepository authRoleRepository;
     private final AuthMenuRepository authMenuRepository;
@@ -54,6 +55,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
     private final ObjectMapper objectMapper;
     private final AuthRoleAppAssembler authRoleAppAssembler;
     private final AuthDeptAppAssembler authDeptAppAssembler;
+    private final AuthPostAppAssembler authPostAppAssembler;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -158,6 +160,11 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
             // 步骤 B: 使用 MapStruct 将 DO List 转换为 DTO List
             List<DeptResponseDTO> deptDTOList = authDeptAppAssembler.toDTOList(deptDOs);
             userDTO.setDeptListDTO(deptDTOList);
+
+            //2.4 填充岗位信息
+            AuthPostDO authPostDO = authPostRepository.postDynamicQuery(PostQuery.builder().id(userDTO.getPostId()).build());
+            PostResponseDTO postResponseDTO = authPostAppAssembler.toDTO(authPostDO);
+            userDTO.setPostDTO(postResponseDTO);
 
             return userDTO;
         }).collect(Collectors.toList());

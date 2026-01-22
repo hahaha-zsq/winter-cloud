@@ -22,7 +22,7 @@ public class AuthDeptRepositoryImpl implements AuthDeptRepository {
     private final AuthDeptMapper authDeptMapper;
 
     @Override
-    public List<AuthDeptDO> deptDynamicQuery(DeptQuery deptQuery) {
+    public List<AuthDeptDO> deptDynamicQueryList(DeptQuery deptQuery) {
         LambdaQueryWrapper<AuthDeptPO> queryWrapper = new LambdaQueryWrapper<AuthDeptPO>()
                 .like(ObjectUtil.isNotEmpty(deptQuery.getDeptName()), AuthDeptPO::getDeptName, deptQuery.getDeptName())
                 .eq(ObjectUtil.isNotEmpty(deptQuery.getStatus()), AuthDeptPO::getStatus, deptQuery.getStatus())

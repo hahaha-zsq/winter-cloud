@@ -12,4 +12,6 @@ public interface AuthPostAppAssembler {
 
 
     List<PostResponseDTO> toDTOList(List<AuthPostDO> authPostPOList);
+
+    PostResponseDTO toDTO(AuthPostDO authPostDO);
 }
