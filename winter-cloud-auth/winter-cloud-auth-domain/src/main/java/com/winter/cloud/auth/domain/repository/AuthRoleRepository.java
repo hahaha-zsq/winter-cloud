@@ -24,5 +24,5 @@ public interface AuthRoleRepository {
 
     List<AuthRoleDO> selectRoleListByUserId(Long userId, String status);
 
-    List<AuthRoleDO> getAllRoleInfo(String roleName, String status);
+    List<AuthRoleDO> roleDynamicQueryList(RoleQuery roleQuery);
 }

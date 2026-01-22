@@ -10,6 +10,7 @@ import com.winter.cloud.common.response.Response;
 import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,14 +39,10 @@ public class AuthRoleController {
 
     /**
      * 根据状态和角色名称获取角色信息
-     *
-     * @param roleName 角色名
-     * @param status   状态
      */
-    @GetMapping("/getAllRoleInfo")
-    public Response<List<RoleResponseDTO>> getAllRoleInfo(@RequestParam(value = "roleName") String roleName,
-                                                          @RequestParam(value = "status") String status) {
-        List<RoleResponseDTO> data = authRoleAppService.getAllRoleInfo(roleName, status);
+    @PostMapping("/roleDynamicQueryList")
+    public Response<List<RoleResponseDTO>> roleDynamicQueryList(@RequestBody @Validated RoleQuery roleQuery) {
+        List<RoleResponseDTO> data = authRoleAppService.roleDynamicQueryList(roleQuery);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
 
     }
