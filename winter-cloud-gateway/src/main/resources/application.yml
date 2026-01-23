@@ -70,6 +70,21 @@ spring:
                 backoff:
                   firstBackoff: 50ms
                   maxBackoff: 500ms
+        # 文件服务路由
+        - id: winter-cloud-file
+          uri: lb://winter-cloud-file
+          predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=1
+            - name: Retry
+              args:
+                retries: 1  # 减少重试次数
+                statuses: BAD_GATEWAY,GATEWAY_TIMEOUT
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackoff: 500ms
   redis:
     host: localhost
     port: 6379

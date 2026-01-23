@@ -83,7 +83,10 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     @Override
     public String getMessage(String messageKey, Object[] args, String defaultMessage, Locale locale) {
         // 1. 将 Locale 对象转换为字符串（例如 "zh_CN"）
-        String localeStr = locale.toString();
+        String localeStr = locale.getLanguage()
+                           + (locale.getCountry().isEmpty() ? "" : "_" + locale.getCountry());
+        // 从 Java 9 开始，Locale.toString() 会把 Script 信息（比如 Hans、Hant）加到 Variant 里，用 _# 表示。会解析出zh_CN_#Hans，所以为了兼容jdk11,使用 locale.getLanguage() + locale.getCountry() 组合
+        // String localeStr = locale.toString();
         // 2. 构建 Redis 缓存 Key，格式通常为 "i18n:message:{messageKey}:{locale}"
         // 示例：winter:i18n:message:user.login.success:zh_CN
         String cacheKey = CommonConstants.buildI18nMessageKey(messageKey, localeStr);

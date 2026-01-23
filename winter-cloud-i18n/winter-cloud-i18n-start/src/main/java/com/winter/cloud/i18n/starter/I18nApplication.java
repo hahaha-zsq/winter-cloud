@@ -19,7 +19,7 @@ public class I18nApplication {
     public static void main(String[] args) {
         SpringApplication.run(I18nApplication.class, args);
         log.info("========================================");
-        log.info("字典服务启动成功！");
+        log.info("国际化服务启动成功！");
         log.info("========================================");
     }
 }
