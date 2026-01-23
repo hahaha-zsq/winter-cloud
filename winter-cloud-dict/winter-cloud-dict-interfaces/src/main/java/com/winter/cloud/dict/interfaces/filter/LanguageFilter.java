@@ -28,7 +28,6 @@ public class LanguageFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        log.info("LanguageFilter executed, locale={}", LocaleContextHolder.getLocale());
         try {
             String lang = request.getHeader(CommonConstants.Headers.LANGUAGE);
 
@@ -38,6 +37,7 @@ public class LanguageFilter extends OncePerRequestFilter {
             } else {
                 LocaleContextHolder.setLocale(Locale.getDefault());
             }
+            log.info("LanguageFilter executed, locale={}", LocaleContextHolder.getLocale());
 
             filterChain.doFilter(request, response);
 
