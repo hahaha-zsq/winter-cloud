@@ -7,10 +7,12 @@ import com.winter.cloud.common.response.Response;
 import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -25,6 +27,7 @@ import javax.validation.ConstraintViolationException;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
+import java.util.Locale;
 
 import static com.winter.cloud.common.enums.ResultCodeEnum.*;
 
@@ -47,7 +50,8 @@ public class GlobalExceptionHandler {
      */
     @DubboReference(check = false)
     private I18nMessageFacade i18nMessageFacade;
-
+    @Value("${spring.locale.default:zh_CN}")
+    private String DEFAULT_LOCALE;
 
     // 1. 捕获认证失败异常 (401)
     /*
@@ -56,7 +60,15 @@ public class GlobalExceptionHandler {
      * */
     @ExceptionHandler({AuthenticationException.class})
     public Response<Void> handleAuthenticationException(AuthenticationException e) {
-        return Response.fail(UNAUTHENTICATED_LANG.getCode(),i18nMessageFacade.getMessage(UNAUTHENTICATED_LANG.getMessage(),LocaleContextHolder.getLocale())); // 使用项目统一的 Response 结构
+        Locale locale = null;
+        log.error("捕获到认证异常: {}", e.getMessage());
+        if (DEFAULT_LOCALE.contains("_")) {
+            String[] parts = DEFAULT_LOCALE.split("_", 2);
+            if (parts.length == 2 && StringUtils.hasText(parts[0]) && StringUtils.hasText(parts[1])) {
+                locale = new Locale(parts[0], parts[1]);
+            }
+        }
+        return Response.fail(UNAUTHENTICATED_LANG.getCode(),i18nMessageFacade.getMessage(UNAUTHENTICATED_LANG.getMessage(),locale)); // 使用项目统一的 Response 结构
     }
 
     // 2. 捕获权限不足异常 (403)

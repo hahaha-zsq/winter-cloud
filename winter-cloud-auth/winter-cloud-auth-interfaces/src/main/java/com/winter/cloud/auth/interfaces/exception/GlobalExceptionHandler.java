@@ -7,10 +7,12 @@ import com.winter.cloud.common.response.Response;
 import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -48,7 +50,8 @@ public class GlobalExceptionHandler {
      */
     @DubboReference(check = false)
     private I18nMessageFacade i18nMessageFacade;
-
+    @Value("${spring.locale.default:zh_CN}")
+    private String DEFAULT_LOCALE;
 
     // 1. 捕获认证失败异常 (401)
     /*
@@ -57,7 +60,15 @@ public class GlobalExceptionHandler {
      * */
     @ExceptionHandler({AuthenticationException.class})
     public Response<Void> handleAuthenticationException(AuthenticationException e) {
-        return Response.fail(UNAUTHENTICATED_LANG.getCode(),i18nMessageFacade.getMessage(UNAUTHENTICATED_LANG.getMessage(),LocaleContextHolder.getLocale())); // 使用项目统一的 Response 结构
+        Locale locale = null;
+        log.error("捕获到认证异常: {}", e.getMessage());
+        if (DEFAULT_LOCALE.contains("_")) {
+            String[] parts = DEFAULT_LOCALE.split("_", 2);
+            if (parts.length == 2 && StringUtils.hasText(parts[0]) && StringUtils.hasText(parts[1])) {
+                locale = new Locale(parts[0], parts[1]);
+            }
+        }
+        return Response.fail(UNAUTHENTICATED_LANG.getCode(),i18nMessageFacade.getMessage(UNAUTHENTICATED_LANG.getMessage(),locale)); // 使用项目统一的 Response 结构
     }
 
     // 2. 捕获权限不足异常 (403)
@@ -244,6 +255,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({HttpRequestMethodNotSupportedException.class})
     public Response<?> handleException(HttpRequestMethodNotSupportedException e) {
         log.error(e.getMessage(), e);
+        System.err.println(LocaleContextHolder.getLocale());
         return Response.fail(ResultCodeEnum.METHOD_ERROR_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.METHOD_ERROR_LANG.getMessage(), new String[]{e.getMethod()},LocaleContextHolder.getLocale()));
     }
 

@@ -11,5 +11,4 @@ public interface FileFacade {
     Response<String> uploadFile(MultipartFile file) throws IOException;
     // 上传批量文件
     Response<List<String>> uploadFileList(List<MultipartFile> files);
-
 }

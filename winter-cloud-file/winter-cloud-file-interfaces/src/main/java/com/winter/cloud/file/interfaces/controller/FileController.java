@@ -4,9 +4,12 @@ import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.file.api.facade.FileFacade;
 import com.winter.cloud.file.application.service.FileAppService;
-import com.zsq.i18n.template.WinterI18nTemplate;
+import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,10 +25,12 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@DubboService
 @RequestMapping("/file")
 public class FileController implements FileFacade {
     private final FileAppService fileAppService;
-    private final WinterI18nTemplate winterI18nTemplate;
+    @DubboReference(check = false)
+    private I18nMessageFacade i18nMessageFacade;
 
     /**
      * 直接上传（适合小文件）
@@ -35,7 +40,7 @@ public class FileController implements FileFacade {
     @Override
     public Response<String> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
         String url = fileAppService.uploadFile(file);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),url);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),url);
     }
     /**
      * 批量直接上传（适合小文件）
@@ -45,6 +50,6 @@ public class FileController implements FileFacade {
     @Override
     public Response<List<String>> uploadFileList(@RequestParam("files")List<MultipartFile> files) {
         List<String> urlList = fileAppService.uploadFileList(files);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),urlList);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(),LocaleContextHolder.getLocale()),urlList);
     }
 }

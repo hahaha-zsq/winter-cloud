@@ -18,13 +18,19 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
+import org.springframework.util.StringUtils;
+import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -167,5 +173,28 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         log.info("xxl-job executor configured successfully");
         return xxlJobSpringExecutor;
+    }
+
+    @Bean
+    public LocaleResolver localeResolver() {
+        return new AcceptHeaderLocaleResolver() {
+            @Override
+            public Locale resolveLocale(HttpServletRequest request) {
+                // 1. 优先尝试获取自定义 Header
+                String headerLang = request.getHeader(CommonConstants.Headers.LANGUAGE);
+
+                if (StringUtils.hasText(headerLang)) {
+                    try {
+                        return Objects.requireNonNull(StringUtils.parseLocaleString(headerLang));
+                    } catch (Exception e) {
+                        // 解析失败，回退到默认逻辑
+                        return Locale.getDefault();
+                    }
+                }
+
+                // 2. 如果没有自定义 Header，使用默认的 Accept-Language 逻辑
+                return super.resolveLocale(request);
+            }
+        };
     }
 }
