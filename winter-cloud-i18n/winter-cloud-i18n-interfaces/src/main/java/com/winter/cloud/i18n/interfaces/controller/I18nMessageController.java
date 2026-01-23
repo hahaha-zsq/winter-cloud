@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Locale;
 
 
 /**
@@ -48,6 +49,36 @@ public class I18nMessageController implements I18nMessageFacade {
     public Response<String> findMessageByKeyAndLocale(String messageKey, String locale) {
         String data= i18nMessageAppService.findMessageByKeyAndLocale(messageKey,locale);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
+    }
+
+    @Override
+    public String getMessage(String messageKey) {
+        return i18nMessageAppService.getMessage(messageKey);
+    }
+
+    @Override
+    public String getMessage(String messageKey, Locale locale) {
+        return i18nMessageAppService.getMessage(messageKey,locale);
+    }
+
+    @Override
+    public String getMessage(String messageKey, Object[] args) {
+        return i18nMessageAppService.getMessage(messageKey,args);
+    }
+
+    @Override
+    public String getMessage(String messageKey, Object[] args, Locale locale) {
+        return i18nMessageAppService.getMessage(messageKey,args,locale);
+    }
+
+    @Override
+    public String getMessage(String messageKey, Object[] args, String defaultMessage) {
+        return i18nMessageAppService.getMessage(messageKey,args,defaultMessage);
+    }
+
+    @Override
+    public String getMessage(String messageKey, Object[] args, String defaultMessage, Locale locale) {
+        return i18nMessageAppService.getMessage(messageKey,args,locale);
     }
 
 }

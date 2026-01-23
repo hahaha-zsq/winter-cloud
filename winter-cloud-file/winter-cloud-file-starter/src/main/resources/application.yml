@@ -3,6 +3,10 @@ server:
 spring:
   application:
     name: winter-cloud-file
+  servlet:
+    multipart:
+      max-file-size: 2GB # 单个文件最大 2GB
+      max-request-size: 3GB # 请求最大 3GB
   cloud:
     nacos:
       discovery:
@@ -15,7 +19,7 @@ spring:
     host: localhost
     port: 6379
     password: redis
-    database: 7
+    database: 0
     timeout: 3000ms
     lettuce:
       pool:
@@ -123,12 +127,12 @@ winter-i18n:
       - ar_SA                          # 阿拉伯语	沙特阿拉伯(通用)
     header-name: Accept-Language       # HTTP 请求头名称
 winter-aws:
-  access-key: ${MINIO-ACCESSKEY:zsqyyds}
-  endpoint: ${MINIO-ENDPOINT:http://127.0.0.1:9886}
-  secret-key: ${MINIO-ACCESSSECRET:zsqyyds123456789}
-  bucket: ${MINIO-BUCKET:minio-springboot}
-  path-style-access: true
-  region: ap-east-1
+  access-key: ${MINIO-ACCESSKEY:zsqyyds}   # s3 的key
+  endpoint: ${MINIO-ENDPOINT:http://127.0.0.1:9886}  # s3的端点
+  secret-key: ${MINIO-ACCESSSECRET:zsqyyds123456789}  # s3的密钥
+  bucket: ${MINIO-BUCKET:minio-springboot} # s3的存储桶
+  path-style-access: true  # s3的路径样式访问
+  region: ap-east-1  # s3的区域
 logging:
   file:
     path: ./logs/winter

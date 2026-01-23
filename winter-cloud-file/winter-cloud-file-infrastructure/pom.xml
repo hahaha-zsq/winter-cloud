@@ -25,10 +25,6 @@
             <artifactId>winter-cloud-file-domain</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.winter</groupId>
-            <artifactId>winter-cloud-i18n-client</artifactId>
-        </dependency>
-        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
         </dependency>

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 
 
 @Slf4j
@@ -29,5 +30,37 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
     @Override
     public String findMessageByKeyAndLocale(String messageKey, String locale) {
         return i18nMessageRepository.findMessageByKeyAndLocale(messageKey, locale);
+    }
+
+    @Override
+    public String getMessage(String messageKey) {
+        return i18nMessageRepository.getMessage(messageKey);
+    }
+
+    @Override
+    public String getMessage(String messageKey, Locale locale) {
+        return i18nMessageRepository.getMessage(messageKey, locale);
+    }
+
+    @Override
+    public String getMessage(String messageKey, Object[] args) {
+        return i18nMessageRepository.getMessage(messageKey, args);
+    }
+
+    @Override
+    public String getMessage(String messageKey, Object[] args, Locale locale) {
+        return i18nMessageRepository.getMessage(messageKey, args, locale);
+
+    }
+
+    @Override
+    public String getMessage(String messageKey, Object[] args, String defaultMessage, Locale locale) {
+        return i18nMessageRepository.getMessage(messageKey, args, defaultMessage, locale);
+
+    }
+
+    @Override
+    public String getMessage(String messageKey, Object[] args, String defaultMessage) {
+        return i18nMessageRepository.getMessage(messageKey, args, defaultMessage);
     }
 }
