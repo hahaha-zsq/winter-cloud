@@ -6,10 +6,10 @@ import com.winter.cloud.auth.application.service.AuthPostAppService;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
-import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +36,6 @@ public class AuthPostController {
     @PostMapping("/postDynamicQueryList")
     public Response<List<PostResponseDTO>> postDynamicQueryList(@RequestBody @Validated PostQuery postQuery) {
         List<PostResponseDTO> data = authPostAppService.postDynamicQueryList(postQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 }

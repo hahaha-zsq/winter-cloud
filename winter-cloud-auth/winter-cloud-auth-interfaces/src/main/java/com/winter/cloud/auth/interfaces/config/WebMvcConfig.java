@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.winter.cloud.auth.infrastructure.config.properties.XxlJobProperties;
+import com.winter.cloud.auth.interfaces.interceptor.LanguageInterceptor;
 import com.winter.cloud.auth.interfaces.interceptor.TraceIdInterceptor;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
@@ -40,9 +41,12 @@ import java.util.TimeZone;
 public class WebMvcConfig implements WebMvcConfigurer {
     private final XxlJobProperties xxlJobProperties;
     private final TraceIdInterceptor traceIdInterceptor;
+    private final LanguageInterceptor languageInterceptor;
 
-    public WebMvcConfig(TraceIdInterceptor traceIdInterceptor, XxlJobProperties xxlJobProperties) {
+
+    public WebMvcConfig(TraceIdInterceptor traceIdInterceptor, LanguageInterceptor languageInterceptor, XxlJobProperties xxlJobProperties) {
         this.traceIdInterceptor = traceIdInterceptor;
+        this.languageInterceptor = languageInterceptor;
         this.xxlJobProperties = xxlJobProperties;
     }
 
@@ -57,7 +61,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(traceIdInterceptor)
                 .addPathPatterns("/**")  // 拦截所有请求
                 .order(0);  // 设置为最高优先级，确保最先执行
+        // 2. 新增：语言拦截器
+        registry.addInterceptor(languageInterceptor)
+                .addPathPatterns("/**")
+                // 排除不需要国际化的静态资源路径（视情况调整）
+                .excludePathPatterns("/doc.html", "/webjars/**", "/swagger-resources/**");
     }
+
 
 
     /**

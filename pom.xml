@@ -46,7 +46,7 @@
         <winter.redis.dcc.version>0.0.4</winter.redis.dcc.version>
         <winter.design.version>0.0.5</winter.design.version>
         <winter.minio.version>0.0.2</winter.minio.version>
-        <winter.security.version>0.0.2</winter.security.version>
+        <winter.security.version>0.0.3</winter.security.version>
         <winter.i18n.version>0.0.3</winter.i18n.version>
         <winter.encrypt.version>0.0.32</winter.encrypt.version>
         <dubbo.version>3.3.0</dubbo.version>

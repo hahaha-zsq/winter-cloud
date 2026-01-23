@@ -6,16 +6,19 @@ import com.winter.cloud.dict.api.dto.command.DictCommand;
 import com.winter.cloud.dict.api.dto.response.DictDataDTO;
 import com.winter.cloud.dict.api.facade.DictFacade;
 import com.winter.cloud.dict.application.service.DictAppService;
-import com.zsq.i18n.template.WinterI18nTemplate;
+import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -29,8 +32,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/dict")
 public class DictController implements DictFacade {
     private final DictAppService dictAppService;
-    private final WinterI18nTemplate winterI18nTemplate;
-
+    @DubboReference(check = false)
+    private I18nMessageFacade i18nMessageFacade;
 
     /**
      * 根据查询条件获取字典数据
@@ -40,6 +43,7 @@ public class DictController implements DictFacade {
     public Response<Map<String,List<DictDataDTO>>> getDictDataByType(@RequestBody DictCommand dictCommand) {
         List<DictDataDTO> data = dictAppService.getDictDataByType(dictCommand.getDictType(), dictCommand.getStatus());
         Map<String, List<DictDataDTO>> collect = data.stream().collect(Collectors.groupingBy(DictDataDTO::getDictName));
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),collect);
+        System.err.println(LocaleContextHolder.getLocale());
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),collect);
     }
 }

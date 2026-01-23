@@ -8,10 +8,10 @@ import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.auth.application.service.AuthRoleAppService;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
-import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,7 +37,7 @@ public class AuthRoleController {
     @PostMapping("/rolePage")
     public Response<PageDTO<RoleResponseDTO>> rolePage(@RequestBody RoleQuery roleQuery) {
         PageDTO<RoleResponseDTO> data = authRoleAppService.rolePage(roleQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 
     /**
@@ -46,7 +46,7 @@ public class AuthRoleController {
     @PostMapping("/roleDynamicQueryList")
     public Response<List<RoleResponseDTO>> roleDynamicQueryList(@RequestBody @Validated RoleQuery roleQuery) {
         List<RoleResponseDTO> data = authRoleAppService.roleDynamicQueryList(roleQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
 
     }
 
@@ -58,7 +58,7 @@ public class AuthRoleController {
     @PostMapping("/saveRole")
     public Response<Boolean> saveRole(@RequestBody RoleCommand command) {
         Boolean data = authRoleAppService.saveRole(command);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 
     /**
@@ -69,7 +69,7 @@ public class AuthRoleController {
     @PutMapping("/updateRole")
     public Response<Boolean> updateRole(@RequestBody RoleCommand command) {
         Boolean data = authRoleAppService.updateRole(command);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 
     /**
@@ -80,6 +80,6 @@ public class AuthRoleController {
     @DeleteMapping("/deleteRole")
     public Response<Boolean> deleteRole(@RequestBody List<Long> roleIds) {
         Boolean data = authRoleAppService.deleteRole(roleIds);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 }

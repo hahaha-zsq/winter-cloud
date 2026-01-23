@@ -1,6 +1,5 @@
 package com.winter.cloud.common.constants;
 
-import org.springframework.beans.factory.annotation.Value;
 
 public final class CommonConstants {
     private CommonConstants() {
@@ -180,6 +179,8 @@ public final class CommonConstants {
         public static final String USER_ROLES = "X-User-Roles";
         /** 用户权限头 */
         public static final String USER_PERMISSIONS = "X-User-Permissions";
+        /** 语言头 */
+        public static final String LANGUAGE = "Accept-Language";
         /** 灰度版本头 */
         public static final String GRAY_VERSION = "X-Gray-Version";
         /** 客户端ID头 */
