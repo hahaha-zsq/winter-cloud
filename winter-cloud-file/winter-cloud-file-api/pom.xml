@@ -35,10 +35,8 @@
             <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-        </dependency>
+
+
     </dependencies>
 
 </project>
