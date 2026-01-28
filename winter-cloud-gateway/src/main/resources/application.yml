@@ -29,9 +29,9 @@ spring:
         - id: winter-cloud-auth
           uri: lb://winter-cloud-auth
           predicates:
-            - Path=/api/**
+            - Path=/api/auth/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
             - name: Retry
               args:
                 retries: 1  # 减少重试次数
@@ -44,9 +44,9 @@ spring:
         - id: winter-cloud-dict
           uri: lb://winter-cloud-dict
           predicates:
-            - Path=/api/**
+            - Path=/api/dict/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
             - name: Retry
               args:
                 retries: 1  # 减少重试次数
@@ -59,9 +59,9 @@ spring:
         - id: winter-cloud-i18n
           uri: lb://winter-cloud-i18n
           predicates:
-            - Path=/api/**
+            - Path=/api/i18n/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
             - name: Retry
               args:
                 retries: 1  # 减少重试次数
@@ -74,9 +74,9 @@ spring:
         - id: winter-cloud-file
           uri: lb://winter-cloud-file
           predicates:
-            - Path=/api/**
+            - Path=/api/file/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
             - name: Retry
               args:
                 retries: 1  # 减少重试次数
@@ -97,7 +97,13 @@ spring:
         max-idle: 8
         min-idle: 0
         max-wait: -1ms
-
+# 白名单
+gateway:
+  auth:
+    ignore-urls:
+      - /api/auth/auth/login
+      - /api/doc.html
+      - /api/swagger-resources/**
 # Dubbo 配置
 dubbo:
   application:

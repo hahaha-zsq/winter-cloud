@@ -1,10 +1,19 @@
 package com.winter.cloud.i18n.infrastructure.repository;
 
+import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.response.PageDTO;
+import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.domain.model.entity.I18nMessageDO;
+import com.winter.cloud.i18n.domain.model.entity.TranslateDO;
 import com.winter.cloud.i18n.domain.repository.I18nMessageRepository;
 import com.winter.cloud.i18n.infrastructure.assembler.I18nMessageInfraAssembler;
 import com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO;
@@ -19,10 +28,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
@@ -36,6 +42,101 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     private final WinterRedissionTemplate winterRedissionTemplate;
     private final Random random = new Random();
 
+    private static final Map<String, String> LANGUAGE_NAMES = Map.of(
+            "zh", "Chinese (Simplified)",
+            "en", "English",
+            "es", "Spanish",
+            "fr", "French",
+            "de", "German",
+            "ja", "Japanese",
+            "ko", "Korean",
+            "ru", "Russian",
+            "pt", "Portuguese",
+            "it", "Italian"
+            // 可按需扩展
+    );
+    public static String getLanguageName(String langCode) {
+        String name = LANGUAGE_NAMES.get(langCode.toLowerCase());
+        if (name == null) {
+            throw new IllegalArgumentException("Unsupported language code: " + langCode);
+        }
+        return name;
+    }
+    private String buildTranslationPrompt(String sourceText, String sourceLang, String targetLang) {
+        String sourceName = getLanguageName(sourceLang);
+        String targetName = getLanguageName(targetLang);
+
+        return String.format(
+                "You are a professional %s to %s translator. " +
+                "Your goal is to accurately convey the meaning and nuances of the original text " +
+                "while adhering to %s grammar, vocabulary, and cultural sensitivities.\n" +
+                "Produce only the translated text in %s, without any additional explanations, commentary, or formatting.\n" +
+                "Original text:\n%s",
+                sourceName,
+                targetName,
+                targetName,
+                targetName,
+                sourceText
+        );
+    }
+
+    private static final String OLLAMA_API_URL = "http://localhost:11434/api/generate";
+    private static final String MODEL_NAME = "translategemma:4b"; // 可根据需要更换为 llama3、mistral 等
+    private static final int TIMEOUT_MS = 120_000; // 120秒，大模型翻译可能较慢
+
+    /**
+     * 调用 Ollama API 执行文本生成（非流式）
+     *
+     * @param prompt 用户输入的完整提示词
+     * @return 模型返回的纯文本响应
+     */
+    private String callOllama(String prompt) {
+        // 构造请求体
+        Map<String, Object> requestBody = Map.of(
+                "model", MODEL_NAME,
+                "prompt", prompt,
+                "stream", false
+        );
+
+        try (HttpResponse response = HttpRequest.post(OLLAMA_API_URL)
+                .header("Content-Type", "application/json")
+                .body(JSONUtil.toJsonStr(requestBody))
+                .timeout(TIMEOUT_MS)
+                .execute()) {
+
+            if (!response.isOk()) {
+                String errorMsg = String.format(
+                        "Ollama API returned status %d: %s",
+                        response.getStatus(),
+                        response.body()
+                );
+                throw new RuntimeException(errorMsg);
+            }
+
+            // 解析 JSON 响应
+            Map<String, Object> respJson = JSONUtil.toBean(response.body(), Map.class, false);
+
+            // 检查是否包含 "response" 字段
+            if (!respJson.containsKey("response")) {
+                throw new RuntimeException("Ollama response missing 'response' field. Full response: " + response.body());
+            }
+
+            String result = (String) respJson.get("response");
+            if (result == null) {
+                throw new RuntimeException("Ollama returned null response");
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            // 记录原始异常（可用于日志）
+            throw new RuntimeException(
+                    "Failed to call Ollama for translation. Prompt preview: " +
+                    (prompt.length() > 100 ? prompt.substring(0, 100) + "..." : prompt),
+                    ExceptionUtil.unwrap(e)
+            );
+        }
+    }
     @Override
     public String getMessage(String messageKey) {
         return getMessage(messageKey, null, null, LocaleContextHolder.getLocale());
@@ -50,6 +151,60 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     @Override
     public String getMessage(String messageKey, Object[] args, String defaultMessage) {
         return getMessage(messageKey, args, defaultMessage, LocaleContextHolder.getLocale());
+    }
+
+    @Override
+    public TranslateDO translate(TranslateCommand command) {
+           String OLLAMA_URL = "http://localhost:11434/api/chat";
+           String MODEL = "llama3";
+
+        // 你的系统提示词
+           String SYSTEM_PROMPT = "You are a professional Chinese (zh-Hans) to English (en) translator. Your goal is to accurately convey the meaning and nuances of the original Chinese text while adhering to English grammar, vocabulary, and cultural sensitivities. Produce only the English translation, without any additional explanations or commentary. Please translate the following Chinese text into English: ";
+
+        if (command == null || command.getSourceContent() == null || command.getSourceContent().isBlank()) {
+            throw new IllegalArgumentException("Source content cannot be null or empty");
+        }
+        if (command.getSourceLanguage() == null || command.getTargetLanguageList() == null || command.getTargetLanguageList().isEmpty()) {
+            throw new IllegalArgumentException("Source language and target languages must be specified");
+        }
+
+        TranslateDO result = new TranslateDO();
+        result.setSourceContent(command.getSourceContent());
+        result.setSourceLanguage(command.getSourceLanguage());
+        Map<String, TranslateDO.TargetLanguageDTO> targetMap = new HashMap<>();
+
+        for (String targetLang : command.getTargetLanguageList()) {
+            // 跳过源语言（避免自翻）
+            if (targetLang.equalsIgnoreCase(command.getSourceLanguage())) {
+                continue;
+            }
+
+            String prompt = buildTranslationPrompt(
+                    command.getSourceContent(),
+                    command.getSourceLanguage(),
+                    targetLang
+            );
+
+            String translatedText = callOllama(prompt);
+
+            TranslateDO.TargetLanguageDTO dto = new TranslateDO.TargetLanguageDTO();
+            dto.setTargetLanguage(targetLang);
+            dto.setTargetContent(translatedText.trim());
+
+            targetMap.put(targetLang, dto);
+        }
+
+        result.setTargetLanguageDTO(targetMap);
+        return result;
+    }
+
+    @Override
+    public PageDTO<I18nMessageDO> i18nPage(I18nMessageQuery i18nMessageQuery) {
+        // 1. 构建分页对象
+        Page<I18nMessagePO> page = new Page<>(i18nMessageQuery.getPageNum(), i18nMessageQuery.getPageSize());
+        IPage<I18nMessagePO> messagePage = messageMapper.selectI18nPage(page, i18nMessageQuery);
+        List<I18nMessageDO> doList = i18nMessageInfraAssembler.toDOList(messagePage.getRecords());
+        return new PageDTO<>(doList, messagePage.getTotal());
     }
 
 

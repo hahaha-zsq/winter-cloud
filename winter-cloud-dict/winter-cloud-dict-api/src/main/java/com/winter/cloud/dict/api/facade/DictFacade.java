@@ -4,6 +4,7 @@ package com.winter.cloud.dict.api.facade;
 
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.dict.api.dto.command.DictCommand;
+import com.winter.cloud.dict.api.dto.query.DictQuery;
 import com.winter.cloud.dict.api.dto.response.DictDataDTO;
 
 import java.util.List;
@@ -22,4 +23,5 @@ public interface DictFacade {
      * @return 字典数据列表
      */
     Response<Map<String,List<DictDataDTO>>> getDictDataByType(DictCommand command);
+    Response<List<DictDataDTO>> dictValueDynamicQueryList(DictQuery dictQuery);
 }

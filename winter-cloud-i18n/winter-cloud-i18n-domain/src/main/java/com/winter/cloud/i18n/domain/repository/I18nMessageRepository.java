@@ -1,7 +1,10 @@
 package com.winter.cloud.i18n.domain.repository;
 
+import com.winter.cloud.common.response.PageDTO;
+import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.domain.model.entity.I18nMessageDO;
+import com.winter.cloud.i18n.domain.model.entity.TranslateDO;
 import com.zsq.i18n.service.I18nMessageService;
 
 import java.util.List;
@@ -18,4 +21,8 @@ public interface I18nMessageRepository extends I18nMessageService {
     String getMessage(String messageKey);
     String getMessage(String messageKey,Object[] args);
     String getMessage(String messageKey, Object[] args, String defaultMessage);
+
+    TranslateDO translate(TranslateCommand translateCommand);
+
+    PageDTO<I18nMessageDO> i18nPage(I18nMessageQuery i18nMessageQuery);
 }

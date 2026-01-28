@@ -49,8 +49,6 @@ public class DictDataDTO implements Serializable {
      */
     private Long dictTypeId;
 
-    private String dictName;
-
     /**
      * 备注
      */

@@ -1,8 +1,11 @@
 package com.winter.cloud.i18n.application.service;
 
 
+import com.winter.cloud.common.response.PageDTO;
+import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
+import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
 
 import java.util.List;
 import java.util.Locale;
@@ -33,4 +36,8 @@ public interface I18nMessageAppService {
      * @param defaultMessage 当查不到消息时的兜底返回
      */
     String getMessage(String messageKey, Object[] args, String defaultMessage, Locale locale);
+
+    TranslateDTO translate(TranslateCommand translateCommand);
+
+    PageDTO<I18nMessageDTO> i18nPage(I18nMessageQuery i18nMessageQuery);
 }

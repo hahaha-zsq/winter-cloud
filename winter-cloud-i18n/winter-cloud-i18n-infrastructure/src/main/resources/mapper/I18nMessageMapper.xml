@@ -25,4 +25,39 @@
             </if>
         </where>
     </select>
+
+    <select id="selectI18nPage" resultType="com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO">
+        SELECT id,
+               message_key,
+               locale,
+               message_value,
+               description,
+               create_by,
+               create_time,
+               update_by,
+               update_time  FROM i18n_messages
+        <where>
+            <if test="query.id != null">
+                AND id = #{query.id}
+            </if>
+            <if test="query.messageValue != null and query.messageValue != ''">
+                AND message_value LIKE CONCAT('%', #{query.messageValue}, '%')
+            </if>
+            <if test="query.messageKey  != null and query.messageKey != ''">
+                AND message_key LIKE CONCAT('%', #{query.messageKey}, '%')
+            </if>
+            <if test="query.locale != null and query.locale != ''">
+                AND locale = #{query.locale}
+            </if>
+        </where>
+        <if test="query.orders != null and query.orders.size() > 0">
+            ORDER BY
+            <foreach collection="query.orders" item="item" separator=",">
+                ${item.field} ${item.order}
+            </foreach>
+        </if>
+        <if test="query.orders == null or query.orders.size() == 0">
+            ORDER BY create_time DESC
+        </if>
+    </select>
 </mapper>

@@ -3,6 +3,7 @@ package com.winter.cloud.dict.interfaces.controller;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.dict.api.dto.command.DictCommand;
+import com.winter.cloud.dict.api.dto.query.DictQuery;
 import com.winter.cloud.dict.api.dto.response.DictDataDTO;
 import com.winter.cloud.dict.api.facade.DictFacade;
 import com.winter.cloud.dict.application.service.DictAppService;
@@ -39,9 +40,19 @@ public class DictController implements DictFacade {
      */
     @PostMapping("/getDictDataByType")
     @Override
-    public Response<Map<String,List<DictDataDTO>>> getDictDataByType(@RequestBody DictCommand dictCommand) {
+    public Response<Map<String, List<DictDataDTO>>> getDictDataByType(@RequestBody DictCommand dictCommand) {
         List<DictDataDTO> data = dictAppService.getDictDataByType(dictCommand.getDictType(), dictCommand.getStatus());
         Map<String, List<DictDataDTO>> collect = data.stream().collect(Collectors.groupingBy(DictDataDTO::getDictName));
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),collect);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), collect);
+    }
+
+    /**
+     * 根据查询条件获取字典数据
+     */
+    @PostMapping("/dictValueDynamicQueryList")
+    @Override
+    public Response<List<DictDataDTO>> dictValueDynamicQueryList(@RequestBody DictQuery dictQuery) {
+        List<DictDataDTO> data = dictAppService.dictValueDynamicQueryList(dictQuery);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 }

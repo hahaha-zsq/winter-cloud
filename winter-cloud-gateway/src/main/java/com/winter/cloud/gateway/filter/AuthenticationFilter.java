@@ -7,6 +7,7 @@ import com.winter.cloud.auth.api.dto.response.ValidateTokenDTO;
 import com.winter.cloud.auth.api.facade.AuthValidationFacade;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.util.JwtUtil;
+import com.winter.cloud.gateway.entity.AuthIgnoreUrlProperties;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -59,24 +60,19 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     /** Redis 操作模板 */
     private final WinterRedisTemplate winterRedisTemplate;
-
+    private final AuthIgnoreUrlProperties ignoreUrlProperties;
     /** Dubbo 远程认证服务 */
     @DubboReference(check = false)
     private AuthValidationFacade authValidationFacade;
 
     public AuthenticationFilter(ObjectMapper objectMapper,
-                                WinterRedisTemplate winterRedisTemplate) {
+                                WinterRedisTemplate winterRedisTemplate,
+                                AuthIgnoreUrlProperties ignoreUrlProperties) {
         this.objectMapper = objectMapper;
         this.winterRedisTemplate = winterRedisTemplate;
+        this.ignoreUrlProperties = ignoreUrlProperties;
     }
-    // 1. 确保白名单配置正确（必须包含 /api/auth/login）
-    private static final List<String> IGNORE_URLS = Arrays.asList(
-            "/api/auth/login",
-            "/api/auth/register",
-            "/api/doc.html",
-            "/api/swagger-resources/**"
-            // 注意：如果你的日志打印是 /api/...，这里必须带 /api
-    );
+
 
     private AntPathMatcher pathMatcher = new AntPathMatcher();
     /**
@@ -96,10 +92,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         // =================================================================
         // ✅ 修复点 2：检查白名单
         // =================================================================
-        for (String ignoreUrl : IGNORE_URLS) {
-            // 使用 AntPathMatcher 进行模糊匹配 (支持 /api/** 这种写法)
-            if (pathMatcher.match(ignoreUrl, path)) {
-                return chain.filter(exchange);
+        List<String> ignoreUrls = ignoreUrlProperties.getIgnoreUrls();
+        if (ObjectUtil.isNotEmpty(ignoreUrls)) {
+            for (String ignoreUrl : ignoreUrls) {
+                if (pathMatcher.match(ignoreUrl, path)) {
+                    return chain.filter(exchange);
+                }
             }
         }
         ServerHttpResponse response = exchange.getResponse();

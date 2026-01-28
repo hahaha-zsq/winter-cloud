@@ -1,16 +1,21 @@
 package com.winter.cloud.i18n.interfaces.controller;
 
+import com.winter.cloud.auth.api.dto.query.UserQuery;
+import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
 import com.winter.cloud.common.enums.ResultCodeEnum;
+import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
+import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
+import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
 import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
 import com.winter.cloud.i18n.application.service.I18nMessageAppService;
 import com.zsq.i18n.template.WinterI18nTemplate;
-import com.zsq.i18n.utils.WinterI18nUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,20 +40,50 @@ public class I18nMessageController implements I18nMessageFacade {
 
     /**
      * 根据条件查询国际化信息
+     *
      * @param query 查询条件
      * @return 查询结果
      */
     @PostMapping("/getI18nMessageInfo")
     @Override
     public Response<List<I18nMessageDTO>> getI18nMessageInfo(@RequestBody @Validated I18nMessageQuery query) {
-        List<I18nMessageDTO> data= i18nMessageAppService.getI18nMessageInfo(query);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
+        List<I18nMessageDTO> data = i18nMessageAppService.getI18nMessageInfo(query);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
     }
 
     @Override
     public Response<String> findMessageByKeyAndLocale(String messageKey, String locale) {
-        String data= i18nMessageAppService.findMessageByKeyAndLocale(messageKey,locale);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
+        String data = i18nMessageAppService.findMessageByKeyAndLocale(messageKey, locale);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+    }
+
+    /**
+     * 翻译
+     *
+     * @param translateCommand 翻译参数
+     * @return 翻译结果
+     */
+    @PostMapping("/translate")
+    @Override
+    public Response<TranslateDTO> translate(@RequestBody @Validated TranslateCommand translateCommand) {
+        TranslateDTO data = i18nMessageAppService.translate(translateCommand);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+    }
+
+    /**
+     * 分页查询
+     *
+     * @param i18nMessageQuery 查询条件
+     * @return 查询结果
+     */
+    @PostMapping("/i18nPage")
+    public Response<PageDTO<I18nMessageDTO>> i18nPage(@RequestBody I18nMessageQuery i18nMessageQuery) {
+        PageDTO<I18nMessageDTO> data = i18nMessageAppService.i18nPage(i18nMessageQuery);
+        return Response.ok(
+                ResultCodeEnum.SUCCESS_LANG.getCode(),
+                winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
+                data
+        );
     }
 
     @Override
@@ -58,27 +93,28 @@ public class I18nMessageController implements I18nMessageFacade {
 
     @Override
     public String getMessage(String messageKey, Locale locale) {
-        return i18nMessageAppService.getMessage(messageKey,locale);
+        return i18nMessageAppService.getMessage(messageKey, locale);
     }
 
     @Override
     public String getMessage(String messageKey, Object[] args) {
-        return i18nMessageAppService.getMessage(messageKey,args);
+        return i18nMessageAppService.getMessage(messageKey, args);
     }
 
     @Override
     public String getMessage(String messageKey, Object[] args, Locale locale) {
-        return i18nMessageAppService.getMessage(messageKey,args,locale);
+        return i18nMessageAppService.getMessage(messageKey, args, locale);
     }
 
     @Override
     public String getMessage(String messageKey, Object[] args, String defaultMessage) {
-        return i18nMessageAppService.getMessage(messageKey,args,defaultMessage);
+        return i18nMessageAppService.getMessage(messageKey, args, defaultMessage);
     }
 
     @Override
     public String getMessage(String messageKey, Object[] args, String defaultMessage, Locale locale) {
-        return i18nMessageAppService.getMessage(messageKey,args,locale);
+        return i18nMessageAppService.getMessage(messageKey, args, locale);
     }
+
 
 }

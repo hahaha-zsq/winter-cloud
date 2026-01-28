@@ -1,16 +1,18 @@
 package com.winter.cloud.i18n.api.dto.query;
 
+import com.winter.cloud.common.response.PageAndOrderDTO;
 import com.zsq.winter.validation.annotation.DynamicEnum;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.io.Serializable;
+
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class I18nMessageQuery {
+public class I18nMessageQuery extends PageAndOrderDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * 主键ID
      */
@@ -20,6 +22,11 @@ public class I18nMessageQuery {
      * 消息键
      */
     private String messageKey;
+
+    /**
+     * 消息值
+     */
+    private String messageValue;
 
     /**
      * 语言环境
