@@ -8,6 +8,7 @@ import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 public interface I18nMessageFacade {
 
@@ -19,7 +20,7 @@ public interface I18nMessageFacade {
     /**
      * 翻译
      */
-    Response<TranslateDTO>  translate(TranslateCommand translateCommand);
+    Response<TranslateDTO>  translate(TranslateCommand translateCommand) throws ExecutionException, InterruptedException;
     String getMessage(String messageKey);
     /**
      * 获取无参国际化消息

@@ -42,7 +42,7 @@ public class DictController implements DictFacade {
     @Override
     public Response<Map<String, List<DictDataDTO>>> getDictDataByType(@RequestBody DictCommand dictCommand) {
         List<DictDataDTO> data = dictAppService.getDictDataByType(dictCommand.getDictType(), dictCommand.getStatus());
-        Map<String, List<DictDataDTO>> collect = data.stream().collect(Collectors.groupingBy(DictDataDTO::getDictName));
+        Map<String, List<DictDataDTO>> collect = data.stream().collect(Collectors.groupingBy(DictDataDTO::getDictLabel));
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), collect);
     }
 

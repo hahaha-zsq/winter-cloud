@@ -9,6 +9,7 @@ import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 public interface I18nMessageAppService {
 
@@ -37,7 +38,7 @@ public interface I18nMessageAppService {
      */
     String getMessage(String messageKey, Object[] args, String defaultMessage, Locale locale);
 
-    TranslateDTO translate(TranslateCommand translateCommand);
+    TranslateDTO translate(TranslateCommand translateCommand) throws ExecutionException, InterruptedException;
 
     PageDTO<I18nMessageDTO> i18nPage(I18nMessageQuery i18nMessageQuery);
 }

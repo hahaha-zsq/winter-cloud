@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -65,7 +66,7 @@ public class I18nMessageController implements I18nMessageFacade {
      */
     @PostMapping("/translate")
     @Override
-    public Response<TranslateDTO> translate(@RequestBody @Validated TranslateCommand translateCommand) {
+    public Response<TranslateDTO> translate(@RequestBody @Validated TranslateCommand translateCommand) throws ExecutionException, InterruptedException {
         TranslateDTO data = i18nMessageAppService.translate(translateCommand);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
     }

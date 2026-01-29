@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 
@@ -36,7 +37,7 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
     }
 
     @Override
-    public TranslateDTO translate(TranslateCommand translateCommand) {
+    public TranslateDTO translate(TranslateCommand translateCommand) throws ExecutionException, InterruptedException {
         TranslateDO translateDO = i18nMessageRepository.translate(translateCommand);
         return i18nMessageAppAssembler.toTranslateDTO(translateDO);
     }
@@ -44,7 +45,7 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
     @Override
     public PageDTO<I18nMessageDTO> i18nPage(I18nMessageQuery i18nMessageQuery) {
         List<PageAndOrderDTO.OrderDTO> orderDTOList = i18nMessageQuery.getOrders();
-        List<String> allowSortColumnList = List.of("locale", "create_time");
+        List<String> allowSortColumnList = List.of("locale", "type","create_time");
         List<String> allowSortValue = List.of("ascend", "asc", "descend", "desc", "ASCEND", "ASC", "DESCEND", "DESC");
         // 判断排序字段是否在允许的字段列表中，只要有一个不在，就抛出异常
         orderDTOList.forEach(orderDTO -> {

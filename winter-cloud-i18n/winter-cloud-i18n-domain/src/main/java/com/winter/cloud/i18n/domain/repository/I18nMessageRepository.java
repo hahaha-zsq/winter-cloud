@@ -8,6 +8,7 @@ import com.winter.cloud.i18n.domain.model.entity.TranslateDO;
 import com.zsq.i18n.service.I18nMessageService;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * 国际化消息仓储接口
@@ -22,7 +23,7 @@ public interface I18nMessageRepository extends I18nMessageService {
     String getMessage(String messageKey,Object[] args);
     String getMessage(String messageKey, Object[] args, String defaultMessage);
 
-    TranslateDO translate(TranslateCommand translateCommand);
+    TranslateDO translate(TranslateCommand translateCommand) throws ExecutionException, InterruptedException;
 
     PageDTO<I18nMessageDO> i18nPage(I18nMessageQuery i18nMessageQuery);
 }

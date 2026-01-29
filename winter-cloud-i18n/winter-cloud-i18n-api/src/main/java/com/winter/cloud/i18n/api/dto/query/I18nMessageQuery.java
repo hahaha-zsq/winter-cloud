@@ -40,4 +40,9 @@ public class I18nMessageQuery extends PageAndOrderDTO implements Serializable {
     )
     private String locale;
 
+    /**
+     * 类型 1:后端 2:前端
+     */
+    private String type;
+
 }

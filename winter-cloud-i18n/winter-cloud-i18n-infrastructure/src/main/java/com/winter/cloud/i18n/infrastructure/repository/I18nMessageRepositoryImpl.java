@@ -1,15 +1,15 @@
 package com.winter.cloud.i18n.infrastructure.repository;
 
-import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.json.JSONUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.response.PageDTO;
+import com.winter.cloud.common.util.TtlExecutorUtils;
 import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.domain.model.entity.I18nMessageDO;
@@ -29,7 +29,7 @@ import org.springframework.stereotype.Repository;
 
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 @Repository
@@ -42,105 +42,44 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     private final WinterRedissionTemplate winterRedissionTemplate;
     private final Random random = new Random();
 
-    private static final Map<String, String> LANGUAGE_NAMES = Map.of(
-            "zh", "Chinese (Simplified)",
-            "en", "English",
-            "es", "Spanish",
-            "fr", "French",
-            "de", "German",
-            "ja", "Japanese",
-            "ko", "Korean",
-            "ru", "Russian",
-            "pt", "Portuguese",
-            "it", "Italian"
-            // 可按需扩展
-    );
-    public static String getLanguageName(String langCode) {
-        String name = LANGUAGE_NAMES.get(langCode.toLowerCase());
-        if (name == null) {
-            throw new IllegalArgumentException("Unsupported language code: " + langCode);
-        }
-        return name;
-    }
-    private String buildTranslationPrompt(String sourceText, String sourceLang, String targetLang) {
-        String sourceName = getLanguageName(sourceLang);
-        String targetName = getLanguageName(targetLang);
+    // ===== NVIDIA NIM 配置 =====
+    private final String apiKey = "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";
+    private final String endpoint = "https://integrate.api.nvidia.com/v1/chat/completions";
+    private final String model = "nvidia/riva-translate-4b-instruct-v1.1";
 
-        return String.format(
-                "You are a professional %s to %s translator. " +
-                "Your goal is to accurately convey the meaning and nuances of the original text " +
-                "while adhering to %s grammar, vocabulary, and cultural sensitivities.\n" +
-                "Produce only the translated text in %s, without any additional explanations, commentary, or formatting.\n" +
-                "Original text:\n%s",
-                sourceName,
-                targetName,
-                targetName,
-                targetName,
-                sourceText
-        );
+    // ===== 线程池 =====
+    private final ExecutorService executor = TtlExecutorUtils.newFixedThreadPool(8);
+
+    // ===== 语言映射表 =====
+    private static final Map<String, String> LANG_MAP = new HashMap<>();
+    static {
+        // ===== 简体中文 =====
+        LANG_MAP.put("zh_CN", "Chinese");
+        // ===== 英语 =====
+        LANG_MAP.put("en_US", "English");
+        // ===== 西班牙语 =====
+        LANG_MAP.put("es_ES", "Spanish");
+        // ===== 法语 =====
+        LANG_MAP.put("fr_FR", "French");
+        // ===== 俄语 =====
+        LANG_MAP.put("ru_RU", "Russian");
+        // ===== 阿拉伯语 =====
+        LANG_MAP.put("ar_SA", "Arabic");
+        // ===== 日语 =====
+        LANG_MAP.put("ja_JP", "Japanese");
+        // ===== 韩语 =====
+        LANG_MAP.put("ko_KR", "Korean");
+        // ===== 德语 =====
+        LANG_MAP.put("de_DE", "German");
+        // ===== 意大利语 =====
+        LANG_MAP.put("pt_BR", "Brazilian Portuguese");
     }
 
-    private static final String OLLAMA_API_URL = "http://localhost:11434/api/generate";
-    private static final String MODEL_NAME = "translategemma:4b"; // 可根据需要更换为 llama3、mistral 等
-    private static final int TIMEOUT_MS = 120_000; // 120秒，大模型翻译可能较慢
-
-    /**
-     * 调用 Ollama API 执行文本生成（非流式）
-     *
-     * @param prompt 用户输入的完整提示词
-     * @return 模型返回的纯文本响应
-     */
-    private String callOllama(String prompt) {
-        // 构造请求体
-        Map<String, Object> requestBody = Map.of(
-                "model", MODEL_NAME,
-                "prompt", prompt,
-                "stream", false
-        );
-
-        try (HttpResponse response = HttpRequest.post(OLLAMA_API_URL)
-                .header("Content-Type", "application/json")
-                .body(JSONUtil.toJsonStr(requestBody))
-                .timeout(TIMEOUT_MS)
-                .execute()) {
-
-            if (!response.isOk()) {
-                String errorMsg = String.format(
-                        "Ollama API returned status %d: %s",
-                        response.getStatus(),
-                        response.body()
-                );
-                throw new RuntimeException(errorMsg);
-            }
-
-            // 解析 JSON 响应
-            Map<String, Object> respJson = JSONUtil.toBean(response.body(), Map.class, false);
-
-            // 检查是否包含 "response" 字段
-            if (!respJson.containsKey("response")) {
-                throw new RuntimeException("Ollama response missing 'response' field. Full response: " + response.body());
-            }
-
-            String result = (String) respJson.get("response");
-            if (result == null) {
-                throw new RuntimeException("Ollama returned null response");
-            }
-
-            return result;
-
-        } catch (Exception e) {
-            // 记录原始异常（可用于日志）
-            throw new RuntimeException(
-                    "Failed to call Ollama for translation. Prompt preview: " +
-                    (prompt.length() > 100 ? prompt.substring(0, 100) + "..." : prompt),
-                    ExceptionUtil.unwrap(e)
-            );
-        }
-    }
     @Override
     public String getMessage(String messageKey) {
         return getMessage(messageKey, null, null, LocaleContextHolder.getLocale());
     }
+
 
     @Override
     public String getMessage(String messageKey, Object[] args) {
@@ -154,48 +93,33 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     }
 
     @Override
-    public TranslateDO translate(TranslateCommand command) {
-           String OLLAMA_URL = "http://localhost:11434/api/chat";
-           String MODEL = "llama3";
+    public TranslateDO translate(TranslateCommand command) throws ExecutionException, InterruptedException {
+        // ====== NVIDIA NIM 配置 ======
 
-        // 你的系统提示词
-           String SYSTEM_PROMPT = "You are a professional Chinese (zh-Hans) to English (en) translator. Your goal is to accurately convey the meaning and nuances of the original Chinese text while adhering to English grammar, vocabulary, and cultural sensitivities. Produce only the English translation, without any additional explanations or commentary. Please translate the following Chinese text into English: ";
+        String sourceText = command.getSourceContent();
+        String sourceLang = command.getSourceLanguage();
+        List<String> targetLangs = command.getTargetLanguageList();
 
-        if (command == null || command.getSourceContent() == null || command.getSourceContent().isBlank()) {
-            throw new IllegalArgumentException("Source content cannot be null or empty");
-        }
-        if (command.getSourceLanguage() == null || command.getTargetLanguageList() == null || command.getTargetLanguageList().isEmpty()) {
-            throw new IllegalArgumentException("Source language and target languages must be specified");
-        }
+        // 并发执行翻译任务
+        List<Future<TranslateDO.TargetLanguageDTO>> futures = new ArrayList<>();
 
-        TranslateDO result = new TranslateDO();
-        result.setSourceContent(command.getSourceContent());
-        result.setSourceLanguage(command.getSourceLanguage());
-        Map<String, TranslateDO.TargetLanguageDTO> targetMap = new HashMap<>();
-
-        for (String targetLang : command.getTargetLanguageList()) {
-            // 跳过源语言（避免自翻）
-            if (targetLang.equalsIgnoreCase(command.getSourceLanguage())) {
-                continue;
-            }
-
-            String prompt = buildTranslationPrompt(
-                    command.getSourceContent(),
-                    command.getSourceLanguage(),
-                    targetLang
-            );
-
-            String translatedText = callOllama(prompt);
-
-            TranslateDO.TargetLanguageDTO dto = new TranslateDO.TargetLanguageDTO();
-            dto.setTargetLanguage(targetLang);
-            dto.setTargetContent(translatedText.trim());
-
-            targetMap.put(targetLang, dto);
+        for (String tgtLang : targetLangs) {
+            futures.add(executor.submit(() -> translateOne(sourceLang, tgtLang, sourceText)));
         }
 
-        result.setTargetLanguageDTO(targetMap);
-        return result;
+        // 组装返回DTO
+        Map<String, TranslateDO.TargetLanguageDTO> resultMap = new LinkedHashMap<>();
+
+        for (Future<TranslateDO.TargetLanguageDTO> f : futures) {
+            TranslateDO.TargetLanguageDTO dto = f.get();
+            resultMap.put(dto.getTargetLanguage(), dto);
+        }
+
+        return TranslateDO.builder()
+                .sourceContent(sourceText)
+                .sourceLanguage(sourceLang)
+                .targetLanguageDTO(resultMap)
+                .build();
     }
 
     @Override
@@ -431,7 +355,8 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
      * 格式化消息字符串
      * <p>使用 {@link MessageFormat} 将参数填充到消息模板中。</p>
      * * @param message 消息模板 (e.g., "Hello {0}")
-     * @param args    参数数组 (e.g., ["World"])
+     *
+     * @param args 参数数组 (e.g., ["World"])
      * @return 格式化后的字符串 (e.g., "Hello World")
      */
     private String formatMessage(String message, Object[] args) {
@@ -446,6 +371,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
         }
         return message;
     }
+
     /**
      * 根据消息键和语言环境查询消息内容
      * <p>直接查询数据库,不经过缓存。</p>
@@ -473,4 +399,70 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
         List<I18nMessagePO> i18nMessageInfo = messageMapper.getI18nMessageInfo(query);
         return i18nMessageInfraAssembler.toDOList(i18nMessageInfo);
     }
+
+
+    // ===== 单条翻译 =====
+    private TranslateDO.TargetLanguageDTO translateOne(String srcLang,
+                                                        String tgtLang,
+                                                        String text) {
+
+        JSONObject body = new JSONObject();
+        body.set("model", model);
+        body.set("temperature", 0);
+        body.set("top_p", 0.9);
+        body.set("max_tokens", 512);
+        body.set("stream", false);
+
+        JSONArray messages = new JSONArray();
+
+        JSONObject sys = new JSONObject();
+        sys.set("role", "system");
+        sys.set("content", buildSystemPrompt(srcLang, tgtLang));
+
+        JSONObject user = new JSONObject();
+        user.set("role", "user");
+        user.set("content", buildUserPrompt(tgtLang, text));
+
+        messages.add(sys);
+        messages.add(user);
+        body.set("messages", messages);
+
+        String response = HttpRequest.post(endpoint)
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .timeout(20000)
+                .body(body.toString())
+                .execute()
+                .body();
+
+        JSONObject json = new JSONObject(response);
+        String translatedText = json.getJSONArray("choices")
+                .getJSONObject(0)
+                .getJSONObject("message")
+                .getStr("content");
+
+        TranslateDO.TargetLanguageDTO dto = new TranslateDO.TargetLanguageDTO();
+        dto.setTargetLanguage(tgtLang);
+        dto.setTargetContent(translatedText);
+
+        return dto;
+    }
+
+    // ===== Prompt 构造 =====
+    private String buildSystemPrompt(String srcCode, String tgtCode) {
+        return String.format(
+                "You are an expert at translating text from %s to %s.",
+                LANG_MAP.get(srcCode),
+                LANG_MAP.get(tgtCode)
+        );
+    }
+
+    private String buildUserPrompt(String tgtCode, String text) {
+        return String.format(
+                "What is the %s translation of the sentence: %s",
+                LANG_MAP.get(tgtCode),
+                text
+        );
+    }
+
 }

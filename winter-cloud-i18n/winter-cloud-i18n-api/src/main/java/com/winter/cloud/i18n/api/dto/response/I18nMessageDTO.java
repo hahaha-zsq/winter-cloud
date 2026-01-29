@@ -24,7 +24,10 @@ public class I18nMessageDTO {
      * 语言环境（如：zh_CN, en_US）
      */
     private String locale;
-
+    /**
+     * 类型 1:后端 2:前端
+     */
+    private String type;
     /**
      * 消息内容
      */

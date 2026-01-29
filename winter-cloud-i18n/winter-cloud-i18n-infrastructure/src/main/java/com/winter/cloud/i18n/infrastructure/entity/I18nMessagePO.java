@@ -44,6 +44,12 @@ public class I18nMessagePO {
     private String description;
 
     /**
+     * 类型 1:后端 2:前端
+     */
+    @TableField("type")
+    private String type;
+
+    /**
      * 创建者
      */
     @TableField(value = "create_by", fill = FieldFill.INSERT)

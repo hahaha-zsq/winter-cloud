@@ -36,6 +36,10 @@ public class I18nMessageDO {
      * 创建者
      */
     private Long createBy;
+    /**
+     * 类型 1:后端 2:前端
+     */
+    private String type;
 
     /**
      * 创建时间

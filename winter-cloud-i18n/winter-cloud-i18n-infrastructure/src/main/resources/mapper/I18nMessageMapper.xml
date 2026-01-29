@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.winter.cloud.i18n.infrastructure.mapper.I18nMessageMapper">
-
     <select id="getI18nMessageInfo" resultType="com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO">
         select id,
+               CASE
+                   WHEN type = '1' THEN '后端'
+                   WHEN type = '2' THEN '前端'
+                   ELSE type
+                   END AS type,
                message_key,
                locale,
                message_value,
@@ -14,8 +18,12 @@
                update_time
         from i18n_messages
         <where>
+            <if test="query.type != null and query.type != ''">
+                AND type = #{query.type}
+            </if>
             <if test="query.messageKey != null and query.messageKey != ''">
-                message_key LIKE CONCAT('%', #{query.messageKey}, '%')
+                AND message_key LIKE CONCAT('%', #{query.messageKey}
+                    , '%')
             </if>
             <if test="query.locale != null and query.locale != ''">
                 and locale = #{query.locale}
@@ -28,6 +36,11 @@
 
     <select id="selectI18nPage" resultType="com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO">
         SELECT id,
+               CASE
+                   WHEN type = '1' THEN '后端'
+                   WHEN type = '2' THEN '前端'
+                   ELSE type
+                   END AS type,
                message_key,
                locale,
                message_value,
@@ -35,15 +48,19 @@
                create_by,
                create_time,
                update_by,
-               update_time  FROM i18n_messages
+               update_time
+        FROM i18n_messages
         <where>
             <if test="query.id != null">
                 AND id = #{query.id}
             </if>
+            <if test="query.type != null and query.type != ''">
+                AND type = #{query.type}
+            </if>
             <if test="query.messageValue != null and query.messageValue != ''">
                 AND message_value LIKE CONCAT('%', #{query.messageValue}, '%')
             </if>
-            <if test="query.messageKey  != null and query.messageKey != ''">
+            <if test="query.messageKey != null and query.messageKey != ''">
                 AND message_key LIKE CONCAT('%', #{query.messageKey}, '%')
             </if>
             <if test="query.locale != null and query.locale != ''">
