@@ -2,6 +2,7 @@ package com.winter.cloud.i18n.domain.repository;
 
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
+import com.winter.cloud.i18n.api.dto.command.UpsertI18NCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.domain.model.entity.I18nMessageDO;
 import com.winter.cloud.i18n.domain.model.entity.TranslateDO;
@@ -26,4 +27,11 @@ public interface I18nMessageRepository extends I18nMessageService {
     TranslateDO translate(TranslateCommand translateCommand) throws ExecutionException, InterruptedException;
 
     PageDTO<I18nMessageDO> i18nPage(I18nMessageQuery i18nMessageQuery);
+
+    Boolean i18nSave(UpsertI18NCommand upsertI18NCommand);
+    Boolean hasDuplicateI18nMessage(Long id,String locale, String messageKey,String type);
+
+    Boolean i18nUpdate(UpsertI18NCommand upsertI18NCommand);
+
+    Boolean i18nDelete(List<Long> ids);
 }

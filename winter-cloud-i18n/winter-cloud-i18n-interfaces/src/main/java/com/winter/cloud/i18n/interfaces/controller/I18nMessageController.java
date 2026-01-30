@@ -1,11 +1,10 @@
 package com.winter.cloud.i18n.interfaces.controller;
 
-import com.winter.cloud.auth.api.dto.query.UserQuery;
-import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
+import com.winter.cloud.i18n.api.dto.command.UpsertI18NCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
 import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
@@ -22,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -86,6 +87,43 @@ public class I18nMessageController implements I18nMessageFacade {
                 data
         );
     }
+
+    /**
+     * 新增国际化信息
+     *
+     * @param upsertI18NCommand 保存参数
+     * @return 保存结果
+     */
+    @PostMapping("/i18nSave")
+    public Response<Boolean> i18nSave(@RequestBody @Validated UpsertI18NCommand upsertI18NCommand) {
+        Boolean data = i18nMessageAppService.i18nSave(upsertI18NCommand);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+    }
+
+    /**
+     * 修改国际化信息
+     *
+     * @param upsertI18NCommand 保存参数
+     * @return 保存结果
+     */
+    @PostMapping("/i18nUpdate")
+    public Response<Boolean> i18nUpdate(@RequestBody @Validated(UpsertI18NCommand.Update.class) UpsertI18NCommand upsertI18NCommand) {
+        Boolean data = i18nMessageAppService.i18nUpdate(upsertI18NCommand);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+    }
+
+    /**
+     * 删除国际化信息
+     *
+     * @param ids 要删除的id
+     * @return 删除结果
+     */
+    public Response<Boolean> i18nDelete(@RequestBody @Valid @NotEmpty(message = "要删除的数据不能为空") List<Long> ids) {
+        Boolean data = i18nMessageAppService.i18nDelete(ids);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+    }
+
+
 
     @Override
     public String getMessage(String messageKey) {

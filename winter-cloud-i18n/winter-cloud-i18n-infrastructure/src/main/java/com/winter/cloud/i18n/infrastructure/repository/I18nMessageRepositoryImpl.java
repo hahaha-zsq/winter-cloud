@@ -8,9 +8,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.enums.ResultCodeEnum;
+import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.util.TtlExecutorUtils;
 import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
+import com.winter.cloud.i18n.api.dto.command.UpsertI18NCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.domain.model.entity.I18nMessageDO;
 import com.winter.cloud.i18n.domain.model.entity.TranslateDO;
@@ -18,6 +21,7 @@ import com.winter.cloud.i18n.domain.repository.I18nMessageRepository;
 import com.winter.cloud.i18n.infrastructure.assembler.I18nMessageInfraAssembler;
 import com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO;
 import com.winter.cloud.i18n.infrastructure.mapper.I18nMessageMapper;
+import com.winter.cloud.i18n.infrastructure.service.II18nMessageMPService;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import com.zsq.winter.redis.ddc.service.WinterRedissionTemplate;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +30,12 @@ import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 
 @Repository
@@ -37,6 +43,7 @@ import java.util.concurrent.*;
 @RequiredArgsConstructor
 public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     private final I18nMessageMapper messageMapper;
+    private final II18nMessageMPService i18nMessageMPService;
     private final I18nMessageInfraAssembler i18nMessageInfraAssembler;
     private final WinterRedisTemplate winterRedisTemplate;
     private final WinterRedissionTemplate winterRedissionTemplate;
@@ -52,6 +59,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
     // ===== 语言映射表 =====
     private static final Map<String, String> LANG_MAP = new HashMap<>();
+
     static {
         // ===== 简体中文 =====
         LANG_MAP.put("zh_CN", "Chinese");
@@ -129,6 +137,140 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
         IPage<I18nMessagePO> messagePage = messageMapper.selectI18nPage(page, i18nMessageQuery);
         List<I18nMessageDO> doList = i18nMessageInfraAssembler.toDOList(messagePage.getRecords());
         return new PageDTO<>(doList, messagePage.getTotal());
+    }
+
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Boolean i18nSave(UpsertI18NCommand command) {
+        // 1. 组装待保存的消息列表
+        List<I18nMessagePO> messageList = command.getMessageValueList()
+                .stream()
+                .map(item -> I18nMessagePO.builder()
+                        .id(ObjectUtil.isNotEmpty(command.getId())?command.getId():null)
+                        .type(command.getType())
+                        .messageKey(command.getMessageKey())
+                        .locale(item.getLocale())
+                        .messageValue(item.getMessageValue())
+                        .description(command.getDescription())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 2. 提取所有 locale 集合，用于批量查重
+        List<String> localeList = messageList.stream()
+                .map(I18nMessagePO::getLocale)
+                .collect(Collectors.toList());
+
+        // 3. 一次性查询数据库中已存在的记录
+        LambdaQueryWrapper<I18nMessagePO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(I18nMessagePO::getType, command.getType())
+                .eq(I18nMessagePO::getMessageKey, command.getMessageKey())
+                .in(I18nMessagePO::getLocale, localeList)
+                .ne(ObjectUtil.isNotEmpty(command.getId()),I18nMessagePO::getId, command.getId());
+
+        List<I18nMessagePO> existList = i18nMessageMPService.list(queryWrapper);
+
+        // 4. 若存在重复，则直接抛出业务异常
+        if (!existList.isEmpty()) {
+            List<String> existLocales = existList.stream()
+                    .map(I18nMessagePO::getLocale)
+                    .collect(Collectors.toList());
+
+            throw new BusinessException(ResultCodeEnum.DUPLICATE_KEY_LANG.getCode(),"以下语言已存在配置，不可重复新增: " + existLocales);
+        }
+
+        // 5. 批量保存
+        return i18nMessageMPService.saveBatch(messageList);
+    }
+
+    /**
+     * 校验是否存在重复的国际化消息配置
+     *
+     * 校验规则：
+     * 同一 type（前端/后端） + messageKey（消息键） + locale（语言环境）
+     * 在数据库中只能存在一条记录。
+     *
+     * 使用场景：
+     * - 新增时：id 为空，检查是否已存在相同组合的数据
+     * - 编辑时：id 不为空，排除自身记录后检查是否重复
+     *
+     * @param id          当前记录ID（编辑时传入，新增时可为空）
+     * @param locale      语言环境（如 zh_CN, en_US）
+     * @param messageKey 消息键（如 login.success）
+     * @param type        类型（1:后端，2:前端）
+     * @return true: 存在重复记录  false: 不存在重复记录
+     */
+    @Override
+    public Boolean hasDuplicateI18nMessage(Long id, String locale, String messageKey, String type) {
+
+        // 构建 Lambda 查询条件
+        LambdaQueryWrapper<I18nMessagePO> queryWrapper = new LambdaQueryWrapper<>();
+
+        queryWrapper.nested(e ->
+                // 按消息键匹配（若参数不为空才拼接条件）
+                e.eq(ObjectUtil.isNotEmpty(messageKey), I18nMessagePO::getMessageKey, messageKey)
+                        // 按语言环境匹配
+                        .eq(ObjectUtil.isNotEmpty(locale), I18nMessagePO::getLocale, locale)
+                        // 按类型匹配（前端/后端）
+                        .eq(ObjectUtil.isNotEmpty(type), I18nMessagePO::getType, type)
+                        // 编辑场景下排除自身记录，避免误判
+                        .ne(ObjectUtil.isNotEmpty(id), I18nMessagePO::getId, id)
+        );
+
+        // 查询符合条件的数据条数
+        long count = i18nMessageMPService.count(queryWrapper);
+
+        // count > 0 表示存在重复配置
+        return count > 0;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Boolean i18nUpdate(UpsertI18NCommand command) {
+        // 1. 组装待保存的消息列表
+        List<I18nMessagePO> messageList = command.getMessageValueList()
+                .stream()
+                .map(item -> I18nMessagePO.builder()
+                        .id(command.getId())
+                        .type(command.getType())
+                        .messageKey(command.getMessageKey())
+                        .locale(item.getLocale())
+                        .messageValue(item.getMessageValue())
+                        .description(command.getDescription())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 2. 提取所有 locale 集合，用于批量查重
+        List<String> localeList = messageList.stream()
+                .map(I18nMessagePO::getLocale)
+                .collect(Collectors.toList());
+
+        // 3. 一次性查询数据库中已存在的记录
+        LambdaQueryWrapper<I18nMessagePO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(I18nMessagePO::getType, command.getType())
+                .eq(I18nMessagePO::getMessageKey, command.getMessageKey())
+                .in(I18nMessagePO::getLocale, localeList)
+                .ne(ObjectUtil.isNotEmpty(command.getId()),I18nMessagePO::getId, command.getId());
+
+        List<I18nMessagePO> existList = i18nMessageMPService.list(queryWrapper);
+
+        // 4. 若存在重复，则直接抛出业务异常
+        if (!existList.isEmpty()) {
+            List<String> existLocales = existList.stream()
+                    .map(I18nMessagePO::getLocale)
+                    .collect(Collectors.toList());
+
+            throw new BusinessException(ResultCodeEnum.DUPLICATE_KEY_LANG.getCode(),"以下语言已存在配置，不可重复新增: " + existLocales);
+        }
+
+        // 5. 批量保存
+        return i18nMessageMPService.updateBatchById(messageList);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Boolean i18nDelete(List<Long> ids) {
+        return i18nMessageMPService.removeByIds(ids);
     }
 
 
@@ -403,8 +545,8 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
     // ===== 单条翻译 =====
     private TranslateDO.TargetLanguageDTO translateOne(String srcLang,
-                                                        String tgtLang,
-                                                        String text) {
+                                                       String tgtLang,
+                                                       String text) {
 
         JSONObject body = new JSONObject();
         body.set("model", model);

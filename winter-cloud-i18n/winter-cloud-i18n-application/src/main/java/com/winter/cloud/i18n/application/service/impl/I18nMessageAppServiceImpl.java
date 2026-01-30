@@ -5,6 +5,7 @@ import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageAndOrderDTO;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
+import com.winter.cloud.i18n.api.dto.command.UpsertI18NCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
 import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
@@ -80,6 +81,21 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
         PageDTO<I18nMessageDO> doPage = i18nMessageRepository.i18nPage(i18nMessageQuery);
         List<I18nMessageDTO> userResponseDTOList = i18nMessageAppAssembler.toI18nMessageDTOList(doPage.getRecords());
         return new PageDTO<>(userResponseDTOList, doPage.getTotal());
+    }
+
+    @Override
+    public Boolean i18nSave(UpsertI18NCommand upsertI18NCommand) {
+        return i18nMessageRepository.i18nSave(upsertI18NCommand);
+    }
+
+    @Override
+    public Boolean i18nUpdate(UpsertI18NCommand upsertI18NCommand) {
+        return i18nMessageRepository.i18nUpdate(upsertI18NCommand);
+    }
+
+    @Override
+    public Boolean i18nDelete(List<Long> ids) {
+        return i18nMessageRepository.i18nDelete(ids);
     }
 
     @Override

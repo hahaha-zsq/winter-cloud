@@ -3,10 +3,13 @@ package com.winter.cloud.i18n.application.service;
 
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
+import com.winter.cloud.i18n.api.dto.command.UpsertI18NCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
 import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -41,4 +44,10 @@ public interface I18nMessageAppService {
     TranslateDTO translate(TranslateCommand translateCommand) throws ExecutionException, InterruptedException;
 
     PageDTO<I18nMessageDTO> i18nPage(I18nMessageQuery i18nMessageQuery);
+
+    Boolean i18nSave(UpsertI18NCommand upsertI18NCommand);
+
+    Boolean i18nUpdate(UpsertI18NCommand upsertI18NCommand);
+
+    Boolean i18nDelete(@Valid @NotEmpty(message = "要删除的数据不能为空") List<Long> ids);
 }

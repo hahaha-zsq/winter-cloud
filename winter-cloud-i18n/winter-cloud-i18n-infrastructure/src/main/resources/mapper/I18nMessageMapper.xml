@@ -3,11 +3,7 @@
 <mapper namespace="com.winter.cloud.i18n.infrastructure.mapper.I18nMessageMapper">
     <select id="getI18nMessageInfo" resultType="com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO">
         select id,
-               CASE
-                   WHEN type = '1' THEN '后端'
-                   WHEN type = '2' THEN '前端'
-                   ELSE type
-                   END AS type,
+               type,
                message_key,
                locale,
                message_value,
@@ -36,11 +32,7 @@
 
     <select id="selectI18nPage" resultType="com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO">
         SELECT id,
-               CASE
-                   WHEN type = '1' THEN '后端'
-                   WHEN type = '2' THEN '前端'
-                   ELSE type
-                   END AS type,
+                type,
                message_key,
                locale,
                message_value,

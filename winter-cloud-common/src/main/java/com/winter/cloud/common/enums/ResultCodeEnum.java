@@ -16,6 +16,7 @@ public enum ResultCodeEnum {
     REQUEST_PARAMETER_ERROR("412", "请求参数异常"),
     BODY_PARAMETER_ERROR("413", "请求体异常"),
     METHOD_ERROR("414", "请求方式不支持"),
+    DUPLICATE_KEY("0004", "数据已存在"),
 
 
 
@@ -30,13 +31,13 @@ public enum ResultCodeEnum {
     SQL_EXECUTE_ERROR_LANG("415", "result.code.sql.execute.error"),
     INTERNAL_SYSTEM_ERROR_LANG("416", "result.code.internal.system.error"),
     DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR("417", "result.code.database.operation.violates.integrity.constraints.error"),
+    DUPLICATE_KEY_LANG("0004", "数据已存在"),
 
 
 
     UN_ERROR("0001", "未知失败"),
     ILLEGAL_PARAMETER("0002", "非法参数"),
     LOGIN_FAILED("0003", "用户名或密码错误"),
-    DUPLICATE_KEY("0004", "数据已存在"),
     NOT_FOUND("0005", "数据不存在"),
     FORBIDDEN("0007", "禁止访问"),
     DISABLED("0008", "禁用"),

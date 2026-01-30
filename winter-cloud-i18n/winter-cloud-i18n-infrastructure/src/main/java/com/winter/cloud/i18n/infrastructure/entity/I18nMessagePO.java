@@ -1,6 +1,7 @@
 package com.winter.cloud.i18n.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
  * 国际化消息实体
  *
  */
+@Builder
 @Data
 @TableName("i18n_messages")
 public class I18nMessagePO {
