@@ -118,6 +118,7 @@ public class I18nMessageController implements I18nMessageFacade {
      * @param ids 要删除的id
      * @return 删除结果
      */
+    @PostMapping("/i18nDelete")
     public Response<Boolean> i18nDelete(@RequestBody @Valid @NotEmpty(message = "要删除的数据不能为空") List<Long> ids) {
         Boolean data = i18nMessageAppService.i18nDelete(ids);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);

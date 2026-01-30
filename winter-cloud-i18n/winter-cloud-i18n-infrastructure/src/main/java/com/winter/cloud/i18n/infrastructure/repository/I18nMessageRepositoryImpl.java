@@ -71,6 +71,8 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     // Redisson 客户端，用于分布式锁和布隆过滤器
     private final WinterRedissionTemplate winterRedissionTemplate;
 
+    private final Executor i18bPoolExecutor;
+
     /**
      * 编程式事务模版
      * <p>
@@ -464,9 +466,27 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     public String getMessage(String messageKey, Object[] args, String defaultMessage, Locale locale) {
         // 构造标准的 Locale 字符串，例如 zh_CN
         String localeStr = locale.getLanguage() + (locale.getCountry().isEmpty() ? "" : "_" + locale.getCountry());
+
+        // 异步统计逻辑 - 支持区分语种
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (ObjectUtil.isNotEmpty(messageKey)) {
+                    // 构造复合 Member: "messageKey:locale"
+                    // 示例: "user.login.success:zh_CN"
+                    String memberWithLocale = messageKey + ":" + localeStr;
+                    // 统计带有语言后缀的 Key
+                    winterRedisTemplate.zSetIncrementScore(CommonConstants.I18nMessage.I18N_STAT_KEY, memberWithLocale, 1);
+
+                    // (可选) 如果你还想看“不分语言的总热度”，可以再多记一条：
+                    // winterRedisTemplate.opsForZSet().incrementScore(I18N_STAT_KEY + ":global", messageKey, 1);
+                }
+            } catch (Exception e) {
+                log.warn("Async stat i18n failed: key={}", messageKey, e);
+            }
+        }, i18bPoolExecutor);
+
         // 构建 Redis Key
         String cacheKey = CommonConstants.buildI18nMessageKey(messageKey, localeStr);
-
         try {
             // 1. 一级缓存查询 (Redis)
             String cachedMessage = (String) winterRedisTemplate.get(cacheKey);
@@ -671,52 +691,65 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
 
     /**
-     * 核心逻辑：将数据库数据加载到 Redis
+     * 核心逻辑：将数据库数据加载到 Redis (分页版)
+     * <p>
+     * 改为分页查询，防止数据量过大导致 OOM
      */
     public void warmupCache() {
         try {
-            // 1. 查询所有国际化消息
-            // 注意：此处是全量查询。如果未来数据量突破 10w+，建议改为分页分批查询（MyBatis Cursor 或 PageHelper），
-            // 避免一次性加载过多对象导致 JVM OOM。
-            List<I18nMessageDO> allMessages = getI18nMessageInfo(null);
+            log.info("开始执行 Redis 缓存预热...");
+            long startTime = System.currentTimeMillis();
 
-            if (allMessages == null || allMessages.isEmpty()) {
-                log.warn("没有找到需要预热的国际化消息");
-                return;
-            }
+            int pageNum = 1;
+            int pageSize = 1000; // 每批处理 1000 条，可根据服务器内存调整
+            int totalSuccess = 0;
 
-            int successCount = 0;
-            // 2. 遍历并写入 Redis
-            for (I18nMessageDO message : allMessages) {
-                try {
-                    // 构建缓存 Key: "i18n:message:{key}:{locale}"
-                    String cacheKey = CommonConstants.buildI18nMessageKey(
-                            message.getMessageKey(), message.getLocale());
+            while (true) {
+                // 1. 构造分页对象
+                Page<I18nMessagePO> page = new Page<>(pageNum, pageSize);
 
-                    // =====================================================================
-                    // 防雪崩策略 (Cache Avalanche Prevention)
-                    // 如果所有缓存在同一时刻（如重启后1小时）集体失效，会导致请求瞬间击穿到 DB。
-                    // 解决方案：expire = 基础时间 (e.g. 24h) + 随机时间 (e.g. 0-60min)
-                    // =====================================================================
-                    long expireSeconds = CommonConstants.I18nMessage.I18N_CACHE_EXPIRE_SECONDS
-                                         + random.nextInt((int) CommonConstants.I18nMessage.I18N_CACHE_RANDOM_EXPIRE_SECONDS);
+                // 2. 执行分页查询 (直接复用 MP Service 的 page 方法，无需手写 SQL)
+                IPage<I18nMessagePO> pageResult = i18nMessageMPService.page(page);
+                List<I18nMessagePO> records = pageResult.getRecords();
 
-                    // 写入 Redis
-                    winterRedissionTemplate.set(
-                            cacheKey,
-                            message.getMessageValue(),
-                            expireSeconds,
-                            TimeUnit.SECONDS);
-
-                    successCount++;
-                } catch (Exception e) {
-                    // 单条数据失败不影响整体
-                    log.error("预热消息失败: key={}, locale={}",
-                            message.getMessageKey(), message.getLocale(), e);
+                // 如果查询结果为空，说明已处理完所有数据，跳出循环
+                if (CollUtil.isEmpty(records)) {
+                    break;
                 }
+
+                // 3. 遍历当前页数据并写入 Redis
+                for (I18nMessagePO message : records) {
+                    try {
+                        // 构建缓存 Key: "i18n:message:{key}:{locale}"
+                        String cacheKey = CommonConstants.buildI18nMessageKey(
+                                message.getMessageKey(), message.getLocale());
+
+                        // 设置随机过期时间，防止缓存雪崩
+                        long expireSeconds = CommonConstants.I18nMessage.I18N_CACHE_EXPIRE_SECONDS
+                                             + random.nextInt((int) CommonConstants.I18nMessage.I18N_CACHE_RANDOM_EXPIRE_SECONDS);
+
+                        // 写入 Redis (修正：统一使用 winterRedisTemplate，与 getMessage/i18nSave 保持一致)
+                        winterRedisTemplate.set(
+                                cacheKey,
+                                message.getMessageValue(),
+                                expireSeconds,
+                                TimeUnit.SECONDS);
+
+                        totalSuccess++;
+                    } catch (Exception e) {
+                        // 单条数据失败不影响整体
+                        log.error("预热消息失败: key={}, locale={}",
+                                message.getMessageKey(), message.getLocale(), e);
+                    }
+                }
+
+                // 4. 准备下一页
+                pageNum++;
             }
 
-            log.info("Redis 缓存预热完成: 总数={}, 成功写入={}", allMessages.size(), successCount);
+            log.info("Redis 缓存预热完成: 耗时={}ms, 成功写入={}条",
+                    System.currentTimeMillis() - startTime, totalSuccess);
+
         } catch (Exception e) {
             log.error("Redis 缓存预热整体失败", e);
             throw new RuntimeException("缓存预热失败", e);
