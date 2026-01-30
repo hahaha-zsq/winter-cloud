@@ -5,12 +5,17 @@ import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.util.TtlExecutorUtils;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
 import com.winter.cloud.i18n.application.service.I18nMessageAppService;
+import com.winter.cloud.i18n.application.service.impl.I18nMessageAppServiceImpl;
+import com.winter.cloud.i18n.domain.repository.I18nMessageRepository;
+import com.winter.cloud.i18n.infrastructure.repository.I18nMessageRepositoryImpl;
+import com.zsq.i18n.service.I18nMessageService;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import com.zsq.winter.redis.ddc.service.WinterRedissionTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -45,9 +50,7 @@ public class I18nMessageRunner {
 
     private final WinterRedisTemplate redisTemplate;
     private final WinterRedissionTemplate redissionTemplate;
-    private final I18nMessageAppService i18nMessageAppService;
-    private final Random random = new Random();
-
+    private final I18nMessageRepositoryImpl i18nMessageRepository;
     /**
      * 支持 TTL 的自定义线程池，用于异步预热
      * <p>
@@ -92,10 +95,10 @@ public class I18nMessageRunner {
                         long startTime = System.currentTimeMillis();
 
                         // 1. 初始化布隆过滤器 (构建防穿透屏障)
-                        initBloomFilter();
+                        i18nMessageRepository.initBloomFilter();
 
                         // 2. 预热 Redis 缓存 (构建热点数据)
-                        warmupCache();
+                        i18nMessageRepository.warmupCache();
 
                         long endTime = System.currentTimeMillis();
                         log.info("I18n 缓存预热完成，耗时: {}ms", endTime - startTime);
@@ -130,119 +133,5 @@ public class I18nMessageRunner {
         log.info("开始关闭 I18n 缓存预热线程池...");
         // 优雅关闭，等待正在执行的任务最多 30 秒
         TtlExecutorUtils.shutdownGracefully(ttlExecutor, 30);
-    }
-
-    /**
-     * 核心逻辑：将数据库数据加载到 Redis
-     */
-    public void warmupCache() {
-        try {
-            // 1. 查询所有国际化消息
-            // 注意：此处是全量查询。如果未来数据量突破 10w+，建议改为分页分批查询（MyBatis Cursor 或 PageHelper），
-            // 避免一次性加载过多对象导致 JVM OOM。
-            List<I18nMessageDTO> allMessages = i18nMessageAppService.getI18nMessageInfo(null);
-
-            if (allMessages == null || allMessages.isEmpty()) {
-                log.warn("没有找到需要预热的国际化消息");
-                return;
-            }
-
-            int successCount = 0;
-            // 2. 遍历并写入 Redis
-            for (I18nMessageDTO message : allMessages) {
-                try {
-                    // 构建缓存 Key: "i18n:message:{key}:{locale}"
-                    String cacheKey = CommonConstants.buildI18nMessageKey(
-                            message.getMessageKey(), message.getLocale());
-
-                    // =====================================================================
-                    // 防雪崩策略 (Cache Avalanche Prevention)
-                    // 如果所有缓存在同一时刻（如重启后1小时）集体失效，会导致请求瞬间击穿到 DB。
-                    // 解决方案：expire = 基础时间 (e.g. 24h) + 随机时间 (e.g. 0-60min)
-                    // =====================================================================
-                    long expireSeconds = CommonConstants.I18nMessage.I18N_CACHE_EXPIRE_SECONDS
-                                         + random.nextInt((int) CommonConstants.I18nMessage.I18N_CACHE_RANDOM_EXPIRE_SECONDS);
-
-                    // 写入 Redis
-                    redisTemplate.set(
-                            cacheKey,
-                            message.getMessageValue(),
-                            expireSeconds,
-                            TimeUnit.SECONDS);
-
-                    successCount++;
-                } catch (Exception e) {
-                    // 单条数据失败不影响整体
-                    log.error("预热消息失败: key={}, locale={}",
-                            message.getMessageKey(), message.getLocale(), e);
-                }
-            }
-
-            log.info("Redis 缓存预热完成: 总数={}, 成功写入={}", allMessages.size(), successCount);
-        } catch (Exception e) {
-            log.error("Redis 缓存预热整体失败", e);
-            throw new RuntimeException("缓存预热失败", e);
-        }
-    }
-
-    /**
-     * 核心逻辑：初始化布隆过滤器
-     * <p>布隆过滤器用于快速判断一个 Key 是否<b>肯定不存在</b>，从而拦截无效请求访问 DB。</p>
-     */
-    public void initBloomFilter() {
-        try {
-            // 1. 获取 Redisson 的布隆过滤器实例
-            RBloomFilter<Object> bloomFilter = redissionTemplate.getBloomFilter(CommonConstants.I18nMessage.I18N_BLOOM_FILTER_NAME);
-
-            // =========================================================================
-            // 重建策略
-            // 布隆过滤器不支持删除单个元素。如果数据库中删除了数据，布隆过滤器里还有，会造成误判。
-            // 因此，每次全量预热时，最佳实践是删除旧的过滤器，根据当前 DB 数据重新构建。
-            // =========================================================================
-            if (ObjectUtil.isNotEmpty(bloomFilter)) {
-                log.info("检测到旧的布隆过滤器，正在删除以重建...");
-                bloomFilter.delete();
-            }
-
-            // 2. 初始化配置
-            // expectedInsertions: 预计插入元素数量（根据业务预估，设置大一点防止误判率升高）
-            // falseProbability: 期望的误判率（通常 0.01 或 0.03，越低占用内存越大）
-            bloomFilter.tryInit(CommonConstants.I18nMessage.I18N_BLOOM_EXPECTED_INSERTIONS,
-                    CommonConstants.I18nMessage.I18N_BLOOM_FALSE_PROBABILITY);
-
-            log.info("布隆过滤器初始化成功: name={}, 预计容量={}, 误判率={}",
-                    CommonConstants.I18nMessage.I18N_BLOOM_FILTER_NAME,
-                    CommonConstants.I18nMessage.I18N_BLOOM_EXPECTED_INSERTIONS,
-                    CommonConstants.I18nMessage.I18N_BLOOM_FALSE_PROBABILITY);
-
-            // 3. 获取全量数据准备加载
-            List<I18nMessageDTO> allMessages = i18nMessageAppService.getI18nMessageInfo(null);
-
-            if (ObjectUtil.isEmpty(allMessages)) {
-                log.warn("没有找到需要加载到布隆过滤器的消息");
-                return;
-            }
-
-            int addCount = 0;
-            // 4. 将所有存在的 Key + Locale 组合写入布隆过滤器
-            for (I18nMessageDTO message : allMessages) {
-                try {
-                    // 构建布隆 Key (需与查询时构建逻辑一致)
-                    String bloomKey = CommonConstants.buildI18nBloomKey(
-                            message.getMessageKey(), message.getLocale());
-                    bloomFilter.add(bloomKey);
-                    addCount++;
-                } catch (Exception e) {
-                    log.error("添加到布隆过滤器失败: key={}, locale={}",
-                            message.getMessageKey(), message.getLocale(), e);
-                }
-            }
-
-            log.info("布隆过滤器加载完成: 数据库总数={}, 成功加载={}, 过滤器当前计数={}",
-                    allMessages.size(), addCount, bloomFilter.count());
-        } catch (Exception e) {
-            log.error("初始化布隆过滤器失败", e);
-            throw new RuntimeException("初始化布隆过滤器失败", e);
-        }
     }
 }

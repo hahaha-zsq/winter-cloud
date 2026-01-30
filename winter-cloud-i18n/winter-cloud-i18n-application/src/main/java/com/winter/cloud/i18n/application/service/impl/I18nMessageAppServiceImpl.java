@@ -1,5 +1,6 @@
 package com.winter.cloud.i18n.application.service.impl;
 
+import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageAndOrderDTO;
@@ -10,12 +11,14 @@ import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
 import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
 import com.winter.cloud.i18n.application.assembler.I18nMessageAppAssembler;
+import com.winter.cloud.i18n.application.runner.I18nMessageRunner;
 import com.winter.cloud.i18n.application.service.I18nMessageAppService;
 import com.winter.cloud.i18n.domain.model.entity.I18nMessageDO;
 import com.winter.cloud.i18n.domain.model.entity.TranslateDO;
 import com.winter.cloud.i18n.domain.repository.I18nMessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,7 +49,7 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
     @Override
     public PageDTO<I18nMessageDTO> i18nPage(I18nMessageQuery i18nMessageQuery) {
         List<PageAndOrderDTO.OrderDTO> orderDTOList = i18nMessageQuery.getOrders();
-        List<String> allowSortColumnList = List.of("locale", "type","create_time");
+        List<String> allowSortColumnList = List.of("locale", "type", "create_time");
         List<String> allowSortValue = List.of("ascend", "asc", "descend", "desc", "ASCEND", "ASC", "DESCEND", "DESC");
         // 判断排序字段是否在允许的字段列表中，只要有一个不在，就抛出异常
         orderDTOList.forEach(orderDTO -> {
@@ -96,6 +99,11 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
     @Override
     public Boolean i18nDelete(List<Long> ids) {
         return i18nMessageRepository.i18nDelete(ids);
+    }
+
+    @Override
+    public void scheduledRebuildBloomFilter() {
+        i18nMessageRepository.scheduledRebuildBloomFilter();
     }
 
     @Override

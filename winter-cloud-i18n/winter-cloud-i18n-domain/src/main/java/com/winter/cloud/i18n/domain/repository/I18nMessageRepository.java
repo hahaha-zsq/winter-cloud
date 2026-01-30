@@ -34,4 +34,6 @@ public interface I18nMessageRepository extends I18nMessageService {
     Boolean i18nUpdate(UpsertI18NCommand upsertI18NCommand);
 
     Boolean i18nDelete(List<Long> ids);
+
+    void scheduledRebuildBloomFilter();
 }

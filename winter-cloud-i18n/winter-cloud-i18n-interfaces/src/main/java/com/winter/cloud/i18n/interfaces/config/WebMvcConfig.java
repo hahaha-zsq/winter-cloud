@@ -9,7 +9,10 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.i18n.infrastructure.config.properties.XxlJobProperties;
 import com.winter.cloud.i18n.interfaces.interceptor.TraceIdInterceptor;
+import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,14 +35,18 @@ import java.util.TimeZone;
  *
  * @author zsq
  */
+@Slf4j
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
+    private final XxlJobProperties xxlJobProperties;
     private final TraceIdInterceptor traceIdInterceptor;
 
-    public WebMvcConfig(TraceIdInterceptor traceIdInterceptor) {
+    public WebMvcConfig(TraceIdInterceptor traceIdInterceptor, XxlJobProperties xxlJobProperties) {
         this.traceIdInterceptor = traceIdInterceptor;
+        this.xxlJobProperties = xxlJobProperties;
     }
+
 
     /**
      * 注册拦截器
@@ -105,5 +112,50 @@ public class WebMvcConfig implements WebMvcConfigurer {
             // 当后端返回数据给前端时，如果某个字段是 null，就不把这个字段写到 JSON 里（为了节省带宽或让 JSON 更干净）
             // builder.serializationInclusion(JsonInclude.Include.NON_NULL);
         };
+    }
+
+    @Bean
+    public XxlJobSpringExecutor xxlJobExecutor() {
+        log.info(">>>>>>>>>>> xxl-job config init.");
+
+        // 详细的空值检查和日志
+        if (xxlJobProperties == null) {
+            log.error("XxlJobProperties is null, please check @EnableConfigurationProperties");
+            throw new IllegalStateException("XxlJobProperties not initialized");
+        }
+
+        log.info("XxlJobProperties loaded: {}", xxlJobProperties);
+
+        if (xxlJobProperties.getAdmin() == null) {
+            log.error("XxlJobProperties.admin is null, please check xxl.job.admin configuration");
+            throw new IllegalStateException("XxlJobProperties.admin not initialized");
+        }
+
+        if (xxlJobProperties.getExecutor() == null) {
+            log.error("XxlJobProperties.executor is null, please check xxl.job.executor configuration");
+            throw new IllegalStateException("XxlJobProperties.executor not initialized");
+        }
+
+        log.info("Admin config - addresses: {}, accessToken: {}",
+                xxlJobProperties.getAdmin().getAddresses(),
+                xxlJobProperties.getAdmin().getAccessToken());
+
+        log.info("Executor config - appname: {}, ip: {}, port: {}, logpath: {}",
+                xxlJobProperties.getExecutor().getAppname(),
+                xxlJobProperties.getExecutor().getIp(),
+                xxlJobProperties.getExecutor().getPort(),
+                xxlJobProperties.getExecutor().getLogpath());
+
+        XxlJobSpringExecutor xxlJobSpringExecutor = new XxlJobSpringExecutor();
+        xxlJobSpringExecutor.setAdminAddresses(xxlJobProperties.getAdmin().getAddresses());
+        xxlJobSpringExecutor.setAccessToken(xxlJobProperties.getAdmin().getAccessToken());
+        xxlJobSpringExecutor.setAppname(xxlJobProperties.getExecutor().getAppname());
+        xxlJobSpringExecutor.setIp(xxlJobProperties.getExecutor().getIp());
+        xxlJobSpringExecutor.setPort(xxlJobProperties.getExecutor().getPort());
+        xxlJobSpringExecutor.setLogPath(xxlJobProperties.getExecutor().getLogpath());
+        xxlJobSpringExecutor.setLogRetentionDays(xxlJobProperties.getExecutor().getLogretentiondays());
+
+        log.info("xxl-job executor configured successfully");
+        return xxlJobSpringExecutor;
     }
 }

@@ -50,4 +50,6 @@ public interface I18nMessageAppService {
     Boolean i18nUpdate(UpsertI18NCommand upsertI18NCommand);
 
     Boolean i18nDelete(@Valid @NotEmpty(message = "要删除的数据不能为空") List<Long> ids);
+
+    void scheduledRebuildBloomFilter();
 }
