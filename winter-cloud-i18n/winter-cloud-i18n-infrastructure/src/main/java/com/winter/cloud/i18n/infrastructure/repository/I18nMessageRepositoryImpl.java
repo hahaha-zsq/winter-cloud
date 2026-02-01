@@ -87,7 +87,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     private final Random random = new Random();
 
     // ===== NVIDIA NIM 翻译服务配置 =====
-    private final String apiKey = "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";
+    private final String apiKey = "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";
     private final String endpoint = "https://integrate.api.nvidia.com/v1/chat/completions";
     private final String model = "nvidia/riva-translate-4b-instruct-v1.1";
 

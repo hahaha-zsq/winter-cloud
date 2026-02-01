@@ -2,6 +2,8 @@ package com.winter.cloud.common.util;
 
 
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.enums.ResultCodeEnum;
+import com.winter.cloud.common.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -98,7 +100,7 @@ public class JwtUtil {
                     .getPayload();
         } catch (Exception e) {
             log.error("解析 Token 失败: {}", e.getMessage());
-            throw new RuntimeException("Token 无效或已过期");
+            throw new BusinessException(ResultCodeEnum.TOKEN_EXPIRED_LANG);
         }
     }
 

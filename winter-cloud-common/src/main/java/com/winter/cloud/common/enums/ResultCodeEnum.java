@@ -27,11 +27,15 @@ public enum ResultCodeEnum {
     REQUEST_PARAMETER_ERROR_LANG("412", "result.code.request.parameter.error"),
     BODY_PARAMETER_ERROR_LANG("413", "result.code.body.parameter.error"),
     METHOD_ERROR_LANG("414", "result.code.method.error"),
-
     SQL_EXECUTE_ERROR_LANG("415", "result.code.sql.execute.error"),
     INTERNAL_SYSTEM_ERROR_LANG("416", "result.code.internal.system.error"),
     DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR("417", "result.code.database.operation.violates.integrity.constraints.error"),
-    DUPLICATE_KEY_LANG("0004", "数据已存在"),
+    DUPLICATE_KEY_LANG("0004", "result.code.data.already.exists"),
+
+    /**token过期*/
+    TOKEN_EXPIRED_LANG("0005", "result.code.token.expired"),
+
+
 
 
 

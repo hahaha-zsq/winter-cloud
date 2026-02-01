@@ -95,7 +95,7 @@ public class I18nMessageController implements I18nMessageFacade {
      * @return 保存结果
      */
     @PostMapping("/i18nSave")
-    public Response<Boolean> i18nSave(@RequestBody @Validated UpsertI18NCommand upsertI18NCommand) {
+    public Response<Boolean> i18nSave(@RequestBody @Validated(UpsertI18NCommand.Save.class) UpsertI18NCommand upsertI18NCommand) {
         Boolean data = i18nMessageAppService.i18nSave(upsertI18NCommand);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
     }
