@@ -13,6 +13,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.ResultCodeEnum;
@@ -20,6 +21,7 @@ import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.common.util.TtlExecutorUtils;
+import com.winter.cloud.dict.api.dto.command.DictCommand;
 import com.winter.cloud.dict.api.dto.query.DictQuery;
 import com.winter.cloud.dict.api.dto.response.DictDataDTO;
 import com.winter.cloud.dict.api.facade.DictFacade;
@@ -46,15 +48,22 @@ import com.zsq.winter.redis.ddc.service.WinterRedissionTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.hibernate.validator.HibernateValidator;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.ObjectUtils;
+import org.springframework.validation.beanvalidation.SpringConstraintValidatorFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -83,6 +92,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
+    private final Validator validator;
     // MyBatis Mapper 接口，负责底层 SQL 执行
     private final I18nMessageMapper messageMapper;
     // MyBatis-Plus Service 接口，提供便捷的 CRUD 操作
@@ -506,121 +516,235 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
         winterExcelTemplate.export(builder);
     }
 
+    /**
+     * 国际化信息 Excel 导入
+     *
+     * <p>
+     * 功能说明：
+     * 1. 从 Excel 中读取国际化消息数据
+     * 2. 进行参数校验（JSR-303）
+     * 3. 进行业务唯一性校验（messageKey + locale + type）
+     * 4. 校验通过后逐条入库（事务控制）
+     * 5. 入库成功后同步更新 Redis 缓存和布隆过滤器
+     * 6. 如果存在校验/业务错误，则导出包含错误信息的 Excel
+     * </p>
+     *
+     * @param response HTTP 响应，用于写出结果或错误 Excel
+     * @param file     上传的 Excel 文件
+     */
     @Override
     public void i18nImportExcel(HttpServletResponse response, MultipartFile file) throws IOException {
-        List<WinterExcelExportParam<?>> excelExportParamList = new ArrayList<>();
-        // 业务逻辑错误集合
-        List<WinterExcelBusinessErrorModel> winterExcelBusinessErrorModelList = new ArrayList<>();
-        // 监听器
-        // 用了 Lombok @Builder → 隐式定义了构造器，
-        WinterAnalysisValidReadListener<I18nMessagePO> i18nMessagePOAnalysisValidReadListener = new WinterAnalysisValidReadListener<>(1000, (item) -> {
-            /*
-             * 这里面执行业务逻辑，比如插入数据库，这部分的业务逻辑的数据是校验逻辑校验通过后的数据，只要你在类中显式声明了至少一个构造器（哪怕它是 private、protected 或有参的），编译器就不会再生成默认构造器
-             * EasyExcel 在内部使用 反射机制 创建实体对象实例。具体流程如下：
-             * 通过 Class.newInstance()（旧版本）或 Constructor.newInstance()（新版本）来创建对象；
-             * 这个过程必须依赖一个可访问的无参构造函数，所以读取的实体类一定要有无参构造器
-             */
-            for (I18nMessagePO i18nMessagePO : item) {
-                Boolean b = hasDuplicateI18nMessage(null, i18nMessagePO.getLocale(), i18nMessagePO.getMessageKey(), i18nMessagePO.getType());
-                if (b) {
-                    try {
-                        String jsonStr = objectMapper.writeValueAsString(i18nMessagePO);
-                        String errorMessage = "消息键、语言环境和类型组成的唯一内容已存在！";
-                        WinterExcelBusinessErrorModel winterExcelBusinessErrorModel = WinterExcelBusinessErrorModel.builder()
-                                .errorMessage(errorMessage)
-                                .entityRowInfo(jsonStr)
-                                .build();
-                        winterExcelBusinessErrorModelList.add(winterExcelBusinessErrorModel);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    // 通过后要插入数据库，这里要一条一条插入，不能批量插入，批量插入无法验证这一批的数据是不是自身之间就存在相同的数据
-                    // 执行数据库事务,
-                    Boolean dbSuccess = transactionTemplate.execute(status -> i18nMessageMPService.save(i18nMessagePO));
 
-                    // 事务提交成功后，覆盖缓存
-                    if (Boolean.TRUE.equals(dbSuccess)) {
-                        try {
-                            RBloomFilter<Object> bloomFilter = winterRedissionTemplate.getBloomFilter(CommonConstants.I18nMessage.I18N_BLOOM_FILTER_NAME);
-                            // A. 覆盖 Redis 缓存 (更新为最新值)
-                            String cacheKey = CommonConstants.buildI18nMessageKey(i18nMessagePO.getMessageKey(), i18nMessagePO.getLocale());
-                            long expire = CommonConstants.I18nMessage.I18N_CACHE_EXPIRE_SECONDS
-                                          + random.nextInt((int) CommonConstants.I18nMessage.I18N_CACHE_RANDOM_EXPIRE_SECONDS);
-                            winterRedisTemplate.set(cacheKey, i18nMessagePO.getMessageValue(), expire, TimeUnit.SECONDS);
-                            // B. 确保布隆过滤器包含该 Key (通常更新操作 Key 不变不需要此步，但为了防止 Locale 变更等边缘情况，补一下更安全)
-                            String bloomKey = CommonConstants.buildI18nBloomKey(i18nMessagePO.getMessageKey(), i18nMessagePO.getLocale());
-                            bloomFilter.add(bloomKey);
-                        } catch (Exception e) {
-                            log.error("国际化更新成功但缓存同步失败: key={}", i18nMessagePO.getMessageKey(), e);
+        // ====================== 1. 预加载字典数据 ======================
+        // 语言环境字典（如：zh_CN -> 中文）
+        Map<String, String> localeMap = dictCache("115", false);
+        // 国际化类型字典
+        Map<String, String> typeMap = dictCache("116", false);
+
+        // Excel 多 Sheet 导出参数集合
+        List<WinterExcelExportParam<?>> excelExportParamList = new ArrayList<>();
+
+        // 业务逻辑错误集合（唯一性冲突等）
+        List<WinterExcelBusinessErrorModel> winterExcelBusinessErrorModelList = new ArrayList<>();
+
+        // ====================== 2. 构建 Excel 读取监听器 ======================
+        /*
+         * WinterAnalysisValidReadListener：
+         * - 支持分批读取（这里每 1000 条回调一次）
+         * - 内置 JSR-303 校验
+         * - 回调的 item 接收到的数据一定是通过 JSR-303 校验的，永远不会包含校验失败的数据。
+         *
+         * 注意：
+         * EasyExcel 使用反射创建实体对象，实体类必须提供可访问的无参构造器
+         */
+        WinterAnalysisValidReadListener<I18nMessagePO> i18nMessagePOAnalysisValidReadListener =
+                new WinterAnalysisValidReadListener<>(1000, (item) -> {
+                    // ====================== 3. 处理每一批校验通过的数据 ======================
+                    for (I18nMessagePO i18nMessagePO : item) {
+                        // 将 Excel 中的字典值转换为系统内部值
+                        String localeOrDefault = localeMap.getOrDefault(i18nMessagePO.getLocale(), "");
+                        String typeOrDefault = typeMap.getOrDefault(i18nMessagePO.getType(), "");
+                        if (!ObjectUtil.isEmpty(localeOrDefault) && !ObjectUtil.isEmpty(typeOrDefault)) {
+                            i18nMessagePO.setLocale(localeOrDefault);
+                            i18nMessagePO.setType(typeOrDefault);
+                        } else {
+                            String jsonStr = null;
+                            try {
+                                jsonStr = objectMapper.writeValueAsString(i18nMessagePO);
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+                            WinterExcelBusinessErrorModel errorModel =
+                                    WinterExcelBusinessErrorModel.builder()
+                                            .errorMessage("国际化类型或者国际化语言环境字典映射错误！")
+                                            .entityRowInfo(jsonStr)
+                                            .build();
+
+                            winterExcelBusinessErrorModelList.add(errorModel);
+                        }
+                        // 校验 messageKey + locale + type 是否已存在（唯一性校验）
+                        Boolean hasDuplicate = hasDuplicateI18nMessage(
+                                null,
+                                i18nMessagePO.getLocale(),
+                                i18nMessagePO.getMessageKey(),
+                                i18nMessagePO.getType()
+                        );
+
+                        if (hasDuplicate) {
+                            // ====================== 3.1 业务唯一性校验失败 ======================
+                            try {
+                                // 将当前行数据序列化，方便导出错误信息
+                                String jsonStr = objectMapper.writeValueAsString(i18nMessagePO);
+
+                                WinterExcelBusinessErrorModel errorModel =
+                                        WinterExcelBusinessErrorModel.builder()
+                                                .errorMessage("消息键、语言环境和类型组成的唯一内容已存在！")
+                                                .entityRowInfo(jsonStr)
+                                                .build();
+
+                                winterExcelBusinessErrorModelList.add(errorModel);
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+
+                        } else {
+                            // ====================== 3.2 业务校验通过，执行入库 ======================
+
+                            /*
+                             * 注意：
+                             * 这里必须逐条插入，不能批量插入
+                             * 原因：批量插入无法校验“当前批次内部”是否存在重复数据
+                             */
+                            Boolean dbSuccess = transactionTemplate.execute(status -> {
+                                // 保存国际化消息
+                                return i18nMessageMPService.save(i18nMessagePO);
+                            });
+
+                            // ====================== 3.3 数据库提交成功后，同步缓存 ======================
+                            if (Boolean.TRUE.equals(dbSuccess)) {
+                                try {
+                                    // 获取布隆过滤器
+                                    RBloomFilter<Object> bloomFilter =
+                                            winterRedissionTemplate.getBloomFilter(
+                                                    CommonConstants.I18nMessage.I18N_BLOOM_FILTER_NAME
+                                            );
+
+                                    // A. 覆盖 Redis 缓存
+                                    String cacheKey = CommonConstants.buildI18nMessageKey(
+                                            i18nMessagePO.getMessageKey(),
+                                            i18nMessagePO.getLocale()
+                                    );
+
+                                    // 设置随机过期时间，防止缓存雪崩
+                                    long expire = CommonConstants.I18nMessage.I18N_CACHE_EXPIRE_SECONDS
+                                                  + random.nextInt(
+                                            (int) CommonConstants.I18nMessage.I18N_CACHE_RANDOM_EXPIRE_SECONDS
+                                    );
+
+                                    winterRedisTemplate.set(
+                                            cacheKey,
+                                            i18nMessagePO.getMessageValue(),
+                                            expire,
+                                            TimeUnit.SECONDS
+                                    );
+
+                                    // B. 同步布隆过滤器（防止 locale / key 变更等边缘场景）
+                                    String bloomKey = CommonConstants.buildI18nBloomKey(
+                                            i18nMessagePO.getMessageKey(),
+                                            i18nMessagePO.getLocale()
+                                    );
+                                    bloomFilter.add(bloomKey);
+
+                                } catch (Exception e) {
+                                    // 数据已入库，但缓存同步失败，仅记录日志，不回滚事务
+                                    log.error("国际化更新成功但缓存同步失败: key={}",
+                                            i18nMessagePO.getMessageKey(), e);
+                                }
+                            }
                         }
                     }
-                }
-            }
-        }, ValidatorUtil.validatorAll, CollUtil.toList(I18nMessagePO.Import.class));
-        // 执行Excel读取
+                }, validator, CollUtil.toList(I18nMessagePO.Import.class));
+
+        // ====================== 4. 执行 Excel 读取 ======================
         FastExcel.read(file.getInputStream(), I18nMessagePO.class, i18nMessagePOAnalysisValidReadListener)
                 .excelType(ExcelTypeEnum.XLSX)
                 .password("")
                 .sheet(0)
                 .doRead();
 
-        // 获取校验逻辑错误集合(来源于validation)
-        List<WinterExcelValidateErrorModel> errorList = i18nMessagePOAnalysisValidReadListener.getErrorList();
+        // ====================== 5. 收集校验错误信息 ======================
+        // JSR-303 校验错误
+        List<WinterExcelValidateErrorModel> errorList =
+                i18nMessagePOAnalysisValidReadListener.getErrorList();
 
+        // ====================== 6. 构建业务逻辑错误 Sheet ======================
         if (!ObjectUtils.isEmpty(winterExcelBusinessErrorModelList)) {
-            // 构建业务逻辑错误模型
-            WinterExcelExportParam<WinterExcelBusinessErrorModel> businessParam = WinterExcelExportParam.<WinterExcelBusinessErrorModel>builder()
-                    .sheetName("业务逻辑错误信息")
-                    .excludeColumnFieldNames(new ArrayList<>())
-                    .writeHandlers(new ArrayList<>())
-                    .password("")
-                    .dataList(winterExcelBusinessErrorModelList)
-                    .head(WinterExcelBusinessErrorModel.class)
-                    .build();
+
+            WinterExcelExportParam<WinterExcelBusinessErrorModel> businessParam =
+                    WinterExcelExportParam.<WinterExcelBusinessErrorModel>builder()
+                            .sheetName("业务逻辑错误信息")
+                            .excludeColumnFieldNames(new ArrayList<>())
+                            .writeHandlers(new ArrayList<>())
+                            .password("")
+                            .dataList(winterExcelBusinessErrorModelList)
+                            .head(WinterExcelBusinessErrorModel.class)
+                            .build();
+
             excelExportParamList.add(businessParam);
         }
+
+        // ====================== 7. 构建校验逻辑错误 Sheet（支持国际化） ======================
         if (!ObjectUtils.isEmpty(errorList)) {
-            // 需要处理国际化信息
+
+            // 对校验错误信息进行国际化处理
             errorList.forEach(error -> {
                 String message = error.getMessage();
                 StringBuilder stringBuilder = new StringBuilder();
-                // 检查消息是否为国际化键格式 {key}
+
+                // 判断是否为国际化 key 格式：{xxx}
                 if (message != null && message.startsWith("{") && message.endsWith("}")) {
-                    // 提取消息键
                     String messageKey = message.substring(1, message.length() - 1);
                     try {
-                        // 尝试获取国际化消息
-                        String i18nMessage = getMessage(messageKey, new Object[]{}, message);
-                        stringBuilder.append(i18nMessage);
+                        stringBuilder.append(getMessage(messageKey, new Object[]{}, message));
                     } catch (Exception ex) {
-                        // 如果获取国际化消息失败，使用原始消息
+                        // 国际化失败，使用原始消息
                         stringBuilder.append(message);
                     }
                 } else {
-                    // 不是国际化键格式，直接使用原始消息
                     stringBuilder.append(message);
                 }
                 error.setMessage(stringBuilder.toString());
             });
-            // 构建校验逻辑错误模型
-            WinterExcelExportParam<WinterExcelValidateErrorModel> validateParam = WinterExcelExportParam.<WinterExcelValidateErrorModel>builder()
-                    .sheetName("校验逻辑错误信息")
-                    .excludeColumnFieldNames(new ArrayList<>())
-                    .writeHandlers(new ArrayList<>())
-                    .password("")
-                    .dataList(errorList)
-                    .head(WinterExcelValidateErrorModel.class)
-                    .build();
+
+            WinterExcelExportParam<WinterExcelValidateErrorModel> validateParam =
+                    WinterExcelExportParam.<WinterExcelValidateErrorModel>builder()
+                            .sheetName("校验逻辑错误信息")
+                            .excludeColumnFieldNames(new ArrayList<>())
+                            .writeHandlers(new ArrayList<>())
+                            .password("")
+                            .dataList(errorList)
+                            .head(WinterExcelValidateErrorModel.class)
+                            .build();
+
             excelExportParamList.add(validateParam);
         }
-        if (ObjectUtils.isEmpty(winterExcelBusinessErrorModelList) && ObjectUtils.isEmpty(errorList)) {
+
+        // ====================== 8. 返回结果 ======================
+        if (ObjectUtils.isEmpty(winterExcelBusinessErrorModelList)
+            && ObjectUtils.isEmpty(errorList)) {
+
+            // 无任何错误，直接返回成功结果
             Response<Object> build = Response.build(null, "200", "导入成功！");
-            String jsonStr = JSONUtil.toJsonStr(build);
-            WebUtil.renderString(response, jsonStr);
+            WebUtil.renderString(response, JSONUtil.toJsonStr(build));
+
         } else {
-            // 导出多sheet的excel
-            winterExcelTemplate.exportMultiSheet(response, "错误信息.xlsx", "", excelExportParamList);
+            // 存在错误，导出多 Sheet 的错误 Excel
+            winterExcelTemplate.exportMultiSheet(
+                    response,
+                    "错误信息.xlsx",
+                    "",
+                    excelExportParamList
+            );
         }
     }
 
@@ -1023,5 +1147,140 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
             log.error("初始化布隆过滤器失败", e);
             throw new RuntimeException("初始化布隆过滤器失败", e);
         }
+    }
+
+
+    /**
+     * 根据字典类型获取字典键值对
+     *
+     * <p>
+     * 默认返回：label -> value
+     * 当 reverse = true 时返回：value -> label
+     * </p>
+     *
+     * <p>
+     * 查询优先级：
+     * 1. 先从 Redis 缓存中获取
+     * 2. 缓存不存在或解析失败，则调用远程字典服务获取
+     * </p>
+     *
+     * @param dictType 字典类型（字典类型 ID）
+     * @param reverse  是否反转 key / value
+     * @return 字典键值 Map，不存在则返回空 Map
+     */
+    public Map<String, String> dictCache(String dictType, boolean reverse) {
+
+        // Redis 中字典缓存的 key，格式：DICT_KEY:dictType
+        String redisKey = CommonConstants.Redis.DICT_KEY
+                          + CommonConstants.Redis.SPLIT
+                          + dictType;
+
+        // ====================== 1. 优先从 Redis 中获取字典数据 ======================
+        Object cache = winterRedisTemplate.get(redisKey);
+
+        // 将 Redis 中的缓存数据反序列化为字典列表
+        List<DictDataDTO> dictList = parseFromCache(cache);
+
+        // ====================== 2. 缓存未命中或解析失败时，调用远程服务 ======================
+        if (CollUtil.isEmpty(dictList)) {
+            dictList = fetchFromRemote(dictType);
+        }
+
+        // ====================== 3. 按是否反转构建返回的 Map ======================
+        return buildResultMap(dictList, reverse);
+    }
+
+    /**
+     * 从 Redis 缓存中解析字典数据
+     *
+     * <p>
+     * Redis 中存储的是字典数据的 JSON 字符串，
+     * 这里负责将其反序列化为 List<DictDataDTO>
+     * </p>
+     *
+     * @param cache Redis 获取到的缓存对象
+     * @return 字典列表，解析失败或缓存为空时返回空集合
+     */
+    private List<DictDataDTO> parseFromCache(Object cache) {
+
+        // 缓存为空，直接返回空集合
+        if (ObjectUtil.isEmpty(cache)) {
+            return Collections.emptyList();
+        }
+
+        try {
+            // 将 JSON 字符串反序列化为字典数据列表
+            return objectMapper.readValue(
+                    cache.toString(),
+                    new TypeReference<List<DictDataDTO>>() {
+                    }
+            );
+        } catch (Exception e) {
+            // JSON 解析失败时记录日志，避免问题被悄悄吞掉
+            log.warn("解析字典缓存失败，缓存内容：{}", cache, e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 从远程字典服务中获取字典数据
+     *
+     * <p>
+     * 远程接口返回的是：
+     * Map<dictType, List<DictDataDTO>>
+     * 这里需要将所有字典数据打平，并过滤出当前 dictType 对应的数据
+     * </p>
+     *
+     * @param dictType 字典类型（字典类型 ID）
+     * @return 字典列表，远程调用失败时返回空集合
+     */
+    private List<DictDataDTO> fetchFromRemote(String dictType) {
+
+        // 调用字典微服务，根据字典类型查询字典数据
+        Response<Map<String, List<DictDataDTO>>> response =
+                dictFacade.getDictDataByType(new DictCommand(Long.valueOf(dictType), "1"));
+
+        // 接口返回为空，直接返回空集合，避免空指针
+        if (ObjectUtil.isEmpty(response) || ObjectUtil.isEmpty(response.getData())) {
+            return Collections.emptyList();
+        }
+
+        // 将 Map 中的所有字典列表打平，并过滤出当前 dictType 的字典数据
+        return response.getData()
+                .values()
+                .stream()
+                .flatMap(List::stream)
+                .filter(d -> dictType.equals(String.valueOf(d.getDictTypeId())))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据字典列表构建最终返回的 Map
+     *
+     * <p>
+     * 不反转（reverse = false）：label -> value
+     * 反转（reverse = true）：value -> label
+     * </p>
+     *
+     * @param list    字典数据列表
+     * @param reverse 是否反转 key / value
+     * @return 构建好的字典 Map
+     */
+    private Map<String, String> buildResultMap(List<DictDataDTO> list, boolean reverse) {
+
+        // 字典列表为空时，返回空 Map
+        if (CollUtil.isEmpty(list)) {
+            return Collections.emptyMap();
+        }
+
+        return list.stream()
+                .collect(Collectors.toMap(
+                        // 根据 reverse 决定 key 的取值
+                        reverse ? DictDataDTO::getDictValue : DictDataDTO::getDictLabel,
+                        // 根据 reverse 决定 value 的取值
+                        reverse ? DictDataDTO::getDictLabel : DictDataDTO::getDictValue,
+                        // 当 key 冲突时，保留第一个值，防止抛出异常
+                        (v1, v2) -> v1
+                ));
     }
 }

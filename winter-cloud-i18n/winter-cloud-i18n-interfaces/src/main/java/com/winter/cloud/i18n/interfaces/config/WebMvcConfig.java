@@ -13,18 +13,28 @@ import com.winter.cloud.i18n.infrastructure.config.properties.XxlJobProperties;
 import com.winter.cloud.i18n.interfaces.interceptor.TraceIdInterceptor;
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.HibernateValidator;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.validation.beanvalidation.SpringConstraintValidatorFactory;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 
 /**
@@ -61,6 +71,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/**")  // 拦截所有请求
                 .order(0);  // 设置为最高优先级，确保最先执行
     }
+
     /**
      * Jackson 配置
      * <p>
@@ -181,5 +192,40 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // 初始化线程池
         executor.initialize();
         return executor;
+    }
+
+    /**
+     * 配置校验器 (Validator)
+     * <p>
+     * 整合了以下功能：
+     * 1. 国际化：将自定义 {@link MessageSource} 注入，使校验注解能读取数据库消息。
+     * 2. 快速失败配置：配置 Hibernate Validator 的 failFast 模式（false=校验所有字段，true=遇错即停）。
+     * 3. 依赖注入支持：LocalValidatorFactoryBean 默认使用 SpringConstraintValidatorFactory，
+     * 自定义校验器（ConstraintValidator）中可以直接使用 @Autowired。
+     *
+     * @param messageSource 自定义的国际化消息源
+     * @return 配置好消息源和属性的 Validator 工厂 Bean
+     */
+    @Bean
+    public LocalValidatorFactoryBean validator(MessageSource messageSource) {
+        LocalValidatorFactoryBean validatorFactoryBean = new LocalValidatorFactoryBean();
+
+        // 1. 设置国际化消息源 (对应您第一段代码的核心需求)
+        // 这样 @Length(message="{key}") 中的占位符会被 MessageSource 解析
+        validatorFactoryBean.setValidationMessageSource(messageSource);
+
+        // 2. 配置 Hibernate Validator 特有属性 (对应您第二段代码的核心需求)
+        java.util.Properties properties = new java.util.Properties();
+        // failFast = false : 全量校验，返回所有错误信息
+        // failFast = true  : 快速失败，遇到第一个错误就返回
+        properties.setProperty("hibernate.validator.fail_fast", "false");
+
+        validatorFactoryBean.setValidationProperties(properties);
+
+        // 3. 关于 SpringConstraintValidatorFactory (对应您第二段代码的 beanFactory 部分)
+        // LocalValidatorFactoryBean 内部默认就会自动设置 SpringConstraintValidatorFactory，
+        // 所以无需手动配置 .constraintValidatorFactory(...)，自定义校验器自动支持 @Autowired。
+
+        return validatorFactoryBean;
     }
 }

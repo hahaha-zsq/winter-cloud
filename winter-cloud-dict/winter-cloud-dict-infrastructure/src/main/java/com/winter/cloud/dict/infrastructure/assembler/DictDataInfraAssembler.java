@@ -18,8 +18,9 @@ public interface DictDataInfraAssembler {
     DictDataDO toDO(DictDataPO dictDataPO);
 
     // Entity 转 PO
-    DictDataPO toPO(DictDataDO authUserDO);
+    DictDataPO toPO(DictDataDO dictDataDO);
+    List<DictDataPO> toPOList(List<DictDataDO> dictDataDOList);
 
     // 也可以定义 List 的转换
-    List<DictDataDO> toDOList(List<DictDataPO> authUserPOList);
+    List<DictDataDO> toDOList(List<DictDataPO> dictDataPOList);
 }

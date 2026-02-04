@@ -47,6 +47,9 @@ public class DatabaseDictProvider implements DictDataProvider {
                         new TypeReference<List<DictDataDTO>>() {
                         }
                 );
+                if(reverse){
+                    return list.stream().map(DictDataDTO::getDictLabel).collect(Collectors.toList());
+                }
                 return list.stream().map(DictDataDTO::getDictValue).collect(Collectors.toList());
             } catch (Exception e) {
                 // JSON解析失败，继续从远程服务获取

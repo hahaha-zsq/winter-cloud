@@ -35,6 +35,7 @@ public class DatabaseDictProvider implements DictDataProvider {
     private final WinterRedisTemplate winterRedisTemplate;
     private final ObjectMapper objectMapper;
 
+
     @Override
     public Collection<String> getDictValues(String dictType, boolean reverse) {
         //  从redis中获取字典内容，没有在远程调用。字典微服务初始化时，会预先加载一份字典数据，下次查询时，会从缓存中获取。
@@ -46,6 +47,9 @@ public class DatabaseDictProvider implements DictDataProvider {
                         new TypeReference<List<DictDataDTO>>() {
                         }
                 );
+                if(reverse){
+                    return list.stream().map(DictDataDTO::getDictLabel).collect(Collectors.toList());
+                }
                 return list.stream().map(DictDataDTO::getDictValue).collect(Collectors.toList());
             } catch (Exception e) {
                 // JSON解析失败，继续从远程服务获取
