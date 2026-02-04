@@ -41,29 +41,22 @@ import com.zsq.winter.office.entity.excel.handler.CustomMatchColumnWidthStyleHan
 import com.zsq.winter.office.entity.excel.handler.CustomStyleHandler;
 import com.zsq.winter.office.entity.excel.listener.WinterAnalysisValidReadListener;
 import com.zsq.winter.office.service.excel.WinterExcelTemplate;
-import com.zsq.winter.office.util.ValidatorUtil;
 import com.zsq.winter.office.util.WebUtil;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import com.zsq.winter.redis.ddc.service.WinterRedissionTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
-import org.hibernate.validator.HibernateValidator;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.ObjectUtils;
-import org.springframework.validation.beanvalidation.SpringConstraintValidatorFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Validation;
 import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -92,7 +85,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
-    private final Validator validator;
+    private final Validator fastFalseValidator;
     // MyBatis Mapper 接口，负责底层 SQL 执行
     private final I18nMessageMapper messageMapper;
     // MyBatis-Plus Service 接口，提供便捷的 CRUD 操作
@@ -663,7 +656,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
                             }
                         }
                     }
-                }, validator, CollUtil.toList(I18nMessagePO.Import.class));
+                }, fastFalseValidator, CollUtil.toList(I18nMessagePO.Import.class));
 
         // ====================== 4. 执行 Excel 读取 ======================
         FastExcel.read(file.getInputStream(), I18nMessagePO.class, i18nMessagePOAnalysisValidReadListener)
