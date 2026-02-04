@@ -11,18 +11,18 @@ import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
 import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
 import com.winter.cloud.i18n.application.service.I18nMessageAppService;
 import com.zsq.i18n.template.WinterI18nTemplate;
+import com.zsq.winter.office.service.excel.WinterExcelTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotEmpty;
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -35,10 +35,12 @@ import java.util.concurrent.ExecutionException;
 @RestController
 @RequiredArgsConstructor
 @DubboService
+@Validated
 @RequestMapping("/i18nMessage")
 public class I18nMessageController implements I18nMessageFacade {
     private final I18nMessageAppService i18nMessageAppService;
     private final WinterI18nTemplate winterI18nTemplate;
+    private final WinterExcelTemplate winterExcelTemplate;
 
     /**
      * 根据条件查询国际化信息
@@ -119,9 +121,40 @@ public class I18nMessageController implements I18nMessageFacade {
      * @return 删除结果
      */
     @PostMapping("/i18nDelete")
-    public Response<Boolean> i18nDelete(@RequestBody @Valid @NotEmpty(message = "要删除的数据不能为空") List<Long> ids) {
+    public Response<Boolean> i18nDelete(@RequestBody @NotEmpty(message = "{delete.data.notEmpty}") List<Long> ids) {
         Boolean data = i18nMessageAppService.i18nDelete(ids);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()), data);
+    }
+
+    /**
+     * 导出excel
+     *
+     * @param response 响应
+     */
+    @PostMapping(value = "/i18nExportExcel")
+    public void i18nExportExcel(HttpServletResponse response) {
+        i18nMessageAppService.i18nExportExcel(response);
+    }
+
+    /**
+     * 导出excel模板
+     *
+     * @param response 响应
+     */
+    @PostMapping(value = "/i18nExportExcelTemplate")
+    public void i18nExportExcelTemplate(HttpServletResponse response) {
+        i18nMessageAppService.i18nExportExcelTemplate(response);
+    }
+
+    /**
+     * 导入excel
+     *
+     * @param response 响应
+     * @param file     文件
+     */
+    @PostMapping(value = "/i18nImportExcel")
+    public void i18nImportExcel(HttpServletResponse response, @RequestParam(value = "file") MultipartFile file) throws IOException {
+        i18nMessageAppService.i18nImportExcel(response,file);
     }
 
 

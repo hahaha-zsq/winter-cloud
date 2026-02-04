@@ -20,7 +20,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -105,6 +108,22 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
     public void scheduledRebuildBloomFilter() {
         i18nMessageRepository.scheduledRebuildBloomFilter();
     }
+
+    @Override
+    public void i18nExportExcel(HttpServletResponse response) {
+        i18nMessageRepository.i18nExportExcel(response);
+    }
+
+    @Override
+    public void i18nImportExcel(HttpServletResponse response, MultipartFile file) throws IOException {
+        i18nMessageRepository.i18nImportExcel(response, file);
+    }
+
+    @Override
+    public void i18nExportExcelTemplate(HttpServletResponse response) {
+        i18nMessageRepository.i18nExportExcelTemplate(response);
+    }
+
 
     @Override
     public String findMessageByKeyAndLocale(String messageKey, String locale) {

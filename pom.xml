@@ -46,6 +46,7 @@
         <winter.redis.dcc.version>0.0.4</winter.redis.dcc.version>
         <winter.design.version>0.0.5</winter.design.version>
         <winter.minio.version>0.0.2</winter.minio.version>
+        <winter.office.version>0.0.1</winter.office.version>
         <winter.security.version>0.0.3</winter.security.version>
         <winter.i18n.version>0.0.3</winter.i18n.version>
         <winter.encrypt.version>0.0.32</winter.encrypt.version>
@@ -221,6 +222,12 @@
                 <groupId>io.github.hahaha-zsq</groupId>
                 <artifactId>winter-minio-spring-boot-starter</artifactId>
                 <version>${winter.minio.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.hahaha-zsq</groupId>
+                <artifactId>winter-office-spring-boot-starter</artifactId>
+                <version>${winter.office.version}</version>
             </dependency>
 
             <!-- 项目内部模块依赖管理 -->

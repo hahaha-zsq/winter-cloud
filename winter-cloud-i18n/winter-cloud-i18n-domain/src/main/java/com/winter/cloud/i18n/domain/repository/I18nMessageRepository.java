@@ -7,7 +7,10 @@ import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.domain.model.entity.I18nMessageDO;
 import com.winter.cloud.i18n.domain.model.entity.TranslateDO;
 import com.zsq.i18n.service.I18nMessageService;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -36,4 +39,10 @@ public interface I18nMessageRepository extends I18nMessageService {
     Boolean i18nDelete(List<Long> ids);
 
     void scheduledRebuildBloomFilter();
+
+    void i18nExportExcel(HttpServletResponse response);
+
+    void i18nImportExcel(HttpServletResponse response, MultipartFile file) throws IOException;
+
+    void i18nExportExcelTemplate(HttpServletResponse response);
 }

@@ -45,5 +45,14 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.winter</groupId>
+            <artifactId>winter-cloud-dict-api</artifactId>
+        </dependency>
+
     </dependencies>
 </project>

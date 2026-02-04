@@ -5,14 +5,24 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
+import cn.idev.excel.FastExcel;
+import cn.idev.excel.support.ExcelTypeEnum;
+import cn.idev.excel.write.handler.WriteHandler;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
+import com.winter.cloud.common.response.Response;
 import com.winter.cloud.common.util.TtlExecutorUtils;
+import com.winter.cloud.dict.api.dto.query.DictQuery;
+import com.winter.cloud.dict.api.dto.response.DictDataDTO;
+import com.winter.cloud.dict.api.facade.DictFacade;
 import com.winter.cloud.i18n.api.dto.command.TranslateCommand;
 import com.winter.cloud.i18n.api.dto.command.UpsertI18NCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
@@ -23,16 +33,29 @@ import com.winter.cloud.i18n.infrastructure.assembler.I18nMessageInfraAssembler;
 import com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO;
 import com.winter.cloud.i18n.infrastructure.mapper.I18nMessageMapper;
 import com.winter.cloud.i18n.infrastructure.service.II18nMessageMPService;
+import com.zsq.winter.office.entity.excel.*;
+import com.zsq.winter.office.entity.excel.handler.CustomDateValidationWriteHandler;
+import com.zsq.winter.office.entity.excel.handler.CustomMatchColumnWidthStyleHandler;
+import com.zsq.winter.office.entity.excel.handler.CustomStyleHandler;
+import com.zsq.winter.office.entity.excel.listener.WinterAnalysisValidReadListener;
+import com.zsq.winter.office.service.excel.WinterExcelTemplate;
+import com.zsq.winter.office.util.ValidatorUtil;
+import com.zsq.winter.office.util.WebUtil;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import com.zsq.winter.redis.ddc.service.WinterRedissionTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -70,9 +93,12 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     private final WinterRedisTemplate winterRedisTemplate;
     // Redisson 客户端，用于分布式锁和布隆过滤器
     private final WinterRedissionTemplate winterRedissionTemplate;
+    private final ObjectMapper objectMapper;
+    private final WinterExcelTemplate winterExcelTemplate;
 
     private final Executor i18bPoolExecutor;
-
+    @DubboReference(check = false)
+    private DictFacade dictFacade;
     /**
      * 编程式事务模版
      * <p>
@@ -440,6 +466,188 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
         }
     }
 
+    @Override
+    public void i18nExportExcel(HttpServletResponse response) {
+        // 语言环境
+        Response<List<DictDataDTO>> listLocaleResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(115L).build());
+        List<DictDataDTO> localeList = listLocaleResponse.getData();
+        // 语言环境映射
+        Map<String, String> localeMap = localeList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+
+        // 类型
+        Response<List<DictDataDTO>> listTypeResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(116L).build());
+        List<DictDataDTO> typeList = listTypeResponse.getData();
+        // 语言环境映射
+        Map<String, String> typeMap = typeList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+
+
+        List<I18nMessagePO> collect = i18nMessageMPService.list().stream()
+                .map(item -> {
+                    item.setLocale(localeMap.get(item.getLocale()));
+                    item.setType(typeMap.get(item.getType()));
+                    return item;
+                }).collect(Collectors.toList());
+        ArrayList<WriteHandler> writeHandlers = new ArrayList<>();
+        // 自定义样式处理器
+        CustomStyleHandler cellStyleSheetWriteHandler = new CustomStyleHandler(null, null);
+        writeHandlers.add(cellStyleSheetWriteHandler);
+        writeHandlers.add(new CustomMatchColumnWidthStyleHandler());
+        WinterExcelExportParam<I18nMessagePO> builder = WinterExcelExportParam.<I18nMessagePO>builder()
+                .response(response)
+                .batchSize(1000)
+                .password("")
+                .fileName("国际化消息.xlsx")
+                .excludeColumnFieldNames(null)
+                .writeHandlers(writeHandlers)
+                .converters(null)
+                .head(I18nMessagePO.class)
+                .dataList(collect)
+                .build();
+        winterExcelTemplate.export(builder);
+    }
+
+    @Override
+    public void i18nImportExcel(HttpServletResponse response, MultipartFile file) throws IOException {
+        List<WinterExcelExportParam<?>> excelExportParamList = new ArrayList<>();
+        // 业务逻辑错误集合
+        List<WinterExcelBusinessErrorModel> winterExcelBusinessErrorModelList = new ArrayList<>();
+        // 监听器
+        // 用了 Lombok @Builder → 隐式定义了构造器，
+        WinterAnalysisValidReadListener<I18nMessagePO> i18nMessagePOAnalysisValidReadListener = new WinterAnalysisValidReadListener<>(1000, (item) -> {
+            /*
+             * 这里面执行业务逻辑，比如插入数据库，这部分的业务逻辑的数据是校验逻辑校验通过后的数据，只要你在类中显式声明了至少一个构造器（哪怕它是 private、protected 或有参的），编译器就不会再生成默认构造器
+             * EasyExcel 在内部使用 反射机制 创建实体对象实例。具体流程如下：
+             * 通过 Class.newInstance()（旧版本）或 Constructor.newInstance()（新版本）来创建对象；
+             * 这个过程必须依赖一个可访问的无参构造函数，所以读取的实体类一定要有无参构造器
+             */
+            for (I18nMessagePO i18nMessagePO : item) {
+                Boolean b = hasDuplicateI18nMessage(null, i18nMessagePO.getLocale(), i18nMessagePO.getMessageKey(), i18nMessagePO.getType());
+                if (b) {
+                    try {
+                        String jsonStr = objectMapper.writeValueAsString(i18nMessagePO);
+                        String errorMessage = "消息键、语言环境和类型组成的唯一内容已存在！";
+                        WinterExcelBusinessErrorModel winterExcelBusinessErrorModel = WinterExcelBusinessErrorModel.builder()
+                                .errorMessage(errorMessage)
+                                .entityRowInfo(jsonStr)
+                                .build();
+                        winterExcelBusinessErrorModelList.add(winterExcelBusinessErrorModel);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    // 通过后要插入数据库，这里要一条一条插入，不能批量插入，批量插入无法验证这一批的数据是不是自身之间就存在相同的数据
+                    // 执行数据库事务,
+                    Boolean dbSuccess = transactionTemplate.execute(status -> i18nMessageMPService.save(i18nMessagePO));
+
+                    // 事务提交成功后，覆盖缓存
+                    if (Boolean.TRUE.equals(dbSuccess)) {
+                        try {
+                            RBloomFilter<Object> bloomFilter = winterRedissionTemplate.getBloomFilter(CommonConstants.I18nMessage.I18N_BLOOM_FILTER_NAME);
+                            // A. 覆盖 Redis 缓存 (更新为最新值)
+                            String cacheKey = CommonConstants.buildI18nMessageKey(i18nMessagePO.getMessageKey(), i18nMessagePO.getLocale());
+                            long expire = CommonConstants.I18nMessage.I18N_CACHE_EXPIRE_SECONDS
+                                          + random.nextInt((int) CommonConstants.I18nMessage.I18N_CACHE_RANDOM_EXPIRE_SECONDS);
+                            winterRedisTemplate.set(cacheKey, i18nMessagePO.getMessageValue(), expire, TimeUnit.SECONDS);
+                            // B. 确保布隆过滤器包含该 Key (通常更新操作 Key 不变不需要此步，但为了防止 Locale 变更等边缘情况，补一下更安全)
+                            String bloomKey = CommonConstants.buildI18nBloomKey(i18nMessagePO.getMessageKey(), i18nMessagePO.getLocale());
+                            bloomFilter.add(bloomKey);
+                        } catch (Exception e) {
+                            log.error("国际化更新成功但缓存同步失败: key={}", i18nMessagePO.getMessageKey(), e);
+                        }
+                    }
+                }
+            }
+        }, ValidatorUtil.validatorAll, CollUtil.toList(I18nMessagePO.Import.class));
+        // 执行Excel读取
+        FastExcel.read(file.getInputStream(), I18nMessagePO.class, i18nMessagePOAnalysisValidReadListener)
+                .excelType(ExcelTypeEnum.XLSX)
+                .password("")
+                .sheet(0)
+                .doRead();
+
+        // 获取校验逻辑错误集合(来源于validation)
+        List<WinterExcelValidateErrorModel> errorList = i18nMessagePOAnalysisValidReadListener.getErrorList();
+
+        if (!ObjectUtils.isEmpty(winterExcelBusinessErrorModelList)) {
+            // 构建业务逻辑错误模型
+            WinterExcelExportParam<WinterExcelBusinessErrorModel> businessParam = WinterExcelExportParam.<WinterExcelBusinessErrorModel>builder()
+                    .sheetName("业务逻辑错误信息")
+                    .excludeColumnFieldNames(new ArrayList<>())
+                    .writeHandlers(new ArrayList<>())
+                    .password("")
+                    .dataList(winterExcelBusinessErrorModelList)
+                    .head(WinterExcelBusinessErrorModel.class)
+                    .build();
+            excelExportParamList.add(businessParam);
+        }
+        if (!ObjectUtils.isEmpty(errorList)) {
+            // 需要处理国际化信息
+            errorList.forEach(error -> {
+                String message = error.getMessage();
+                StringBuilder stringBuilder = new StringBuilder();
+                // 检查消息是否为国际化键格式 {key}
+                if (message != null && message.startsWith("{") && message.endsWith("}")) {
+                    // 提取消息键
+                    String messageKey = message.substring(1, message.length() - 1);
+                    try {
+                        // 尝试获取国际化消息
+                        String i18nMessage = getMessage(messageKey, new Object[]{}, message);
+                        stringBuilder.append(i18nMessage);
+                    } catch (Exception ex) {
+                        // 如果获取国际化消息失败，使用原始消息
+                        stringBuilder.append(message);
+                    }
+                } else {
+                    // 不是国际化键格式，直接使用原始消息
+                    stringBuilder.append(message);
+                }
+                error.setMessage(stringBuilder.toString());
+            });
+            // 构建校验逻辑错误模型
+            WinterExcelExportParam<WinterExcelValidateErrorModel> validateParam = WinterExcelExportParam.<WinterExcelValidateErrorModel>builder()
+                    .sheetName("校验逻辑错误信息")
+                    .excludeColumnFieldNames(new ArrayList<>())
+                    .writeHandlers(new ArrayList<>())
+                    .password("")
+                    .dataList(errorList)
+                    .head(WinterExcelValidateErrorModel.class)
+                    .build();
+            excelExportParamList.add(validateParam);
+        }
+        if (ObjectUtils.isEmpty(winterExcelBusinessErrorModelList) && ObjectUtils.isEmpty(errorList)) {
+            Response<Object> build = Response.build(null, "200", "导入成功！");
+            String jsonStr = JSONUtil.toJsonStr(build);
+            WebUtil.renderString(response, jsonStr);
+        } else {
+            // 导出多sheet的excel
+            winterExcelTemplate.exportMultiSheet(response, "错误信息.xlsx", "", excelExportParamList);
+        }
+    }
+
+
+    @Override
+    public void i18nExportExcelTemplate(HttpServletResponse response) {
+        ArrayList<WriteHandler> writeHandlers = new ArrayList<>();
+        // 自定义样式处理器
+        CustomStyleHandler cellStyleSheetWriteHandler = new CustomStyleHandler(null, null);
+        writeHandlers.add(new CustomDateValidationWriteHandler(Map.of(5, new WinterDateValidationModel("yyyy-MM-dd HH:mm:ss", 2, 5555))));
+        writeHandlers.add(cellStyleSheetWriteHandler);
+        writeHandlers.add(new CustomMatchColumnWidthStyleHandler());
+        WinterExcelExportParam<I18nMessagePO> builder = WinterExcelExportParam.<I18nMessagePO>builder()
+                .response(response)
+                .batchSize(1000)
+                .password("")
+                .fileName("国际化消息模版.xlsx")
+                // 导出的模版不需要创建时间这个列
+                .excludeColumnFieldNames(List.of("createTime"))
+                .converters(null)
+                .writeHandlers(writeHandlers)
+                .head(I18nMessagePO.class)
+                .dataList(null)
+                .build();
+        winterExcelTemplate.export(builder);
+    }
+
 
     @Override
     public String getMessage(String messageKey, Locale locale) {
@@ -755,6 +963,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
             throw new RuntimeException("缓存预热失败", e);
         }
     }
+
     /**
      * 核心逻辑：初始化布隆过滤器
      * <p>布隆过滤器用于快速判断一个 Key 是否<b>肯定不存在</b>，从而拦截无效请求访问 DB。</p>

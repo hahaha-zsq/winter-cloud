@@ -7,9 +7,12 @@ import com.winter.cloud.i18n.api.dto.command.UpsertI18NCommand;
 import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
 import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -52,4 +55,10 @@ public interface I18nMessageAppService {
     Boolean i18nDelete(@Valid @NotEmpty(message = "要删除的数据不能为空") List<Long> ids);
 
     void scheduledRebuildBloomFilter();
+
+    void i18nExportExcel(HttpServletResponse response);
+
+    void i18nImportExcel(HttpServletResponse response, MultipartFile file) throws IOException;
+
+    void i18nExportExcelTemplate(HttpServletResponse response);
 }

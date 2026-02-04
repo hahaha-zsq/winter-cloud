@@ -36,7 +36,7 @@ public class DatabaseDictProvider implements DictDataProvider {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Collection<String> getDictValues(String dictType) {
+    public Collection<String> getDictValues(String dictType, boolean reverse) {
         //  从redis中获取字典内容，没有在远程调用。字典微服务初始化时，会预先加载一份字典数据，下次查询时，会从缓存中获取。
         Object o = winterRedisTemplate.get(CommonConstants.Redis.DICT_KEY + CommonConstants.Redis.SPLIT + dictType);
         if (ObjectUtil.isNotEmpty(o)) {
@@ -54,6 +54,15 @@ public class DatabaseDictProvider implements DictDataProvider {
         // 调用业务服务，根据字典类型查出所有字典键值
         Response<Map<String, List<DictDataDTO>>> dictDataByType = dictFacade.getDictDataByType(new DictCommand(Long.valueOf(dictType), "1"));
         // 注意处理空指针，建议返回空集合而不是 null
+        // 如果 reverse 为 false，则返回字典值，否则返回字典标签
+        if (reverse) {
+            return dictDataByType.getData().values()
+                    .stream()
+                    .flatMap(List::stream)
+                    .filter(dictData -> dictData.getDictTypeId().toString().equals(dictType))
+                    .map(DictDataDTO::getDictLabel)
+                    .collect(Collectors.toList());
+        }
         return dictDataByType.getData().values()
                 .stream()
                 .flatMap(List::stream)
