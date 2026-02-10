@@ -217,4 +217,13 @@ public final class CommonConstants {
         public static final String HTTP_X_FORWARDED_FOR = "HTTP_X_FORWARDED_FOR";
     }
 
+    public static final class I18nKey{
+        /** 排序键非法 */
+        public static final String SORT_KEY_ILLEGAL = "sort.key.Illegal";
+        /** 排序顺序非法 */
+        public static final String SORT_ORDER_ILLEGAL = "sort.order.Illegal";
+        /**角色名称/标识已存在！*/
+        public static final String ROLE_NAME_OR_IDENTIFIER_EXISTS = "UpsertRoleCommand.identifier.exists";
+    }
+
 }

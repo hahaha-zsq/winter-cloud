@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -19,4 +20,5 @@ public class RoleResponseDTO implements Serializable {
     private Integer roleSort;
     private String status;
     private String remark;
+    private LocalDateTime createTime;
 }

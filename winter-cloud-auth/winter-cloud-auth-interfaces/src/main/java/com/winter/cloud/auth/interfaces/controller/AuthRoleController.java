@@ -1,6 +1,6 @@
 package com.winter.cloud.auth.interfaces.controller;
 
-import com.winter.cloud.auth.api.dto.command.RoleCommand;
+import com.winter.cloud.auth.api.dto.command.UpsertRoleCommand;
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
 import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
 import com.winter.cloud.common.enums.ResultCodeEnum;
@@ -11,10 +11,12 @@ import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
@@ -24,6 +26,8 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/role")
+@Validated
+@DubboService
 public class AuthRoleController {
     private final AuthRoleAppService authRoleAppService;
     @DubboReference(check = false)
@@ -55,9 +59,9 @@ public class AuthRoleController {
      *
      * @param command 角色信息
      */
-    @PostMapping("/saveRole")
-    public Response<Boolean> saveRole(@RequestBody RoleCommand command) {
-        Boolean data = authRoleAppService.saveRole(command);
+    @PostMapping("/roleSave")
+    public Response<Boolean> roleSave(@RequestBody @Validated(UpsertRoleCommand.Save.class) UpsertRoleCommand command) {
+        Boolean data = authRoleAppService.roleSave(command);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 
@@ -66,9 +70,9 @@ public class AuthRoleController {
      *
      * @param command 角色信息
      */
-    @PutMapping("/updateRole")
-    public Response<Boolean> updateRole(@RequestBody RoleCommand command) {
-        Boolean data = authRoleAppService.updateRole(command);
+    @PutMapping("/roleUpdate")
+    public Response<Boolean> roleUpdate(@RequestBody @Validated(UpsertRoleCommand.Update.class) UpsertRoleCommand command) {
+        Boolean data = authRoleAppService.roleUpdate(command);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 
@@ -77,9 +81,9 @@ public class AuthRoleController {
      *
      * @param roleIds 角色id集合
      */
-    @DeleteMapping("/deleteRole")
-    public Response<Boolean> deleteRole(@RequestBody List<Long> roleIds) {
-        Boolean data = authRoleAppService.deleteRole(roleIds);
+    @DeleteMapping("/roleDelete")
+    public Response<Boolean> roleDelete(@RequestBody @NotEmpty(message = "{delete.data.notEmpty}") List<Long> roleIds) {
+        Boolean data = authRoleAppService.roleDelete(roleIds);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 }

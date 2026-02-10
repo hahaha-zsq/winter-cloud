@@ -12,13 +12,13 @@ import java.util.List;
  */
 public interface AuthRoleRepository {
 
-    Boolean saveRole(AuthRoleDO aDo);
+    Boolean roleSave(AuthRoleDO aDo);
     // 检查用户名是否存在
     boolean hasDuplicateRole(AuthRoleDO aDo);
 
-    Boolean updateRole(AuthRoleDO aDo);
+    Boolean roleUpdate(AuthRoleDO aDo);
 
-    Boolean deleteRole(List<Long> roleIds);
+    Boolean roleDelete(List<Long> roleIds);
 
     PageDTO<AuthRoleDO> rolePage(RoleQuery roleQuery);
 

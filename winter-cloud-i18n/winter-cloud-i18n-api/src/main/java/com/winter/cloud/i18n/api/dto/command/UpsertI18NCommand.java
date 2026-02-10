@@ -16,9 +16,6 @@ import java.util.List;
 public class UpsertI18NCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 用户ID
-     */
     @NotNull(message = "{UpsertI18NCommand.id.edit.notNull}", groups = {Update.class})
     @Null(message = "{UpsertI18NCommand.id.save.Null}", groups = {Save.class})
     private Long id;

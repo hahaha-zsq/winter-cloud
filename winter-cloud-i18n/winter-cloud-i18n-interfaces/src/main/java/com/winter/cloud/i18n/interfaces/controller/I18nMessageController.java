@@ -40,7 +40,6 @@ import java.util.concurrent.ExecutionException;
 public class I18nMessageController implements I18nMessageFacade {
     private final I18nMessageAppService i18nMessageAppService;
     private final WinterI18nTemplate winterI18nTemplate;
-    private final WinterExcelTemplate winterExcelTemplate;
 
     /**
      * 根据条件查询国际化信息

@@ -14,17 +14,6 @@
 
 
     <dependencies>
-        <!-- API Module -->
-        <dependency>
-            <groupId>com.winter</groupId>
-            <artifactId>winter-cloud-auth-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.winter</groupId>
-            <artifactId>winter-cloud-i18n-api</artifactId>
-        </dependency>
-
-
 
         <!-- Application Module -->
         <dependency>
@@ -49,11 +38,6 @@
             <groupId>com.xuxueli</groupId>
             <artifactId>xxl-job-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo</artifactId>
-        </dependency>
-
     </dependencies>
 
 </project>

@@ -5,7 +5,6 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import cn.idev.excel.FastExcel;
 import cn.idev.excel.support.ExcelTypeEnum;
 import cn.idev.excel.write.handler.WriteHandler;
@@ -728,7 +727,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
             // 无任何错误，直接返回成功结果
             Response<Object> build = Response.build(null, "200", "导入成功！");
-            WebUtil.renderString(response, JSONUtil.toJsonStr(build));
+            WebUtil.renderString(response, objectMapper.writeValueAsString(build));
 
         } else {
             // 存在错误，导出多 Sheet 的错误 Excel
