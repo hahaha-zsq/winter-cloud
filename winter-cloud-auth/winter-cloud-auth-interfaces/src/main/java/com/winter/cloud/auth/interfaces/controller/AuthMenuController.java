@@ -1,5 +1,6 @@
 package com.winter.cloud.auth.interfaces.controller;
 
+import com.winter.cloud.auth.api.dto.query.MenuQuery;
 import com.winter.cloud.auth.api.dto.response.MenuResponseDTO;
 import com.winter.cloud.auth.application.service.AuthMenuAppService;
 import com.winter.cloud.common.enums.ResultCodeEnum;
@@ -40,4 +41,17 @@ public class AuthMenuController {
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),dynamicRouting);
     }
 
+
+    /**
+     * 菜单树
+     *
+     * @param menuQuery
+     * @return
+     */
+    @PostMapping("/menuTree")
+    public Response<List<MenuResponseDTO>> menuTree(@RequestBody MenuQuery menuQuery) {
+        // 查询menu(菜单是tree类型的，父子菜单)
+        List<MenuResponseDTO> data = authMenuAppService.menuTree(menuQuery);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),data);
+    }
 }

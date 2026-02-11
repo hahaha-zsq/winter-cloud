@@ -2,8 +2,13 @@ package com.winter.cloud.auth.infrastructure.repository;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.winter.cloud.auth.api.dto.query.MenuQuery;
 import com.winter.cloud.auth.api.dto.response.MenuResponseDTO;
+import com.winter.cloud.auth.domain.model.entity.AuthMenuDO;
 import com.winter.cloud.auth.domain.repository.AuthMenuRepository;
+import com.winter.cloud.auth.infrastructure.assembler.AuthMenuInfraAssembler;
+import com.winter.cloud.auth.infrastructure.entity.AuthMenuPO;
 import com.winter.cloud.auth.infrastructure.mapper.AuthMenuMapper;
 import com.winter.cloud.auth.infrastructure.service.IAuthMenuMpService;
 import com.winter.cloud.common.enums.MenuTypeEnum;
@@ -18,7 +23,7 @@ import java.util.List;
 public class AuthMenuRepositoryImpl implements AuthMenuRepository {
     private final IAuthMenuMpService authMenuMpService;
     private final AuthMenuMapper authMenuMapper;
-
+    private final AuthMenuInfraAssembler authMenuInfraAssembler;
 
     @Override
     public List<MenuResponseDTO> selectMenuListByRoleIdList(List<Long> roleIdList, String status) {
@@ -44,5 +49,20 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
             return authMenuMapper.getMenu(id, StatusEnum.ENABLE.getCode(), CollUtil.toList(MenuTypeEnum.MENU.getCode()));
         }
         return List.of();
+    }
+
+    @Override
+    public List<AuthMenuDO> getMenuList(MenuQuery menuQuery) {
+        List<AuthMenuPO> list = authMenuMpService.list(new LambdaQueryWrapper<AuthMenuPO>()
+                .eq(ObjectUtil.isNotEmpty(menuQuery.getId()), AuthMenuPO::getId, menuQuery.getId())
+                .eq(ObjectUtil.isNotEmpty(menuQuery.getMenuName()), AuthMenuPO::getMenuName, menuQuery.getMenuName())
+                .eq(ObjectUtil.isNotEmpty(menuQuery.getStatus()), AuthMenuPO::getStatus, menuQuery.getStatus())
+                .eq(ObjectUtil.isNotEmpty(menuQuery.getMenuType()), AuthMenuPO::getMenuType, menuQuery.getMenuType())
+                .eq(ObjectUtil.isNotEmpty(menuQuery.getVisible()), AuthMenuPO::getVisible, menuQuery.getVisible())
+                .eq(ObjectUtil.isNotEmpty(menuQuery.getPerms()), AuthMenuPO::getPerms, menuQuery.getPerms())
+                .eq(ObjectUtil.isNotEmpty(menuQuery.getFrame()), AuthMenuPO::getFrame, menuQuery.getFrame())
+                .eq(ObjectUtil.isNotEmpty(menuQuery.getPath()), AuthMenuPO::getPath, menuQuery.getPath())
+        );
+        return authMenuInfraAssembler.toDOList(list);
     }
 }

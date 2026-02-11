@@ -6,6 +6,8 @@ import com.winter.cloud.auth.api.dto.query.RoleQuery;
 import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
 import com.winter.cloud.common.response.PageDTO;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 public interface AuthRoleAppService {
@@ -44,4 +46,6 @@ public interface AuthRoleAppService {
 
 
     List<RoleResponseDTO> roleDynamicQueryList(RoleQuery roleQuery);
+
+    void assignMenuPermissions(@NotNull Long roleId, @NotEmpty List<Long> menuIds);
 }

@@ -1,12 +1,18 @@
 package com.winter.cloud.auth.application.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+import com.winter.cloud.auth.api.dto.query.MenuQuery;
 import com.winter.cloud.auth.api.dto.response.MenuResponseDTO;
+import com.winter.cloud.auth.application.assembler.AuthMenuAppAssembler;
 import com.winter.cloud.auth.application.service.AuthMenuAppService;
+import com.winter.cloud.auth.domain.model.entity.AuthMenuDO;
 import com.winter.cloud.auth.domain.repository.AuthMenuRepository;
+import com.winter.cloud.common.constants.CommonConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,7 +20,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthMenuAppServiceImpl implements AuthMenuAppService {
-
+    private final AuthMenuAppAssembler authMenuAppAssembler;
     private final AuthMenuRepository authMenuRepository;
     /**
      * 获取用户菜单树形结构
@@ -37,6 +43,20 @@ public class AuthMenuAppServiceImpl implements AuthMenuAppService {
     @Override
     public List<MenuResponseDTO> getDynamicRouting(Long id) {
         return authMenuRepository.getDynamicRouting(id).stream().distinct().collect(Collectors.toList());
+    }
+
+    @Override
+    public List<MenuResponseDTO> menuTree(MenuQuery menuQuery) {
+        List<AuthMenuDO> data = authMenuRepository.getMenuList(menuQuery);
+        List<String> collect = data.stream().map(AuthMenuDO::getAncestors).filter(ObjectUtil::isNotEmpty).collect(Collectors.toList());
+        // 提取所有菜单的id并去重
+        HashSet<String> idList = new HashSet<>();
+        collect.forEach(item -> {
+            idList.addAll(List.of(item.split(CommonConstants.Delimiter.ENGLISH_COMMA)));
+        });
+        // todo  构建父子树，所有的子节点都挂载到了同一个父节点对象上
+
+        return authMenuAppAssembler.toDTOList(data);
     }
 
     /**

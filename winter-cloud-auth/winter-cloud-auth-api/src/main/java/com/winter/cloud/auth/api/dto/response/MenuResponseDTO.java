@@ -29,5 +29,6 @@ public class MenuResponseDTO implements Serializable {
     private String visible;
     private String status;
     private String icon;
+    private String ancestors;
     private List<MenuResponseDTO> children;
 }

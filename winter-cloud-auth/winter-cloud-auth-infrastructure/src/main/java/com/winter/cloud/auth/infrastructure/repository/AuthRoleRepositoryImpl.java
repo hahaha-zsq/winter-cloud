@@ -10,10 +10,12 @@ import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
 import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
 import com.winter.cloud.auth.domain.repository.AuthRoleRepository;
 import com.winter.cloud.auth.infrastructure.assembler.AuthRoleInfraAssembler;
+import com.winter.cloud.auth.infrastructure.entity.AuthRoleMenuPO;
 import com.winter.cloud.auth.infrastructure.entity.AuthRolePO;
 import com.winter.cloud.auth.infrastructure.entity.AuthUserPO;
 import com.winter.cloud.auth.infrastructure.mapper.AuthRoleMapper;
 import com.winter.cloud.auth.infrastructure.service.IAuthRoleMPService;
+import com.winter.cloud.auth.infrastructure.service.IAuthRoleMenuMpService;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
@@ -22,8 +24,10 @@ import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.winter.cloud.common.enums.ResultCodeEnum.DUPLICATE_KEY;
 
@@ -32,12 +36,14 @@ import static com.winter.cloud.common.enums.ResultCodeEnum.DUPLICATE_KEY;
 public class AuthRoleRepositoryImpl implements AuthRoleRepository {
 
     private final IAuthRoleMPService authRoleMpService;
+    private final IAuthRoleMenuMpService authRoleMenuMpService;
     private final AuthRoleMapper authRoleMapper;
     private final AuthRoleInfraAssembler authRoleInfraAssembler;
     @DubboReference
     public I18nMessageFacade i18nMessageFacade;
 
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean roleSave(AuthRoleDO authRoleDO) {
         boolean b = this.hasDuplicateRole(authRoleDO);
@@ -60,6 +66,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         return count > 0;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean roleUpdate(AuthRoleDO authRoleDO) {
         boolean b = this.hasDuplicateRole(authRoleDO);
@@ -78,13 +85,13 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         return true;
     }
 
-    @Override
     /**
      * 分页查询角色列表，并支持安全的字段排序（使用 Stream 流处理）。
      *
      * @param roleQuery 查询条件（包含分页参数、排序规则、搜索关键字等）
      * @return 分页结果，封装为 {@link PageDTO<RoleResponseDTO>}
      */
+    @Override
     public PageDTO<AuthRoleDO> rolePage(RoleQuery roleQuery) {
         // 1. 构建分页对象
         Page<AuthUserPO> page = new Page<>(roleQuery.getPageNum(), roleQuery.getPageSize());
@@ -114,4 +121,12 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         return authRoleInfraAssembler.toDOList(list);
     }
 
+
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void assignMenuPermissions(Long roleId, List<Long> menuIds) {
+        List<AuthRoleMenuPO> authRoleMenuPOList = menuIds.stream().map(menuId -> AuthRoleMenuPO.builder().roleId(roleId).menuId(menuId).build()).collect(Collectors.toList());
+        authRoleMenuMpService.saveBatch(authRoleMenuPOList, 100);
+    }
 }

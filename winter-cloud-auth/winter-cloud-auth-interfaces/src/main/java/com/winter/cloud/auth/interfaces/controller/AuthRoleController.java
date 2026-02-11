@@ -17,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -85,5 +86,13 @@ public class AuthRoleController {
     public Response<Boolean> roleDelete(@RequestBody @NotEmpty(message = "{delete.data.notEmpty}") List<Long> roleIds) {
         Boolean data = authRoleAppService.roleDelete(roleIds);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
+    }
+    /**
+     * 分配菜单权限
+     */
+    @PostMapping("/assignMenuPermissions")
+    public Response<Void> assignMenuPermissions(@RequestParam @NotNull Long roleId, @RequestParam @NotEmpty  List<Long> menuIds) {
+        authRoleAppService.assignMenuPermissions(roleId, menuIds);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),null);
     }
 }

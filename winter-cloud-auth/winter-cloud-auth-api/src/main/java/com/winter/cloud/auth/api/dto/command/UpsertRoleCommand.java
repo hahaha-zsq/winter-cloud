@@ -34,7 +34,8 @@ public class UpsertRoleCommand implements Serializable {
     )
     private String status;
 
-    @Size(max = 200, message = "{UpsertRoleCommand.remark.length}")
+
+    @Size(max = 200, message = "{UpsertRoleCommand.remark.length}",groups ={UpsertRoleCommand.Save.class, UpsertRoleCommand.Update.class})
     private String remark;
 
     public interface Save {}

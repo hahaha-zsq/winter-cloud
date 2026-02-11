@@ -24,6 +24,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 认证控制器
  * DDD Interfaces Layer - HTTP 协议适配层
@@ -185,5 +187,10 @@ public class AuthUserController implements AuthValidationFacade {
                 i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
                 data
         );
+    }
+
+    @PostMapping("/assignRoles")
+    public void assignRoles(@RequestParam Long userId, @RequestParam List<Long> roleIds) {
+
     }
 }

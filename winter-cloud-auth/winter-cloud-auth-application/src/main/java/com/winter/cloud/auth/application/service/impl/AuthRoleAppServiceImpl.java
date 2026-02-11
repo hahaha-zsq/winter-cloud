@@ -81,6 +81,12 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
         List<AuthRoleDO> allRoleInfo = authRoleRepository.roleDynamicQueryList(roleQuery);
         return authRoleAppAssembler.toDTOList(allRoleInfo);
     }
+
+    @Override
+    public void assignMenuPermissions(Long roleId, List<Long> menuIds) {
+        authRoleRepository.assignMenuPermissions(roleId, menuIds);
+    }
+
     /**
      * 对排序参数进行【校验 + 标准化】的统一处理方法
      *

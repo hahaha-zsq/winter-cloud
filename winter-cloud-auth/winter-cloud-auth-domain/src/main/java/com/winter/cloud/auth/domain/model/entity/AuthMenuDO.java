@@ -1,6 +1,5 @@
 package com.winter.cloud.auth.domain.model.entity;
 
-import com.zsq.winter.encrypt.util.CryptoUtil;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -24,6 +23,7 @@ public class AuthMenuDO {
     private String visible;
     private String status;
     private String icon;
+    private String ancestors;
     
     // 审计字段通常在领域层也可以保留，或者封装成 ValueObject
     private Long createBy;

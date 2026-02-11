@@ -226,4 +226,9 @@ public final class CommonConstants {
         public static final String ROLE_NAME_OR_IDENTIFIER_EXISTS = "UpsertRoleCommand.identifier.exists";
     }
 
+    public static final class Delimiter{
+        /** 英文逗号 */
+        public static final String ENGLISH_COMMA = ",";
+    }
+
 }

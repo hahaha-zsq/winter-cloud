@@ -89,6 +89,12 @@ public class AuthMenuPO implements Serializable {
     private String status;
 
     /**
+     * 父子层级关系（用英文逗号分割）
+     */
+    @TableField(value = "ancestors")
+    private String ancestors;
+
+    /**
      * 菜单图标
      */
     @TableField(value = "icon")

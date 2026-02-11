@@ -25,4 +25,6 @@ public interface AuthRoleRepository {
     List<AuthRoleDO> selectRoleListByUserId(Long userId, String status);
 
     List<AuthRoleDO> roleDynamicQueryList(RoleQuery roleQuery);
+
+    void assignMenuPermissions(Long roleId, List<Long> menuIds);
 }
