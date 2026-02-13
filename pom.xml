@@ -42,7 +42,7 @@
         <xxljob.version>2.4.2</xxljob.version>
 
         <winter.log.version>0.0.1</winter.log.version>
-        <winter.validator.version>0.0.2</winter.validator.version>
+        <winter.validator.version>0.0.3</winter.validator.version>
         <winter.redis.dcc.version>0.0.4</winter.redis.dcc.version>
         <winter.design.version>0.0.5</winter.design.version>
         <winter.minio.version>0.0.2</winter.minio.version>
