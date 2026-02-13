@@ -15,8 +15,10 @@ import com.winter.cloud.common.enums.MenuTypeEnum;
 import com.winter.cloud.common.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -55,7 +57,7 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
     public List<AuthMenuDO> getMenuList(MenuQuery menuQuery) {
         List<AuthMenuPO> list = authMenuMpService.list(new LambdaQueryWrapper<AuthMenuPO>()
                 .eq(ObjectUtil.isNotEmpty(menuQuery.getId()), AuthMenuPO::getId, menuQuery.getId())
-                .eq(ObjectUtil.isNotEmpty(menuQuery.getMenuName()), AuthMenuPO::getMenuName, menuQuery.getMenuName())
+                .like(ObjectUtil.isNotEmpty(menuQuery.getMenuName()), AuthMenuPO::getMenuName, menuQuery.getMenuName())
                 .eq(ObjectUtil.isNotEmpty(menuQuery.getStatus()), AuthMenuPO::getStatus, menuQuery.getStatus())
                 .eq(ObjectUtil.isNotEmpty(menuQuery.getMenuType()), AuthMenuPO::getMenuType, menuQuery.getMenuType())
                 .eq(ObjectUtil.isNotEmpty(menuQuery.getVisible()), AuthMenuPO::getVisible, menuQuery.getVisible())
@@ -65,4 +67,21 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
         );
         return authMenuInfraAssembler.toDOList(list);
     }
+
+    @Override
+    public List<AuthMenuDO> listByIds(Set<Long> allIds) {
+        if (CollUtil.isEmpty(allIds)) {
+            return List.of();
+        }
+        List<AuthMenuPO> list = authMenuMpService.list(new LambdaQueryWrapper<AuthMenuPO>().in(AuthMenuPO::getId, allIds));
+        return authMenuInfraAssembler.toDOList(list);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean menuSave(AuthMenuDO authMenuDO) {
+        AuthMenuPO po = authMenuInfraAssembler.toPO(authMenuDO);
+        return authMenuMpService.save(po);
+    }
+
 }

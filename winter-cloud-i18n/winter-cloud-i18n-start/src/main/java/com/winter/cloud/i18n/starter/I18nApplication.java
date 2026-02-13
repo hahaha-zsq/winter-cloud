@@ -10,7 +10,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@ComponentScan("com.winter.cloud")
+@ComponentScan("com.winter.cloud.i18n")
 @MapperScan("com.winter.**.mapper")
 @EnableDiscoveryClient
 @EnableDubbo(scanBasePackages = {"com.winter.cloud.i18n"})

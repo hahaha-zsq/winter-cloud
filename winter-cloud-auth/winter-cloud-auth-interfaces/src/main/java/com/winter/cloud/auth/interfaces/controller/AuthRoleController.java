@@ -7,11 +7,9 @@ import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.auth.application.service.AuthRoleAppService;
 import com.winter.cloud.common.response.Response;
-import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
-import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -28,11 +26,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/role")
 @Validated
-@DubboService
 public class AuthRoleController {
     private final AuthRoleAppService authRoleAppService;
-    @DubboReference(check = false)
-    private I18nMessageFacade i18nMessageFacade;
+    private final WinterI18nTemplate winterI18nTemplate;
 
     /**
      * 分页查询角色列表
@@ -42,7 +38,7 @@ public class AuthRoleController {
     @PostMapping("/rolePage")
     public Response<PageDTO<RoleResponseDTO>> rolePage(@RequestBody RoleQuery roleQuery) {
         PageDTO<RoleResponseDTO> data = authRoleAppService.rolePage(roleQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 
     /**
@@ -51,7 +47,7 @@ public class AuthRoleController {
     @PostMapping("/roleDynamicQueryList")
     public Response<List<RoleResponseDTO>> roleDynamicQueryList(@RequestBody @Validated RoleQuery roleQuery) {
         List<RoleResponseDTO> data = authRoleAppService.roleDynamicQueryList(roleQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
 
     }
 
@@ -63,7 +59,7 @@ public class AuthRoleController {
     @PostMapping("/roleSave")
     public Response<Boolean> roleSave(@RequestBody @Validated(UpsertRoleCommand.Save.class) UpsertRoleCommand command) {
         Boolean data = authRoleAppService.roleSave(command);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 
     /**
@@ -74,7 +70,7 @@ public class AuthRoleController {
     @PutMapping("/roleUpdate")
     public Response<Boolean> roleUpdate(@RequestBody @Validated(UpsertRoleCommand.Update.class) UpsertRoleCommand command) {
         Boolean data = authRoleAppService.roleUpdate(command);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 
     /**
@@ -85,7 +81,7 @@ public class AuthRoleController {
     @DeleteMapping("/roleDelete")
     public Response<Boolean> roleDelete(@RequestBody @NotEmpty(message = "{delete.data.notEmpty}") List<Long> roleIds) {
         Boolean data = authRoleAppService.roleDelete(roleIds);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
     /**
      * 分配菜单权限
@@ -93,6 +89,6 @@ public class AuthRoleController {
     @PostMapping("/assignMenuPermissions")
     public Response<Void> assignMenuPermissions(@RequestParam @NotNull Long roleId, @RequestParam @NotEmpty  List<Long> menuIds) {
         authRoleAppService.assignMenuPermissions(roleId, menuIds);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),null);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),null);
     }
 }

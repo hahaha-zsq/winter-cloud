@@ -24,16 +24,6 @@
             <groupId>com.winter</groupId>
             <artifactId>winter-cloud-file-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.winter</groupId>
-            <artifactId>winter-cloud-i18n-api</artifactId>
-        </dependency>
-
-        <!-- 认证服务API -->
-        <dependency>
-            <groupId>com.winter</groupId>
-            <artifactId>winter-cloud-auth-api</artifactId>
-        </dependency>
 
 
         <!-- Application Module -->
@@ -55,10 +45,6 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

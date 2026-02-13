@@ -9,7 +9,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan("com.winter.cloud")
+@ComponentScan("com.winter.cloud.file")
 @MapperScan("com.winter.**.mapper")
 @EnableDiscoveryClient
 @EnableDubbo(scanBasePackages = {"com.winter.cloud.file"})

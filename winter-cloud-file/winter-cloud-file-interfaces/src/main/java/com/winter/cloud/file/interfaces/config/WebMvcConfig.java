@@ -113,27 +113,4 @@ public class WebMvcConfig implements WebMvcConfigurer {
             // builder.serializationInclusion(JsonInclude.Include.NON_NULL);
         };
     }
-
-    @Bean
-    public LocaleResolver localeResolver() {
-        return new AcceptHeaderLocaleResolver() {
-            @Override
-            public Locale resolveLocale(HttpServletRequest request) {
-                // 1. 优先尝试获取自定义 Header
-                String headerLang = request.getHeader(CommonConstants.Headers.LANGUAGE);
-
-                if (StringUtils.hasText(headerLang)) {
-                    try {
-                        return Objects.requireNonNull(StringUtils.parseLocaleString(headerLang));
-                    } catch (Exception e) {
-                        // 解析失败，回退到默认逻辑
-                        return Locale.getDefault();
-                    }
-                }
-
-                // 2. 如果没有自定义 Header，使用默认的 Accept-Language 逻辑
-                return super.resolveLocale(request);
-            }
-        };
-    }
 }

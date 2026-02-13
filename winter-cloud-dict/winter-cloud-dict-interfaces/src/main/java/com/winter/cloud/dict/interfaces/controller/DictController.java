@@ -7,10 +7,9 @@ import com.winter.cloud.dict.api.dto.query.DictQuery;
 import com.winter.cloud.dict.api.dto.response.DictDataDTO;
 import com.winter.cloud.dict.api.facade.DictFacade;
 import com.winter.cloud.dict.application.service.DictAppService;
-import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,12 +27,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@DubboService
 @RequestMapping("/dict")
+@DubboService
 public class DictController implements DictFacade {
     private final DictAppService dictAppService;
-    @DubboReference(check = false)
-    private I18nMessageFacade i18nMessageFacade;
+    private final WinterI18nTemplate winterI18nTemplate;
 
     /**
      * 根据查询条件获取字典数据
@@ -43,7 +41,7 @@ public class DictController implements DictFacade {
     public Response<Map<String, List<DictDataDTO>>> getDictDataByType(@RequestBody DictCommand dictCommand) {
         List<DictDataDTO> data = dictAppService.getDictDataByType(dictCommand.getDictType(), dictCommand.getStatus());
         Map<String, List<DictDataDTO>> collect = data.stream().collect(Collectors.groupingBy(DictDataDTO::getDictLabel));
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), collect);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), collect);
     }
 
     /**
@@ -53,6 +51,6 @@ public class DictController implements DictFacade {
     @Override
     public Response<List<DictDataDTO>> dictValueDynamicQueryList(@RequestBody DictQuery dictQuery) {
         List<DictDataDTO> data = dictAppService.dictValueDynamicQueryList(dictQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 }

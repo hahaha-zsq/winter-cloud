@@ -5,10 +5,9 @@ import com.winter.cloud.auth.api.dto.response.PostResponseDTO;
 import com.winter.cloud.auth.application.service.AuthPostAppService;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.Response;
-import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -24,8 +23,7 @@ import java.util.List;
 @RequestMapping("/post")
 public class AuthPostController {
     private final AuthPostAppService authPostAppService;
-    @DubboReference(check = false)
-    private I18nMessageFacade i18nMessageFacade;
+    private final WinterI18nTemplate winterI18nTemplate;
 
 
     /**
@@ -36,6 +34,6 @@ public class AuthPostController {
     @PostMapping("/postDynamicQueryList")
     public Response<List<PostResponseDTO>> postDynamicQueryList(@RequestBody @Validated PostQuery postQuery) {
         List<PostResponseDTO> data = authPostAppService.postDynamicQueryList(postQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
 }

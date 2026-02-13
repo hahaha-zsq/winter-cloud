@@ -117,7 +117,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     // ===== NVIDIA NIM 翻译服务配置 =====
     private final String apiKey = "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";
     private final String endpoint = "https://integrate.api.nvidia.com/v1/chat/completions";
-    private final String model = "nvidia/riva-translate-4b-instruct-v1.1";
+    private final String model = "openai/gpt-oss-120b";
 
     // ===== 线程池 (TTL包装，支持上下文传递) =====
     // 使用 TtlExecutorUtils 包装线程池，确保 TraceId、UserContext 等 ThreadLocal 变量能在子线程中传递
@@ -999,7 +999,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
     private String buildSystemPrompt(String srcCode, String tgtCode) {
         return String.format(
-                "You are an expert at translating text from %s to %s.",
+                "You are a translation engine. Translate the input text from %s to %s. Output ONLY the translated text. Do NOT include any other content.",
                 LANG_MAP.get(srcCode),
                 LANG_MAP.get(tgtCode)
         );

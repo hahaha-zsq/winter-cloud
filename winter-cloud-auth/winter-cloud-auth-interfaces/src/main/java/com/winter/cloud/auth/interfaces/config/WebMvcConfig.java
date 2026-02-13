@@ -9,7 +9,6 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.winter.cloud.auth.infrastructure.config.properties.XxlJobProperties;
-import com.winter.cloud.auth.interfaces.interceptor.LanguageInterceptor;
 import com.winter.cloud.auth.interfaces.interceptor.TraceIdInterceptor;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
@@ -18,19 +17,13 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
-import org.springframework.util.StringUtils;
-import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -47,12 +40,10 @@ import java.util.TimeZone;
 public class WebMvcConfig implements WebMvcConfigurer {
     private final XxlJobProperties xxlJobProperties;
     private final TraceIdInterceptor traceIdInterceptor;
-    private final LanguageInterceptor languageInterceptor;
 
 
-    public WebMvcConfig(TraceIdInterceptor traceIdInterceptor, LanguageInterceptor languageInterceptor, XxlJobProperties xxlJobProperties) {
+    public WebMvcConfig(TraceIdInterceptor traceIdInterceptor, XxlJobProperties xxlJobProperties) {
         this.traceIdInterceptor = traceIdInterceptor;
-        this.languageInterceptor = languageInterceptor;
         this.xxlJobProperties = xxlJobProperties;
     }
 
@@ -67,11 +58,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(traceIdInterceptor)
                 .addPathPatterns("/**")  // 拦截所有请求
                 .order(0);  // 设置为最高优先级，确保最先执行
-        // 2. 新增：语言拦截器
-        registry.addInterceptor(languageInterceptor)
-                .addPathPatterns("/**")
-                // 排除不需要国际化的静态资源路径（视情况调整）
-                .excludePathPatterns("/doc.html", "/webjars/**", "/swagger-resources/**");
     }
 
 
@@ -173,28 +159,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         log.info("xxl-job executor configured successfully");
         return xxlJobSpringExecutor;
-    }
-
-    @Bean
-    public LocaleResolver localeResolver() {
-        return new AcceptHeaderLocaleResolver() {
-            @Override
-            public Locale resolveLocale(HttpServletRequest request) {
-                // 1. 优先尝试获取自定义 Header
-                String headerLang = request.getHeader(CommonConstants.Headers.LANGUAGE);
-
-                if (StringUtils.hasText(headerLang)) {
-                    try {
-                        return Objects.requireNonNull(StringUtils.parseLocaleString(headerLang));
-                    } catch (Exception e) {
-                        // 解析失败，回退到默认逻辑
-                        return Locale.getDefault();
-                    }
-                }
-
-                // 2. 如果没有自定义 Header，使用默认的 Accept-Language 逻辑
-                return super.resolveLocale(request);
-            }
-        };
     }
 }

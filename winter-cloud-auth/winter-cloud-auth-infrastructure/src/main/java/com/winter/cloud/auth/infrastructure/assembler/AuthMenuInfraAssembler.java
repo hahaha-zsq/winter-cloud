@@ -15,4 +15,7 @@ import java.util.List;
 public interface AuthMenuInfraAssembler {
     List<AuthMenuDO> toDOList(List<AuthMenuPO> authMenuPOList);
 
+    AuthMenuPO toPO(AuthMenuDO authMenuDO);
+
+
 }

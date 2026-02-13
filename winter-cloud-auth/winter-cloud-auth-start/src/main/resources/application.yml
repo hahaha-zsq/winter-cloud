@@ -55,21 +55,23 @@ spring:
           driver-class-name: com.mysql.cj.jdbc.Driver
           type: com.alibaba.druid.pool.DruidDataSource
           druid:
-            initial-size: 8
+            initial-size: 10
             min-idle: 5
-            max-active: 8
-            max-wait: 30000
+            max-active: 30
+            max-wait: 60000
+
             time-between-eviction-runs-millis: 60000
             min-evictable-idle-time-millis: 300000
+
             validation-query: SELECT 1
             test-while-idle: true
-            test-on-borrow: true
+            test-on-borrow: false
             test-on-return: false
-            pool-prepared-statements: true
-            max-pool-prepared-statement-per-connection-size: 20
-            filters: stat,wall
-            connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
 
+            pool-prepared-statements: false
+
+            filters: stat,wall
+            connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=3000
 
 # Dubbo 配置
 dubbo:
@@ -162,6 +164,17 @@ winter:
     permissions-header: "X-User-Permissions"
     bearerPrefix: "Bearer "
     gateway-role-and-permission-separator: ","
+winter-i18n:
+  locale:
+    default-locale: zh_CN              # 默认语言
+    supported:                         # 支持的语言列表
+      - zh_CN                          # 中文	中国大陆
+      - en_US                          # 英语	美国
+      - es_ES                          # 西班牙语	西班牙
+      - fr_FR                          # 法语	法国
+      - ru_RU                          # 俄语	俄罗斯
+      - ar_SA                          # 阿拉伯语	沙特阿拉伯(通用)
+    header-name: Accept-Language       # HTTP 请求头名称
 xxl:
   job:
     admin:

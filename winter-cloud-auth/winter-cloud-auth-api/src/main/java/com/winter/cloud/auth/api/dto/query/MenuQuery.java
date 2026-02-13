@@ -8,10 +8,17 @@ import lombok.Data;
 public class MenuQuery {
     private Long id;
     private String menuName;
+    // 只能是0，1
     private String status;
     private String perms;
+    // 只能是0，1
+
     private String frame;
     private String path;
+    // 只能是0，1
+
     private String menuType;
+    // 只能是0，1
+
     private String visible;
 }

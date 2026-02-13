@@ -14,8 +14,8 @@ public class Job {
 
     private final IconAppService iconAppService;
     // 可参考Sample示例执行器中的 "com.xxl.job.executor.jobhandler.SampleXxlJob" ，如下：
-    @XxlJob("demoJobHandler")
-    public void demoJobHandler() throws Exception {
+    @XxlJob("iconJobHandler")
+    public void iconJobHandler() throws Exception {
 
         // 获取xxljob页面填入的参数，参数时=是字符串类型
         String jobParam = XxlJobHelper.getJobParam();

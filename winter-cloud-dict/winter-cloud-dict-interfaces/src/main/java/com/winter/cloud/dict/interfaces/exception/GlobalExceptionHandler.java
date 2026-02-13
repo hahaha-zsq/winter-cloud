@@ -4,11 +4,9 @@ package com.winter.cloud.dict.interfaces.exception;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.Response;
-import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -48,10 +46,14 @@ public class GlobalExceptionHandler {
     /**
      * 业务异常处理
      */
-    @DubboReference(check = false)
-    private I18nMessageFacade i18nMessageFacade;
-    @Value("${spring.locale.default:zh_CN}")
-    private String DEFAULT_LOCALE;
+    public final WinterI18nTemplate winterI18nTemplate;
+    @Value("${winter-i18n.locale.default-locale}")
+    public String DEFAULT_LOCALE;
+
+    public GlobalExceptionHandler(WinterI18nTemplate winterI18nTemplate) {
+        this.winterI18nTemplate = winterI18nTemplate;
+    }
+
 
     // 1. 捕获认证失败异常 (401)
     /*
@@ -68,14 +70,14 @@ public class GlobalExceptionHandler {
                 locale = new Locale(parts[0], parts[1]);
             }
         }
-        return Response.fail(UNAUTHENTICATED_LANG.getCode(),i18nMessageFacade.getMessage(UNAUTHENTICATED_LANG.getMessage(),locale)); // 使用项目统一的 Response 结构
+        return Response.fail(UNAUTHENTICATED_LANG.getCode(),winterI18nTemplate.message(UNAUTHENTICATED_LANG.getMessage(),locale)); // 使用项目统一的 Response 结构
     }
 
     // 2. 捕获权限不足异常 (403)
     @ExceptionHandler({AccessDeniedException.class})
     public Response<Void> handleAccessDeniedException(AccessDeniedException e) {
         log.error("捕获到权限异常: {}", e.getMessage());
-        return Response.fail(UNAUTHORIZED_LANG.getCode(),i18nMessageFacade.getMessage(UNAUTHORIZED_LANG.getMessage(),LocaleContextHolder.getLocale())); // 使用项目统一的 Response 结构
+        return Response.fail(UNAUTHORIZED_LANG.getCode(),winterI18nTemplate.message(UNAUTHORIZED_LANG.getMessage())); // 使用项目统一的 Response 结构
     }
     /**
      * 业务异常
@@ -117,7 +119,7 @@ public class GlobalExceptionHandler {
                 String messageKey = message.substring(1, message.length() - 1);
                 try {
                     // 尝试获取国际化消息
-                    String i18nMessage = i18nMessageFacade.getMessage(messageKey, new Object[]{}, message,LocaleContextHolder.getLocale());
+                    String i18nMessage = winterI18nTemplate.message(messageKey, new Object[]{}, message);
                     stringBuilder.append(i18nMessage).append("; ");
                 } catch (Exception ex) {
                     // 如果获取国际化消息失败，使用原始消息
@@ -155,7 +157,7 @@ public class GlobalExceptionHandler {
                 String messageKey = message.substring(1, message.length() - 1);
                 try {
                     // 尝试获取国际化消息
-                    String i18nMessage = i18nMessageFacade.getMessage(messageKey, new Object[]{}, message,LocaleContextHolder.getLocale());
+                    String i18nMessage = winterI18nTemplate.message(messageKey, new Object[]{}, message);
                     stringBuilder.append(i18nMessage).append("; ");
                 } catch (Exception ex) {
                     // 如果获取国际化消息失败，使用原始消息
@@ -195,7 +197,7 @@ public class GlobalExceptionHandler {
                 String messageKey = message.substring(1, message.length() - 1);
                 try {
                     // 尝试获取国际化消息
-                    String i18nMessage = i18nMessageFacade.getMessage(messageKey, new Object[]{}, message,LocaleContextHolder.getLocale());
+                    String i18nMessage = winterI18nTemplate.message(messageKey, new Object[]{}, message);
                     stringBuilder.append(i18nMessage).append("; ");
                 } catch (Exception ex) {
                     // 如果获取国际化消息失败，使用原始消息
@@ -224,7 +226,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Response<?> parameterMissingExceptionHandler(MissingServletRequestParameterException e) {
         log.error("请求参数异常", e);
-        return Response.fail(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getMessage(), new String[]{e.getParameterName()},LocaleContextHolder.getLocale()));
+        return Response.fail(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getMessage(), e.getParameterName()));
     }
 
     /**
@@ -239,7 +241,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Response<?> parameterBodyMissingExceptionHandler(HttpMessageNotReadableException e) {
         log.error("参数体不能为空", e);
-        return Response.fail(ResultCodeEnum.BODY_PARAMETER_ERROR_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.BODY_PARAMETER_ERROR_LANG.getMessage(),LocaleContextHolder.getLocale()));
+        return Response.fail(ResultCodeEnum.BODY_PARAMETER_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.BODY_PARAMETER_ERROR_LANG.getMessage()));
 
     }
 
@@ -255,8 +257,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({HttpRequestMethodNotSupportedException.class})
     public Response<?> handleException(HttpRequestMethodNotSupportedException e) {
         log.error(e.getMessage(), e);
-        System.err.println(LocaleContextHolder.getLocale());
-        return Response.fail(ResultCodeEnum.METHOD_ERROR_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.METHOD_ERROR_LANG.getMessage(), new String[]{e.getMethod()},LocaleContextHolder.getLocale()));
+        return Response.fail(ResultCodeEnum.METHOD_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.METHOD_ERROR_LANG.getMessage(), e.getMethod()));
     }
 
 
@@ -272,7 +273,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SQLException.class)
     public Response<?> handleSQLException(SQLException e) {
         log.error("SQL执行异常: {}", e.getMessage(), e);
-        return Response.fail(ResultCodeEnum.SQL_EXECUTE_ERROR_LANG.getCode(), i18nMessageFacade.getMessage(ResultCodeEnum.SQL_EXECUTE_ERROR_LANG.getMessage(),LocaleContextHolder.getLocale()));
+        return Response.fail(ResultCodeEnum.SQL_EXECUTE_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SQL_EXECUTE_ERROR_LANG.getMessage()));
     }
 
     /**
@@ -287,7 +288,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({NullPointerException.class, IndexOutOfBoundsException.class, ClassCastException.class})
     public Response<?> handleNullPointerException(RuntimeException e) {
         log.error("运行时异常", e);
-        return Response.fail(INTERNAL_SYSTEM_ERROR_LANG.getCode(), i18nMessageFacade.getMessage(INTERNAL_SYSTEM_ERROR_LANG.getMessage(),LocaleContextHolder.getLocale()));
+        return Response.fail(INTERNAL_SYSTEM_ERROR_LANG.getCode(), winterI18nTemplate.message(INTERNAL_SYSTEM_ERROR_LANG.getMessage()));
     }
 
     /**
@@ -302,7 +303,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SQLIntegrityConstraintViolationException .class)
     public Response<Void> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException e) {
         log.error("数据库完整性约束违反异常: {}", e.getMessage(), e);
-        return Response.fail(DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR.getCode(), i18nMessageFacade.getMessage(DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR.getMessage(),LocaleContextHolder.getLocale()));
+        return Response.fail(DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR.getCode(), winterI18nTemplate.message(DATABASE_OPERATION_VIOLATES_INTEGRITY_CONSTRAINTS_ERROR.getMessage()));
     }
 
 

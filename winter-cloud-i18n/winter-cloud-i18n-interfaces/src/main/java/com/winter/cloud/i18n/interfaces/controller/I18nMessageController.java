@@ -185,7 +185,7 @@ public class I18nMessageController implements I18nMessageFacade {
 
     @Override
     public String getMessage(String messageKey, Object[] args, String defaultMessage, Locale locale) {
-        return i18nMessageAppService.getMessage(messageKey, args, locale);
+        return i18nMessageAppService.getMessage(messageKey, args, defaultMessage,locale);
     }
 
 

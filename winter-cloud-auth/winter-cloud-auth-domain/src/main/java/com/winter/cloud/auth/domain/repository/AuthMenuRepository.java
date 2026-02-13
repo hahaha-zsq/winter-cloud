@@ -2,11 +2,13 @@ package com.winter.cloud.auth.domain.repository;
 
 
 import cn.hutool.core.lang.Opt;
+import com.winter.cloud.auth.api.dto.command.UpsertMenuCommand;
 import com.winter.cloud.auth.api.dto.query.MenuQuery;
 import com.winter.cloud.auth.api.dto.response.MenuResponseDTO;
 import com.winter.cloud.auth.domain.model.entity.AuthMenuDO;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 菜单仓储接口 (面向领域)
@@ -38,4 +40,14 @@ public interface AuthMenuRepository {
      * @return 菜单列表
      */
     List<AuthMenuDO> getMenuList(MenuQuery menuQuery);
+
+    /**
+     * 根据ID列表获取菜单列表
+     *
+     * @param allIds ID列表
+     * @return 菜单列表
+     */
+    List<AuthMenuDO> listByIds(Set<Long> allIds);
+
+    boolean menuSave(AuthMenuDO authMenuDO);
 }

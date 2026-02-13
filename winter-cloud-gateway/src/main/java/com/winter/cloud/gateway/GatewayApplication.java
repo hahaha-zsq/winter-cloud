@@ -1,6 +1,5 @@
 package com.winter.cloud.gateway;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.boot.SpringApplication;
@@ -103,16 +102,9 @@ public class GatewayApplication {
                 protocol, hostAddress, serverPort, contextPath,
                 env.getActiveProfiles().length == 0 ? env.getDefaultProfiles() : env.getActiveProfiles(),
                 env.getProperty("app.version", "1.0.0"));
-        
-        // 输出网关核心功能说明，帮助开发和运维人员了解网关能力
-        log.info("ZT俱乐部网关启动成功！");
-        log.info("网关功能包括：");
-        log.info("- 统一认证和身份验证");  // 通过AuthService和相关过滤器实现
-        log.info("- 流量染色和灰度发布");  // 通过TrafficTagFilter和GrayReleaseService实现
-        log.info("- 白名单和访问控制");   // 通过WhitelistService和AccessControlFilter实现
-        log.info("- 服务间调用认证");     // 通过ServiceAuthFilter实现
-        log.info("- 恶意脚本防护");       // 通过SecurityFilter实现XSS和SQL注入防护
-        log.info("- 审计日志和链路追踪"); // 通过AuditLogFilter和AuditLogService实现
-        log.info("注意：权限校验已移至具体业务服务中");  // 架构设计说明，避免网关层过重
+
+        log.info("========================================");
+        log.info("网关服务启动成功！");
+        log.info("========================================");
     }
 }

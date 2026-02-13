@@ -6,11 +6,9 @@ import com.winter.cloud.file.api.dto.query.FileUploadQuery;
 import com.winter.cloud.file.api.dto.response.FileCheckDTO;
 import com.winter.cloud.file.api.facade.FileFacade;
 import com.winter.cloud.file.application.service.FileAppService;
-import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
-import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,7 +31,6 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@DubboService
 @RequestMapping("/file")
 public class FileController implements FileFacade {
 
@@ -41,12 +38,7 @@ public class FileController implements FileFacade {
      * 文件应用层服务，处理核心上传业务逻辑
      */
     private final FileAppService fileAppService;
-
-    /**
-     * 国际化消息服务（Dubbo 远程调用），用于获取多语言响应信息
-     */
-    @DubboReference(check = false)
-    private I18nMessageFacade i18nMessageFacade;
+    private final WinterI18nTemplate winterI18nTemplate;
 
     /**
      * 简单文件上传接口
@@ -64,7 +56,7 @@ public class FileController implements FileFacade {
         // 构建成功响应，使用国际化消息
         return Response.ok(
                 ResultCodeEnum.SUCCESS_LANG.getCode(),
-                i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
+                winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
                 url
         );
     }
@@ -82,7 +74,7 @@ public class FileController implements FileFacade {
         List<String> urlList = fileAppService.uploadFileList(files);
         return Response.ok(
                 ResultCodeEnum.SUCCESS_LANG.getCode(),
-                i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
+                winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
                 urlList
         );
     }
@@ -103,7 +95,7 @@ public class FileController implements FileFacade {
         FileCheckDTO fileCheckDTO = fileAppService.checkFileByMd5(md5);
         return Response.ok(
                 ResultCodeEnum.SUCCESS_LANG.getCode(),
-                i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
+                winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
                 fileCheckDTO
         );
     }
@@ -122,7 +114,7 @@ public class FileController implements FileFacade {
         fileAppService.initUpload(query);
         return Response.ok(
                 ResultCodeEnum.SUCCESS_LANG.getCode(),
-                i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
+                winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
                 null
         );
     }
@@ -147,7 +139,7 @@ public class FileController implements FileFacade {
         fileAppService.uploadChunk(md5, chunkIndex, file);
         return Response.ok(
                 ResultCodeEnum.SUCCESS_LANG.getCode(),
-                i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
+                winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
                 null
         );
     }
@@ -166,7 +158,7 @@ public class FileController implements FileFacade {
         String url = fileAppService.mergeFile(query);
         return Response.ok(
                 ResultCodeEnum.SUCCESS_LANG.getCode(),
-                i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
+                winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
                 url
         );
     }
@@ -185,7 +177,7 @@ public class FileController implements FileFacade {
         fileAppService.cancelUpload(md5);
         return Response.ok(
                 ResultCodeEnum.SUCCESS_LANG.getCode(),
-                i18nMessageFacade.getMessage(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
+                winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),
                 null
         );
     }

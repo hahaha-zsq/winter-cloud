@@ -31,7 +31,7 @@ public class IconAppServiceImpl implements IconAppService {
     public void insert(String name) {
         try {
             String template = "https://icones.js.org/collections/{}-meta.json";
-            String str = StrUtil.format(template, name);
+            String str = StrUtil.format(template, name.trim());
             String result = HttpUtil.get(str);
             // JSON -> Map
             Map<String, Object> info = objectMapper.readValue(

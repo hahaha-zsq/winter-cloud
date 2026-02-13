@@ -35,6 +35,25 @@
             <groupId>io.github.hahaha-zsq</groupId>
             <artifactId>winter-minio-spring-boot-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.hahaha-zsq</groupId>
+            <artifactId>winter-i18n-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.winter</groupId>
+            <artifactId>winter-cloud-i18n-api</artifactId>
+        </dependency>
+
+        <!-- 认证服务API -->
+        <dependency>
+            <groupId>com.winter</groupId>
+            <artifactId>winter-cloud-auth-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

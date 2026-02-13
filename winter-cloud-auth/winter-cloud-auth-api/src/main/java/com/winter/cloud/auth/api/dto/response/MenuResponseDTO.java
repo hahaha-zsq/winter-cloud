@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -30,5 +31,7 @@ public class MenuResponseDTO implements Serializable {
     private String status;
     private String icon;
     private String ancestors;
-    private List<MenuResponseDTO> children;
+    // 强制赋予默认值，且 Builder 会尊重这个默认值，使用了 @Builder 注解。Lombok 的 Builder 模式在构建对象时，如果不做特殊处理，会忽略字段定义的默认值
+    @Builder.Default
+    private List<MenuResponseDTO> children = new ArrayList<>();
 }

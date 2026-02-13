@@ -1,5 +1,6 @@
 package com.winter.cloud.auth.application.service;
 
+import com.winter.cloud.auth.api.dto.command.UpsertMenuCommand;
 import com.winter.cloud.auth.api.dto.query.MenuQuery;
 import com.winter.cloud.auth.api.dto.response.MenuResponseDTO;
 
@@ -12,4 +13,6 @@ public interface AuthMenuAppService {
     List<MenuResponseDTO> getDynamicRouting(@NotNull Long id);
 
     List<MenuResponseDTO> menuTree(MenuQuery menuQuery);
+
+    boolean menuSave(UpsertMenuCommand command);
 }

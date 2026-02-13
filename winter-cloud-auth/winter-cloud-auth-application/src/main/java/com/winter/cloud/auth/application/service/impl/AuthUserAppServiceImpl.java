@@ -129,7 +129,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
         // 获取角色正常的角色id
         List<Long> roleIdList = roleResponseDOList.stream().map(AuthRoleDO::getId).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
         // 根据角色id查询状态正常的权限并去重复
-        List<MenuResponseDTO> menuResponseDTOList = authMenuRepository.selectMenuListByRoleIdList(roleIdList, "1");
+        List<MenuResponseDTO> menuResponseDTOList = authMenuRepository.selectMenuListByRoleIdList(roleIdList, StatusEnum.ENABLE.getCode());
         // 获取权限标识并去重复
         List<String> permissionsList = menuResponseDTOList.stream().map(MenuResponseDTO::getPerms).filter(ObjectUtil::isNotEmpty).distinct().collect(Collectors.toList());
 
