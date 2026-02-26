@@ -84,4 +84,8 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
         return authMenuMpService.save(po);
     }
 
+    @Override
+    public List<Long> getResourcesListByRoleId(Long roleId) {
+        return authMenuMapper.getResourcesListByRoleId(roleId);
+    }
 }

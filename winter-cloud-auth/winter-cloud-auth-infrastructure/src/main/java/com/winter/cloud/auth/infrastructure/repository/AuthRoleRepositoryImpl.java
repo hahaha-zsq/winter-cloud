@@ -13,9 +13,11 @@ import com.winter.cloud.auth.infrastructure.assembler.AuthRoleInfraAssembler;
 import com.winter.cloud.auth.infrastructure.entity.AuthRoleMenuPO;
 import com.winter.cloud.auth.infrastructure.entity.AuthRolePO;
 import com.winter.cloud.auth.infrastructure.entity.AuthUserPO;
+import com.winter.cloud.auth.infrastructure.entity.AuthUserRolePO;
 import com.winter.cloud.auth.infrastructure.mapper.AuthRoleMapper;
 import com.winter.cloud.auth.infrastructure.service.IAuthRoleMPService;
 import com.winter.cloud.auth.infrastructure.service.IAuthRoleMenuMpService;
+import com.winter.cloud.auth.infrastructure.service.IAuthUserRoleMpService;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
@@ -34,7 +36,7 @@ import static com.winter.cloud.common.enums.ResultCodeEnum.DUPLICATE_KEY;
 @Repository
 @RequiredArgsConstructor
 public class AuthRoleRepositoryImpl implements AuthRoleRepository {
-
+    private final IAuthUserRoleMpService authUserRoleMpService;
     private final IAuthRoleMPService authRoleMpService;
     private final IAuthRoleMenuMpService authRoleMenuMpService;
     private final AuthRoleMapper authRoleMapper;
@@ -77,12 +79,22 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         return authRoleMpService.updateById(authRolePO);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean roleDelete(List<Long> roleIds) {
-        // todo 查询该角色有没有关联用户，有的话就不能删除
-        //todo 根据id数组批量删除角色信息
-        //todo 根据id数组批量删除 角色菜单中间表的信息
-        return true;
+        List<Long> allowDeleteRoleIds;
+        // 根据传入的角色编号，查询用户角色关联的信息，如果没有，说明没有关联用户，可以删除，如果查询有结果，说明有关联用户，有关联的用户的角色不能删除，用现有的角色剔除有关联的用户角色，剩下的删除
+        List<AuthUserRolePO> list = authUserRoleMpService.list(new LambdaQueryWrapper<AuthUserRolePO>().in(AuthUserRolePO::getRoleId, roleIds));
+        if(ObjectUtil.isNotEmpty(list)){
+            // 这是已经存在关联的角色，这是不能删除的，需要获取对应的用户编号集合并告知前端
+            List<Long> collect = list.stream().map(AuthUserRolePO::getRoleId).collect(Collectors.toList());
+            allowDeleteRoleIds = roleIds.stream().filter(roleId -> !collect.contains(roleId)).collect(Collectors.toList());
+        }else{
+            allowDeleteRoleIds = roleIds;
+        }
+        boolean b = authRoleMpService.removeByIds(allowDeleteRoleIds);
+        boolean remove = authRoleMenuMpService.remove(new LambdaQueryWrapper<AuthRoleMenuPO>().in(AuthRoleMenuPO::getRoleId, allowDeleteRoleIds));
+        return b && remove;
     }
 
     /**
@@ -126,6 +138,9 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void assignMenuPermissions(Long roleId, List<Long> menuIds) {
+        //  删除之前角色拥有的资源
+        authRoleMenuMpService.remove(new LambdaQueryWrapper<AuthRoleMenuPO>().eq(AuthRoleMenuPO::getRoleId, roleId));
+        //  添加角色新的资源
         List<AuthRoleMenuPO> authRoleMenuPOList = menuIds.stream().map(menuId -> AuthRoleMenuPO.builder().roleId(roleId).menuId(menuId).build()).collect(Collectors.toList());
         authRoleMenuMpService.saveBatch(authRoleMenuPOList, 100);
     }

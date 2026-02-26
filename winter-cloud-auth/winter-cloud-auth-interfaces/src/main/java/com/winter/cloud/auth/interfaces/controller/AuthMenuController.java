@@ -74,4 +74,15 @@ public class AuthMenuController {
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),data);
     }
 
+    /**
+     * 根据角色ID获取资源ID
+     * @param roleId 角色ID
+     * @return 资源ID
+     */
+    @GetMapping("/resourcesOwnedList")
+    public Response<List<Long>> resourcesOwnedList(@RequestParam("roleId") @NotNull Long roleId) {
+        List<Long> data = authMenuAppService.resourcesOwnedList(roleId);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),data);
+    }
+
 }

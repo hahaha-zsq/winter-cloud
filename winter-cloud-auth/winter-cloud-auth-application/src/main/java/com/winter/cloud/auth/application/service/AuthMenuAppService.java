@@ -15,4 +15,6 @@ public interface AuthMenuAppService {
     List<MenuResponseDTO> menuTree(MenuQuery menuQuery);
 
     boolean menuSave(UpsertMenuCommand command);
+
+    List<Long> resourcesOwnedList(@NotNull Long roleId);
 }

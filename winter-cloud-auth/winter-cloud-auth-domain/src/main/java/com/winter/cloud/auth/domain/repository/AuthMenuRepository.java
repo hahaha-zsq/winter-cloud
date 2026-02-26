@@ -50,4 +50,6 @@ public interface AuthMenuRepository {
     List<AuthMenuDO> listByIds(Set<Long> allIds);
 
     boolean menuSave(AuthMenuDO authMenuDO);
+
+    List<Long> getResourcesListByRoleId(Long roleId);
 }

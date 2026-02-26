@@ -101,6 +101,11 @@ public class AuthMenuAppServiceImpl implements AuthMenuAppService {
         return authMenuRepository.menuSave(authMenuDO);
     }
 
+    @Override
+    public List<Long> resourcesOwnedList(Long roleId) {
+        return authMenuRepository.getResourcesListByRoleId(roleId);
+    }
+
     /**
      * 构建菜单树形结构
      * <p>

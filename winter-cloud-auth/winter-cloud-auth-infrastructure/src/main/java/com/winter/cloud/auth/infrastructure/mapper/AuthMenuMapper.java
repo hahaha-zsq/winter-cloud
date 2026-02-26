@@ -15,4 +15,6 @@ public interface AuthMenuMapper extends BaseMapper<AuthMenuPO> {
     List<MenuResponseDTO> selectMenuListByRoleIdList(@Param("roleIdList") List<Long> roleIdList,@Param("status") String status);
 
     List<MenuResponseDTO> getMenu(@Param("id") Long id,@Param("status") String status,@Param("menuTypeList") List<String> menuTypeList);
+
+    List<Long> getResourcesListByRoleId(@Param("roleId") Long roleId);
 }

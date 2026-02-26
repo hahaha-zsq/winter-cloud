@@ -1,5 +1,6 @@
 package com.winter.cloud.auth.interfaces.controller;
 
+import com.winter.cloud.auth.api.dto.command.AssignResourcesCommand;
 import com.winter.cloud.auth.api.dto.command.UpsertRoleCommand;
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
 import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
@@ -15,7 +16,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -87,8 +87,8 @@ public class AuthRoleController {
      * 分配菜单权限
      */
     @PostMapping("/assignMenuPermissions")
-    public Response<Void> assignMenuPermissions(@RequestParam @NotNull Long roleId, @RequestParam @NotEmpty  List<Long> menuIds) {
-        authRoleAppService.assignMenuPermissions(roleId, menuIds);
+    public Response<Void> assignMenuPermissions(@RequestBody @Validated AssignResourcesCommand command ) {
+        authRoleAppService.assignMenuPermissions(command.getRoleId(), command.getMenuIds());
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),null);
     }
 }

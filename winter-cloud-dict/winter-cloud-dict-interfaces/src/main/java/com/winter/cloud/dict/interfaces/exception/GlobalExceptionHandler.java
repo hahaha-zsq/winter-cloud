@@ -1,6 +1,7 @@
 package com.winter.cloud.dict.interfaces.exception;
 
 
+import cn.hutool.core.util.StrUtil;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.Response;
@@ -226,9 +227,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Response<?> parameterMissingExceptionHandler(MissingServletRequestParameterException e) {
         log.error("请求参数异常", e);
-        return Response.fail(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getMessage(), e.getParameterName()));
+        String message = StrUtil.format("请求参数丢失：{}", e.getParameterName());
+        return Response.fail(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.REQUEST_PARAMETER_ERROR_LANG.getMessage(),message, e.getParameterName()));
     }
-
     /**
      * 请求体不可读/缺失异常
      * <p>
