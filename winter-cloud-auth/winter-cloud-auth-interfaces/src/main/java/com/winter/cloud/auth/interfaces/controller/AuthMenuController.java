@@ -64,6 +64,23 @@ public class AuthMenuController {
     }
 
     /**
+     * 编辑资源
+     * @param command 编辑
+     * @return 是否编辑成功
+     */
+    @PutMapping("/menuUpdate")
+    public Response<Boolean> menuUpdate(@RequestBody @Validated(UpsertMenuCommand.Update.class) UpsertMenuCommand command){
+        boolean data = authMenuAppService.menuUpdate(command);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),data);
+    }
+
+    @DeleteMapping("/menuDelete")
+    public Response<Boolean> menuDelete(@RequestParam @NotNull Long id){
+        boolean data = authMenuAppService.menuDelete(id);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),data);
+    }
+
+    /**
      * 新增/编辑时需要的可选的父级菜单
      * @param userId 用户ID
      * @return 父菜单列表

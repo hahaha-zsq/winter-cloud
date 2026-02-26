@@ -9,10 +9,15 @@ import com.winter.cloud.auth.domain.model.entity.AuthMenuDO;
 import com.winter.cloud.auth.domain.repository.AuthMenuRepository;
 import com.winter.cloud.auth.infrastructure.assembler.AuthMenuInfraAssembler;
 import com.winter.cloud.auth.infrastructure.entity.AuthMenuPO;
+import com.winter.cloud.auth.infrastructure.entity.AuthRoleMenuPO;
 import com.winter.cloud.auth.infrastructure.mapper.AuthMenuMapper;
 import com.winter.cloud.auth.infrastructure.service.IAuthMenuMpService;
+import com.winter.cloud.auth.infrastructure.service.IAuthRoleMenuMpService;
 import com.winter.cloud.common.enums.MenuTypeEnum;
+import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.enums.StatusEnum;
+import com.winter.cloud.common.exception.BusinessException;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +29,10 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthMenuRepositoryImpl implements AuthMenuRepository {
     private final IAuthMenuMpService authMenuMpService;
+    private final IAuthRoleMenuMpService authRoleMenuMpService;
     private final AuthMenuMapper authMenuMapper;
     private final AuthMenuInfraAssembler authMenuInfraAssembler;
+    private final WinterI18nTemplate winterI18nTemplate;
 
     @Override
     public List<MenuResponseDTO> selectMenuListByRoleIdList(List<Long> roleIdList, String status) {
@@ -87,5 +94,25 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
     @Override
     public List<Long> getResourcesListByRoleId(Long roleId) {
         return authMenuMapper.getResourcesListByRoleId(roleId);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean menuUpdate(AuthMenuDO authMenuDO) {
+        AuthMenuPO po = authMenuInfraAssembler.toPO(authMenuDO);
+        return authMenuMpService.updateById(po);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean menuDelete(Long id) {
+        long count = authMenuMpService.count(new LambdaQueryWrapper<AuthMenuPO>().eq(AuthMenuPO::getParentId, id));
+        if (count > 0) {
+            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(),winterI18nTemplate.message("Menu.delete.submenu.first"));
+        }
+        boolean b = authMenuMpService.removeById(id);
+        // 同步删除中间关联表
+        boolean remove = authRoleMenuMpService.remove(new LambdaQueryWrapper<AuthRoleMenuPO>().eq(AuthRoleMenuPO::getMenuId, id));
+        return b && remove;
     }
 }

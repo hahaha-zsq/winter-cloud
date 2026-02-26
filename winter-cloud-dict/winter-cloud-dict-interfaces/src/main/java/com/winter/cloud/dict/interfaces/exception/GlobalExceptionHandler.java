@@ -258,7 +258,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({HttpRequestMethodNotSupportedException.class})
     public Response<?> handleException(HttpRequestMethodNotSupportedException e) {
         log.error(e.getMessage(), e);
-        return Response.fail(ResultCodeEnum.METHOD_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.METHOD_ERROR_LANG.getMessage(), e.getMethod()));
+        String message = StrUtil.format("不支持的请求方法类型：{}", e.getMethod());
+        return Response.fail(ResultCodeEnum.METHOD_ERROR_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.METHOD_ERROR_LANG.getMessage(),message, e.getMethod()));
     }
 
 

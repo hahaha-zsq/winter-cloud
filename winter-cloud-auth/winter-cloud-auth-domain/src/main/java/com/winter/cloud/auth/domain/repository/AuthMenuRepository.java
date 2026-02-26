@@ -52,4 +52,8 @@ public interface AuthMenuRepository {
     boolean menuSave(AuthMenuDO authMenuDO);
 
     List<Long> getResourcesListByRoleId(Long roleId);
+
+    boolean menuUpdate(AuthMenuDO authMenuDO);
+
+    boolean menuDelete(Long id);
 }

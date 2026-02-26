@@ -17,4 +17,8 @@ public interface AuthMenuAppService {
     boolean menuSave(UpsertMenuCommand command);
 
     List<Long> resourcesOwnedList(@NotNull Long roleId);
+
+    boolean menuUpdate(UpsertMenuCommand command);
+
+    boolean menuDelete(@NotNull Long id);
 }

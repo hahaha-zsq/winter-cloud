@@ -106,6 +106,17 @@ public class AuthMenuAppServiceImpl implements AuthMenuAppService {
         return authMenuRepository.getResourcesListByRoleId(roleId);
     }
 
+    @Override
+    public boolean menuUpdate(UpsertMenuCommand command) {
+        AuthMenuDO authMenuDO = authMenuAppAssembler.toDO(command);
+        return authMenuRepository.menuUpdate(authMenuDO);
+    }
+
+    @Override
+    public boolean menuDelete(Long id) {
+        return authMenuRepository.menuDelete(id);
+    }
+
     /**
      * 构建菜单树形结构
      * <p>

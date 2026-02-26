@@ -19,9 +19,11 @@ import com.winter.cloud.auth.infrastructure.service.IAuthRoleMPService;
 import com.winter.cloud.auth.infrastructure.service.IAuthRoleMenuMpService;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserRoleMpService;
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -41,6 +43,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     private final IAuthRoleMenuMpService authRoleMenuMpService;
     private final AuthRoleMapper authRoleMapper;
     private final AuthRoleInfraAssembler authRoleInfraAssembler;
+    private final WinterI18nTemplate winterI18nTemplate;
     @DubboReference
     public I18nMessageFacade i18nMessageFacade;
 
@@ -82,19 +85,43 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean roleDelete(List<Long> roleIds) {
+        if (ObjectUtil.isEmpty(roleIds)) {
+            return false;
+        }
+
         List<Long> allowDeleteRoleIds;
-        // 根据传入的角色编号，查询用户角色关联的信息，如果没有，说明没有关联用户，可以删除，如果查询有结果，说明有关联用户，有关联的用户的角色不能删除，用现有的角色剔除有关联的用户角色，剩下的删除
-        List<AuthUserRolePO> list = authUserRoleMpService.list(new LambdaQueryWrapper<AuthUserRolePO>().in(AuthUserRolePO::getRoleId, roleIds));
-        if(ObjectUtil.isNotEmpty(list)){
-            // 这是已经存在关联的角色，这是不能删除的，需要获取对应的用户编号集合并告知前端
+        // 查询被用户关联的角色
+        List<AuthUserRolePO> list = authUserRoleMpService.list(
+                new LambdaQueryWrapper<AuthUserRolePO>().in(AuthUserRolePO::getRoleId, roleIds)
+        );
+
+        if (ObjectUtil.isNotEmpty(list)) {
             List<Long> collect = list.stream().map(AuthUserRolePO::getRoleId).collect(Collectors.toList());
             allowDeleteRoleIds = roleIds.stream().filter(roleId -> !collect.contains(roleId)).collect(Collectors.toList());
-        }else{
+        } else {
             allowDeleteRoleIds = roleIds;
         }
+
+        // 1. 拦截空集合：如果没有可以删除的角色，直接中断处理
+        if (ObjectUtil.isEmpty(allowDeleteRoleIds)) {
+            // 建议在这里抛出自定义业务异常，提示前端 "所选角色均已关联用户，无法删除"
+            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(),winterI18nTemplate.message("Roles.cannot.delete"));
+        }
+
+        // 2. 执行主表删除
         boolean b = authRoleMpService.removeByIds(allowDeleteRoleIds);
-        boolean remove = authRoleMenuMpService.remove(new LambdaQueryWrapper<AuthRoleMenuPO>().in(AuthRoleMenuPO::getRoleId, allowDeleteRoleIds));
-        return b && remove;
+        if (!b) {
+            // 主表删除失败，必须抛出异常触发回滚！
+            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(),winterI18nTemplate.message("delete.fail")); // 替换为你项目中的实际业务异常类
+        }
+
+        // 3. 执行关联表删除
+        // 注意：这里不需要接收返回值，也不需要判断 true/false。
+        // 因为有没有关联菜单都可以，影响行数为 0 (返回false) 也是正常的业务场景。
+        authRoleMenuMpService.remove(
+                new LambdaQueryWrapper<AuthRoleMenuPO>().in(AuthRoleMenuPO::getRoleId, allowDeleteRoleIds)
+        );
+        return true;
     }
 
     /**
