@@ -1,6 +1,8 @@
 package com.winter.cloud.common.constants;
 
 
+import cn.hutool.core.lang.Dict;
+
 public final class CommonConstants {
     private CommonConstants() {
         // 私有构造函数，防止实例化
@@ -224,6 +226,29 @@ public final class CommonConstants {
         public static final String SORT_ORDER_ILLEGAL = "sort.order.Illegal";
         /**角色名称/标识已存在！*/
         public static final String ROLE_NAME_OR_IDENTIFIER_EXISTS = "UpsertRoleCommand.identifier.exists";
+        public static final String ROLE_DICT_MAPPING_ERROR = "role.dict.mapping.error";
+        /**角色信息(角色导出excel文件的名称)*/
+        public static final String ROLE_INFORMATION = "role.information";
+        /**角色信息模版(角色模版导出excel文件的名称)*/
+        public static final String ROLE_INFORMATION_TEMPLATE = "role.information.template";
+        /**业务逻辑错误*/
+        public static final String BUSINESS_LOGIC_ERROR = "business.logic.error";
+        /**验证逻辑错误*/
+        public static final String VALIDATION_LOGIC_ERROR = "validation.logic.error";
+        /**导入成功*/
+        public static final String IMPORT_SUCCESSFUL = "import.successful";
+        /**错误信息*/
+        public static final String ERROR_MESSAGE = "error.message";
+        /**消息键、语言环境和类型组成的唯一内容已存在！*/
+        public static final String I18N_UNIQUE_ERROR = "i18n.unique.error";
+        /**国际化类型或者国际化语言环境字典映射错误！！*/
+        public static final String I18N_TYPE_OR_LOCAL_DICT_MAPPING_ERROR = "i18n.typeOrLocal.dict.mapping.error";
+        /**国际化(国际化导出excel文件的名称)*/
+        public static final String I18N_MESSAGE = "i18n.message";
+        /**国际化导出模版名称*/
+        public static final String I18N_MESSAGE_TEMPLATE = "i18n.message.template";
+
+
     }
 
     public static final class Delimiter{

@@ -235,7 +235,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
                 .response(response)
                 .batchSize(1000)
                 .password("")
-                .fileName("角色信息.xlsx")
+                .fileName(winterI18nTemplate.message(CommonConstants.I18nKey.ROLE_INFORMATION)+".xlsx")
                 .excludeColumnFieldNames(null)
                 .writeHandlers(writeHandlers)
                 .converters(null)
@@ -256,7 +256,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
                 .response(response)
                 .batchSize(1000)
                 .password("")
-                .fileName("角色信息模版.xlsx")
+                .fileName(winterI18nTemplate.message(CommonConstants.I18nKey.ROLE_INFORMATION_TEMPLATE)+".xlsx")
                 // 导出的模版不需要创建时间这个列
                 .excludeColumnFieldNames(List.of("createTime"))
                 .converters(null)
@@ -306,7 +306,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
                             }
                             WinterExcelBusinessErrorModel errorModel =
                                     WinterExcelBusinessErrorModel.builder()
-                                            .errorMessage("角色状态字典映射错误！")
+                                            .errorMessage(winterI18nTemplate.message(CommonConstants.I18nKey.ROLE_DICT_MAPPING_ERROR))
                                             .entityRowInfo(jsonStr)
                                             .build();
 
@@ -328,7 +328,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
                                 String jsonStr = objectMapper.writeValueAsString(authRolePO);
                                 WinterExcelBusinessErrorModel errorModel =
                                         WinterExcelBusinessErrorModel.builder()
-                                                .errorMessage("角色名称/标识已存在")
+                                                .errorMessage(winterI18nTemplate.message(CommonConstants.I18nKey.ROLE_NAME_OR_IDENTIFIER_EXISTS))
                                                 .entityRowInfo(jsonStr)
                                                 .build();
 
@@ -369,7 +369,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
 
             WinterExcelExportParam<WinterExcelBusinessErrorModel> businessParam =
                     WinterExcelExportParam.<WinterExcelBusinessErrorModel>builder()
-                            .sheetName("业务逻辑错误信息")
+                            .sheetName(winterI18nTemplate.message(CommonConstants.I18nKey.BUSINESS_LOGIC_ERROR))
                             .excludeColumnFieldNames(new ArrayList<>())
                             .writeHandlers(new ArrayList<>())
                             .password("")
@@ -405,7 +405,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
 
             WinterExcelExportParam<WinterExcelValidateErrorModel> validateParam =
                     WinterExcelExportParam.<WinterExcelValidateErrorModel>builder()
-                            .sheetName("校验逻辑错误信息")
+                            .sheetName(winterI18nTemplate.message(CommonConstants.I18nKey.VALIDATION_LOGIC_ERROR))
                             .excludeColumnFieldNames(new ArrayList<>())
                             .writeHandlers(new ArrayList<>())
                             .password("")
@@ -421,14 +421,14 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
             && ObjectUtils.isEmpty(errorList)) {
 
             // 无任何错误，直接返回成功结果
-            Response<Object> build = Response.build(null, "200", "导入成功！");
+            Response<Object> build = Response.build(null, ResultCodeEnum.SUCCESS.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.IMPORT_SUCCESSFUL));
             WebUtil.renderString(response, objectMapper.writeValueAsString(build));
 
         } else {
             // 存在错误，导出多 Sheet 的错误 Excel
             winterExcelTemplate.exportMultiSheet(
                     response,
-                    "错误信息.xlsx",
+                    winterI18nTemplate.message(CommonConstants.I18nKey.ERROR_MESSAGE)+".xlsx",
                     "",
                     excelExportParamList
             );

@@ -34,6 +34,7 @@ import com.winter.cloud.i18n.infrastructure.assembler.I18nMessageInfraAssembler;
 import com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO;
 import com.winter.cloud.i18n.infrastructure.mapper.I18nMessageMapper;
 import com.winter.cloud.i18n.infrastructure.service.II18nMessageMPService;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import com.zsq.winter.office.entity.excel.*;
 import com.zsq.winter.office.entity.excel.handler.CustomDateValidationWriteHandler;
 import com.zsq.winter.office.entity.excel.handler.CustomMatchColumnWidthStyleHandler;
@@ -97,7 +98,6 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     private final WinterRedissionTemplate winterRedissionTemplate;
     private final ObjectMapper objectMapper;
     private final WinterExcelTemplate winterExcelTemplate;
-
     private final Executor i18bPoolExecutor;
     @DubboReference(check = false)
     private DictFacade dictFacade;
@@ -498,7 +498,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
                 .response(response)
                 .batchSize(1000)
                 .password("")
-                .fileName("国际化消息.xlsx")
+                .fileName(getMessage(CommonConstants.I18nKey.I18N_MESSAGE)+".xlsx")
                 .excludeColumnFieldNames(null)
                 .writeHandlers(writeHandlers)
                 .converters(null)
@@ -568,7 +568,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
                             }
                             WinterExcelBusinessErrorModel errorModel =
                                     WinterExcelBusinessErrorModel.builder()
-                                            .errorMessage("国际化类型或者国际化语言环境字典映射错误！")
+                                            .errorMessage(getMessage(CommonConstants.I18nKey.I18N_TYPE_OR_LOCAL_DICT_MAPPING_ERROR))
                                             .entityRowInfo(jsonStr)
                                             .build();
 
@@ -590,7 +590,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
                                 WinterExcelBusinessErrorModel errorModel =
                                         WinterExcelBusinessErrorModel.builder()
-                                                .errorMessage("消息键、语言环境和类型组成的唯一内容已存在！")
+                                                .errorMessage(getMessage(CommonConstants.I18nKey.I18N_UNIQUE_ERROR))
                                                 .entityRowInfo(jsonStr)
                                                 .build();
 
@@ -674,7 +674,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
             WinterExcelExportParam<WinterExcelBusinessErrorModel> businessParam =
                     WinterExcelExportParam.<WinterExcelBusinessErrorModel>builder()
-                            .sheetName("业务逻辑错误信息")
+                            .sheetName(getMessage(CommonConstants.I18nKey.BUSINESS_LOGIC_ERROR))
                             .excludeColumnFieldNames(new ArrayList<>())
                             .writeHandlers(new ArrayList<>())
                             .password("")
@@ -710,7 +710,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
 
             WinterExcelExportParam<WinterExcelValidateErrorModel> validateParam =
                     WinterExcelExportParam.<WinterExcelValidateErrorModel>builder()
-                            .sheetName("校验逻辑错误信息")
+                            .sheetName(getMessage(CommonConstants.I18nKey.VALIDATION_LOGIC_ERROR))
                             .excludeColumnFieldNames(new ArrayList<>())
                             .writeHandlers(new ArrayList<>())
                             .password("")
@@ -726,14 +726,14 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
             && ObjectUtils.isEmpty(errorList)) {
 
             // 无任何错误，直接返回成功结果
-            Response<Object> build = Response.build(null, "200", "导入成功！");
+            Response<Object> build = Response.build(null, ResultCodeEnum.SUCCESS.getCode(), getMessage(CommonConstants.I18nKey.IMPORT_SUCCESSFUL));
             WebUtil.renderString(response, objectMapper.writeValueAsString(build));
 
         } else {
             // 存在错误，导出多 Sheet 的错误 Excel
             winterExcelTemplate.exportMultiSheet(
                     response,
-                    "错误信息.xlsx",
+                    getMessage(CommonConstants.I18nKey.ERROR_MESSAGE)+".xlsx",
                     "",
                     excelExportParamList
             );
@@ -752,7 +752,7 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
                 .response(response)
                 .batchSize(1000)
                 .password("")
-                .fileName("国际化消息模版.xlsx")
+                .fileName(getMessage(CommonConstants.I18nKey.I18N_MESSAGE_TEMPLATE)+".xlsx")
                 // 导出的模版不需要创建时间这个列
                 .excludeColumnFieldNames(List.of("createTime"))
                 .converters(null)
