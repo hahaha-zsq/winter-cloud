@@ -74,6 +74,11 @@ public class AuthMenuController {
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),data);
     }
 
+    /**
+     * 删除资源
+     * @param id 资源ID
+     * @return 是否删除成功
+     */
     @DeleteMapping("/menuDelete")
     public Response<Boolean> menuDelete(@RequestParam @NotNull Long id){
         boolean data = authMenuAppService.menuDelete(id);

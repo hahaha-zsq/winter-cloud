@@ -746,7 +746,6 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
         ArrayList<WriteHandler> writeHandlers = new ArrayList<>();
         // 自定义样式处理器
         CustomStyleHandler cellStyleSheetWriteHandler = new CustomStyleHandler(null, null);
-        writeHandlers.add(new CustomDateValidationWriteHandler(Map.of(5, new WinterDateValidationModel("yyyy-MM-dd HH:mm:ss", 2, 5555))));
         writeHandlers.add(cellStyleSheetWriteHandler);
         writeHandlers.add(new CustomMatchColumnWidthStyleHandler());
         WinterExcelExportParam<I18nMessagePO> builder = WinterExcelExportParam.<I18nMessagePO>builder()

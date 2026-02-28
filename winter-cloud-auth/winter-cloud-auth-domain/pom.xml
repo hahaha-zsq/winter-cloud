@@ -35,8 +35,16 @@
             <artifactId>winter-cloud-i18n-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.winter</groupId>
+            <artifactId>winter-cloud-dict-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.hahaha-zsq</groupId>
+            <artifactId>winter-office-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>io.github.hahaha-zsq</groupId>

@@ -14,8 +14,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotEmpty;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -72,6 +75,38 @@ public class AuthRoleController {
         Boolean data = authRoleAppService.roleUpdate(command);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }
+
+    /**
+     * 导出excel
+     *
+     * @param response 响应
+     */
+    @PostMapping(value = "/roleExportExcel")
+    public void roleExportExcel(HttpServletResponse response) {
+        authRoleAppService.roleExportExcel(response);
+    }
+
+    /**
+     * 导出excel模板
+     *
+     * @param response 响应
+     */
+    @PostMapping(value = "/roleExportExcelTemplate")
+    public void roleExportExcelTemplate(HttpServletResponse response) {
+        authRoleAppService.roleExportExcelTemplate(response);
+    }
+
+    /**
+     * 导入excel
+     *
+     * @param response 响应
+     * @param file     文件
+     */
+    @PostMapping(value = "/roleImportExcel")
+    public void roleImportExcel(HttpServletResponse response, @RequestParam(value = "file") MultipartFile file) throws IOException {
+        authRoleAppService.roleImportExcel(response,file);
+    }
+
 
     /**
      * 删除角色

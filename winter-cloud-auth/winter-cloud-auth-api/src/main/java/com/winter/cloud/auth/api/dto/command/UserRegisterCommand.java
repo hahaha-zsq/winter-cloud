@@ -2,12 +2,13 @@ package com.winter.cloud.auth.api.dto.command;
 
 import com.zsq.winter.validation.annotation.DynamicEnum;
 import com.zsq.winter.validation.annotation.SpelValid;
+import lombok.Builder;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
 import java.io.Serializable;
-
+@Builder
 @Data
 public class UserRegisterCommand implements Serializable {
     private static final long serialVersionUID = 1L;

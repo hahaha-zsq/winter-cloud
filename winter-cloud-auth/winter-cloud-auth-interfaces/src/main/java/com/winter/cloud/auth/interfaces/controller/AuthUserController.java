@@ -1,6 +1,7 @@
 package com.winter.cloud.auth.interfaces.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.winter.cloud.auth.api.dto.command.UpsertUserCommand;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.query.UserQuery;
@@ -187,8 +188,9 @@ public class AuthUserController implements AuthValidationFacade {
         );
     }
 
-    @PostMapping("/assignRoles")
-    public void assignRoles(@RequestParam Long userId, @RequestParam List<Long> roleIds) {
-
+    @PostMapping("/userSave")
+    public Response<Boolean> userSave(@RequestBody @Validated(UpsertUserCommand.Save.class) UpsertUserCommand upsertUserCommand) {
+        Boolean data = authUserAppService.userSave(upsertUserCommand);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),data);
     }
 }

@@ -108,11 +108,16 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
     public boolean menuDelete(Long id) {
         long count = authMenuMpService.count(new LambdaQueryWrapper<AuthMenuPO>().eq(AuthMenuPO::getParentId, id));
         if (count > 0) {
-            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(),winterI18nTemplate.message("Menu.delete.submenu.first"));
+            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(), winterI18nTemplate.message("Menu.delete.submenu.first"));
         }
-        boolean b = authMenuMpService.removeById(id);
-        // 同步删除中间关联表
-        boolean remove = authRoleMenuMpService.remove(new LambdaQueryWrapper<AuthRoleMenuPO>().eq(AuthRoleMenuPO::getMenuId, id));
-        return b && remove;
+
+        boolean isMenuDeleted = authMenuMpService.removeById(id);
+        if (!isMenuDeleted) {
+            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(), "Menu deletion failed or menu does not exist");
+        }
+
+        authRoleMenuMpService.remove(new LambdaQueryWrapper<AuthRoleMenuPO>().eq(AuthRoleMenuPO::getMenuId, id));
+
+        return true;
     }
 }

@@ -9,14 +9,22 @@ import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.auth.domain.repository.AuthUserRepository;
 import com.winter.cloud.auth.infrastructure.assembler.AuthUserInfraAssembler;
+import com.winter.cloud.auth.infrastructure.entity.AuthRolePO;
 import com.winter.cloud.auth.infrastructure.entity.AuthUserPO;
 import com.winter.cloud.auth.infrastructure.mapper.AuthUserMapper;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserMpService;
+import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
+import static com.winter.cloud.common.enums.ResultCodeEnum.DUPLICATE_KEY;
 
 @Repository
 @RequiredArgsConstructor
@@ -24,6 +32,7 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
     private final IAuthUserMpService authUserMpService;
     private final AuthUserMapper authUserMapper;
     private final AuthUserInfraAssembler authUserInfraAssembler;
+    private final WinterI18nTemplate winterI18nTemplate;
 
     @Override
     public AuthUserDO findById(Long id) {
@@ -87,5 +96,17 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
         IPage<AuthUserPO> userPage = authUserMapper.selectUserPage(page, userQuery);
         List<AuthUserDO> doList = authUserInfraAssembler.toDOList(userPage.getRecords());
         return new PageDTO<>(doList, userPage.getTotal());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Boolean userSave(AuthUserDO aDo) {
+        boolean b = this.hasDuplicateUser(authUserInfraAssembler.toUserRegisterCommand(aDo))    ;
+        if (b) {
+            throw new BusinessException(DUPLICATE_KEY.getCode(), winterI18nTemplate.message("用户信息username/phone/email存在重复"));
+        }
+        AuthUserPO authUserPO = authUserInfraAssembler.toPO(aDo);
+        // todo 将用户和角色关联的信息、用户和部门关联的信息也要存入表中
+        return authUserMpService.save(authUserPO);
     }
 }

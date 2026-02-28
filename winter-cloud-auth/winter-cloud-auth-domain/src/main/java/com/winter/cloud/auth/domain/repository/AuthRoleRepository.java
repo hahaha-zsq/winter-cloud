@@ -1,10 +1,14 @@
 package com.winter.cloud.auth.domain.repository;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
 import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
 import com.winter.cloud.common.response.PageDTO;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -27,4 +31,10 @@ public interface AuthRoleRepository {
     List<AuthRoleDO> roleDynamicQueryList(RoleQuery roleQuery);
 
     void assignMenuPermissions(Long roleId, List<Long> menuIds);
+
+    void roleExportExcel(HttpServletResponse response);
+
+    void roleExportExcelTemplate(HttpServletResponse response);
+
+    void roleImportExcel(HttpServletResponse response, MultipartFile file) throws IOException;
 }

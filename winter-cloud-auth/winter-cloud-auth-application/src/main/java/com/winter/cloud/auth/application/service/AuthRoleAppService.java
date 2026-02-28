@@ -5,9 +5,12 @@ import com.winter.cloud.auth.api.dto.command.UpsertRoleCommand;
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
 import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
 import com.winter.cloud.common.response.PageDTO;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
 import java.util.List;
 
 public interface AuthRoleAppService {
@@ -48,4 +51,10 @@ public interface AuthRoleAppService {
     List<RoleResponseDTO> roleDynamicQueryList(RoleQuery roleQuery);
 
     void assignMenuPermissions(@NotNull Long roleId, @NotEmpty List<Long> menuIds);
+
+    void roleExportExcel(HttpServletResponse response);
+
+    void roleExportExcelTemplate(HttpServletResponse response);
+
+    void roleImportExcel(HttpServletResponse response, MultipartFile file) throws IOException;
 }

@@ -2,6 +2,7 @@ package com.winter.cloud.auth.application.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.winter.cloud.auth.api.dto.command.UpsertUserCommand;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.query.UserQuery;
@@ -36,4 +37,6 @@ public interface AuthUserAppService {
     ValidateTokenDTO generateUserInfo(Long userID, String userName);
 
     PageDTO<UserResponseDTO> userPage(UserQuery userQuery);
+
+    Boolean userSave(UpsertUserCommand upsertUserCommand);
 }

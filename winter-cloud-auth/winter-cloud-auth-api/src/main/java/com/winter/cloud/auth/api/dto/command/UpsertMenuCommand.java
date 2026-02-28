@@ -386,6 +386,8 @@ public class UpsertMenuCommand implements Serializable {
 
     private String component;
 
+    private String ancestors;
+
     @DynamicEnum(
             dictType = "118",
             allowNull = true,

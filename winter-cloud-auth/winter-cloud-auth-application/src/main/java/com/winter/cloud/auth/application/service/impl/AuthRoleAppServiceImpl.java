@@ -13,15 +13,16 @@ import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageAndOrderDTO;
 import com.winter.cloud.common.response.PageDTO;
-import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
+import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -35,8 +36,7 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
 
     private final AuthRoleRepository authRoleRepository;
     private final AuthRoleAppAssembler authRoleAppAssembler;
-    @DubboReference(check = false)
-    private I18nMessageFacade i18nMessageFacade;
+    private final WinterI18nTemplate winterI18nTemplate;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -87,9 +87,25 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
         authRoleRepository.assignMenuPermissions(roleId, menuIds);
     }
 
+    @Override
+    public void roleExportExcel(HttpServletResponse response) {
+        authRoleRepository.roleExportExcel(response);
+    }
+
+    @Override
+    public void roleExportExcelTemplate(HttpServletResponse response) {
+        authRoleRepository.roleExportExcelTemplate(response);
+    }
+
+    @Override
+    public void roleImportExcel(HttpServletResponse response, MultipartFile file) throws IOException {
+        authRoleRepository.roleImportExcel(response, file);
+
+    }
+
     /**
      * 对排序参数进行【校验 + 标准化】的统一处理方法
-     *
+     * <p>
      * 主要职责：
      * 1. 校验排序字段 field 是否在允许的白名单中（防 SQL 注入）
      * 2. 校验排序方式 order 是否合法（asc / desc / ascend / descend）
@@ -136,9 +152,8 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
                     if (ObjectUtils.isEmpty(field) || !allowedFields.contains(field)) {
                         throw new BusinessException(
                                 ResultCodeEnum.FAIL_LANG.getCode(),
-                                i18nMessageFacade.getMessage(
-                                        CommonConstants.I18nKey.SORT_KEY_ILLEGAL,
-                                        LocaleContextHolder.getLocale()
+                                winterI18nTemplate.message(
+                                        CommonConstants.I18nKey.SORT_KEY_ILLEGAL
                                 )
                         );
                     }
@@ -149,9 +164,8 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
                         || !allowedOrders.contains(orderStr.toLowerCase())) {
                         throw new BusinessException(
                                 ResultCodeEnum.FAIL_LANG.getCode(),
-                                i18nMessageFacade.getMessage(
-                                        CommonConstants.I18nKey.SORT_ORDER_ILLEGAL,
-                                        LocaleContextHolder.getLocale()
+                                winterI18nTemplate.message(
+                                        CommonConstants.I18nKey.SORT_ORDER_ILLEGAL
                                 )
                         );
                     }
@@ -167,13 +181,14 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
                 // 7️⃣ 收集为 List
                 .collect(Collectors.toList());
     }
+
     /**
      * 对单个排序参数的 order 值进行标准化处理
-     *
+     * <p>
      * 目标：
      * - 将前端可能传入的多种排序写法：
-     *   ascend / ASCEND / asc → asc
-     *   descend / DESCEND / desc → desc
+     * ascend / ASCEND / asc → asc
+     * descend / DESCEND / desc → desc
      * - 返回一个新的 OrderDTO，避免直接修改原对象（更安全）
      *
      * @param dto 原始排序参数对象

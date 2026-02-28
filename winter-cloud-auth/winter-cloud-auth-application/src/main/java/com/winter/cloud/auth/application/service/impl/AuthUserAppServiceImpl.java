@@ -3,6 +3,7 @@ package com.winter.cloud.auth.application.service.impl;
 import cn.hutool.core.util.ObjectUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.winter.cloud.auth.api.dto.command.UpsertUserCommand;
 import com.winter.cloud.auth.api.dto.command.UserLoginCommand;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.query.PostQuery;
@@ -205,5 +206,11 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
         }).collect(Collectors.toList());
 
         return new PageDTO<>(dtoList, doPage.getTotal());
+    }
+
+    @Override
+    public Boolean userSave(UpsertUserCommand upsertUserCommand) {
+        AuthUserDO aDo = authUserAppAssembler.toDO(upsertUserCommand);
+        return authUserRepository.userSave(aDo);
     }
 }

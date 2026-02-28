@@ -1,10 +1,17 @@
 package com.winter.cloud.auth.infrastructure.repository;
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.idev.excel.FastExcel;
+import cn.idev.excel.support.ExcelTypeEnum;
+import cn.idev.excel.write.handler.WriteHandler;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
 import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
 import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
@@ -22,19 +29,42 @@ import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
-import com.winter.cloud.i18n.api.facade.I18nMessageFacade;
+import com.winter.cloud.common.response.Response;
+import com.winter.cloud.dict.api.dto.command.DictCommand;
+import com.winter.cloud.dict.api.dto.query.DictQuery;
+import com.winter.cloud.dict.api.dto.response.DictDataDTO;
+import com.winter.cloud.dict.api.facade.DictFacade;
 import com.zsq.i18n.template.WinterI18nTemplate;
+import com.zsq.winter.office.entity.excel.WinterExcelBusinessErrorModel;
+import com.zsq.winter.office.entity.excel.WinterExcelExportParam;
+import com.zsq.winter.office.entity.excel.WinterExcelValidateErrorModel;
+import com.zsq.winter.office.entity.excel.handler.CustomMatchColumnWidthStyleHandler;
+import com.zsq.winter.office.entity.excel.handler.CustomStyleHandler;
+import com.zsq.winter.office.entity.excel.listener.WinterAnalysisValidReadListener;
+import com.zsq.winter.office.service.excel.WinterExcelTemplate;
+import com.zsq.winter.office.util.WebUtil;
+import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Validator;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.winter.cloud.common.enums.ResultCodeEnum.DUPLICATE_KEY;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class AuthRoleRepositoryImpl implements AuthRoleRepository {
@@ -44,21 +74,34 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     private final AuthRoleMapper authRoleMapper;
     private final AuthRoleInfraAssembler authRoleInfraAssembler;
     private final WinterI18nTemplate winterI18nTemplate;
-    @DubboReference
-    public I18nMessageFacade i18nMessageFacade;
-
+    private final WinterExcelTemplate winterExcelTemplate;
+    private final WinterRedisTemplate winterRedisTemplate;
+    private final ObjectMapper objectMapper;
+    private final Validator fastFalseValidator;
+    /**
+     * 编程式事务模版
+     * <p>
+     * 用于精确控制事务边界。解决 @Transactional 注解与缓存操作的时序问题。
+     * 如果使用注解，缓存操作通常包裹在事务内，若缓存更新成功但后续 DB 提交失败，会导致缓存脏数据。
+     */
+    private final TransactionTemplate transactionTemplate;
+    @DubboReference(check = false)
+    private DictFacade dictFacade;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean roleSave(AuthRoleDO authRoleDO) {
         boolean b = this.hasDuplicateRole(authRoleDO);
         if (b) {
-            throw new BusinessException(DUPLICATE_KEY.getCode(), i18nMessageFacade.getMessage(CommonConstants.I18nKey.ROLE_NAME_OR_IDENTIFIER_EXISTS, LocaleContextHolder.getLocale()));
+            throw new BusinessException(DUPLICATE_KEY.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.ROLE_NAME_OR_IDENTIFIER_EXISTS));
         }
         AuthRolePO authRolePO = authRoleInfraAssembler.toPO(authRoleDO);
         return authRoleMpService.save(authRolePO);
     }
 
+    /**
+     * 判断是否存在：角色名相同 或 角色编码相同并且（如果是更新）不是自己
+     */
     @Override
     public boolean hasDuplicateRole(AuthRoleDO authRoleDO) {
         LambdaQueryWrapper<AuthRolePO> authRolePOLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -76,7 +119,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     public Boolean roleUpdate(AuthRoleDO authRoleDO) {
         boolean b = this.hasDuplicateRole(authRoleDO);
         if (b) {
-            throw new BusinessException(DUPLICATE_KEY.getCode(), i18nMessageFacade.getMessage(CommonConstants.I18nKey.ROLE_NAME_OR_IDENTIFIER_EXISTS, LocaleContextHolder.getLocale()));
+            throw new BusinessException(DUPLICATE_KEY.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.ROLE_NAME_OR_IDENTIFIER_EXISTS));
         }
         AuthRolePO authRolePO = authRoleInfraAssembler.toPO(authRoleDO);
         return authRoleMpService.updateById(authRolePO);
@@ -105,14 +148,14 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         // 1. 拦截空集合：如果没有可以删除的角色，直接中断处理
         if (ObjectUtil.isEmpty(allowDeleteRoleIds)) {
             // 建议在这里抛出自定义业务异常，提示前端 "所选角色均已关联用户，无法删除"
-            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(),winterI18nTemplate.message("Roles.cannot.delete"));
+            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(), winterI18nTemplate.message("Roles.cannot.delete"));
         }
 
         // 2. 执行主表删除
         boolean b = authRoleMpService.removeByIds(allowDeleteRoleIds);
         if (!b) {
             // 主表删除失败，必须抛出异常触发回滚！
-            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(),winterI18nTemplate.message("delete.fail")); // 替换为你项目中的实际业务异常类
+            throw new BusinessException(ResultCodeEnum.FAIL_LANG.getCode(), winterI18nTemplate.message("delete.fail")); // 替换为你项目中的实际业务异常类
         }
 
         // 3. 执行关联表删除
@@ -161,7 +204,6 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     }
 
 
-
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void assignMenuPermissions(Long roleId, List<Long> menuIds) {
@@ -170,5 +212,361 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         //  添加角色新的资源
         List<AuthRoleMenuPO> authRoleMenuPOList = menuIds.stream().map(menuId -> AuthRoleMenuPO.builder().roleId(roleId).menuId(menuId).build()).collect(Collectors.toList());
         authRoleMenuMpService.saveBatch(authRoleMenuPOList, 100);
+    }
+
+    @Override
+    public void roleExportExcel(HttpServletResponse response) {
+        // 状态
+        Response<List<DictDataDTO>> listLocaleResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(110L).build());
+        List<DictDataDTO> statuList = listLocaleResponse.getData();
+        // 语言环境映射
+        Map<String, String> statusMap = statuList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+        List<AuthRolePO> collect = authRoleMpService.list().stream()
+                .map(item -> {
+                    item.setStatus(statusMap.get(item.getStatus()));
+                    return item;
+                }).collect(Collectors.toList());
+        ArrayList<WriteHandler> writeHandlers = new ArrayList<>();
+        // 自定义样式处理器
+        CustomStyleHandler cellStyleSheetWriteHandler = new CustomStyleHandler(null, null);
+        writeHandlers.add(cellStyleSheetWriteHandler);
+        writeHandlers.add(new CustomMatchColumnWidthStyleHandler());
+        WinterExcelExportParam<AuthRolePO> builder = WinterExcelExportParam.<AuthRolePO>builder()
+                .response(response)
+                .batchSize(1000)
+                .password("")
+                .fileName("角色信息.xlsx")
+                .excludeColumnFieldNames(null)
+                .writeHandlers(writeHandlers)
+                .converters(null)
+                .head(AuthRolePO.class)
+                .dataList(collect)
+                .build();
+        winterExcelTemplate.export(builder);
+    }
+
+    @Override
+    public void roleExportExcelTemplate(HttpServletResponse response) {
+        ArrayList<WriteHandler> writeHandlers = new ArrayList<>();
+        // 自定义样式处理器
+        CustomStyleHandler cellStyleSheetWriteHandler = new CustomStyleHandler(null, null);
+        writeHandlers.add(cellStyleSheetWriteHandler);
+        writeHandlers.add(new CustomMatchColumnWidthStyleHandler());
+        WinterExcelExportParam<AuthRolePO> builder = WinterExcelExportParam.<AuthRolePO>builder()
+                .response(response)
+                .batchSize(1000)
+                .password("")
+                .fileName("角色信息模版.xlsx")
+                // 导出的模版不需要创建时间这个列
+                .excludeColumnFieldNames(List.of("createTime"))
+                .converters(null)
+                .writeHandlers(writeHandlers)
+                .head(AuthRolePO.class)
+                .dataList(null)
+                .build();
+        winterExcelTemplate.export(builder);
+    }
+
+    @Override
+    public void roleImportExcel(HttpServletResponse response, MultipartFile file) throws IOException {
+
+        // ====================== 1. 预加载字典数据 ======================
+        Map<String, String> statusMap = dictCache("110", false);
+
+        // Excel 多 Sheet 导出参数集合
+        List<WinterExcelExportParam<?>> excelExportParamList = new ArrayList<>();
+
+        // 业务逻辑错误集合（唯一性冲突等）
+        List<WinterExcelBusinessErrorModel> winterExcelBusinessErrorModelList = new ArrayList<>();
+
+        // ====================== 2. 构建 Excel 读取监听器 ======================
+        /*
+         * WinterAnalysisValidReadListener：
+         * - 支持分批读取（这里每 1000 条回调一次）
+         * - 内置 JSR-303 校验
+         * - 回调的 item 接收到的数据一定是通过 JSR-303 校验的，永远不会包含校验失败的数据。
+         *
+         * 注意：
+         * EasyExcel 使用反射创建实体对象，实体类必须提供可访问的无参构造器
+         */
+        WinterAnalysisValidReadListener<AuthRolePO> i18nMessagePOAnalysisValidReadListener =
+                new WinterAnalysisValidReadListener<>(1000, (item) -> {
+                    // ====================== 3. 处理每一批校验通过的数据 ======================
+                    for (AuthRolePO authRolePO : item) {
+                        // 将 Excel 中的字典值转换为系统内部值
+                        String statusOrDefault = statusMap.getOrDefault(authRolePO.getStatus(), "");
+                        if (!ObjectUtil.isEmpty(statusOrDefault)) {
+                            authRolePO.setStatus(statusOrDefault);
+                        } else {
+                            String jsonStr = null;
+                            try {
+                                jsonStr = objectMapper.writeValueAsString(authRolePO);
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+                            WinterExcelBusinessErrorModel errorModel =
+                                    WinterExcelBusinessErrorModel.builder()
+                                            .errorMessage("角色状态字典映射错误！")
+                                            .entityRowInfo(jsonStr)
+                                            .build();
+
+                            winterExcelBusinessErrorModelList.add(errorModel);
+                        }
+                        // 校验是否已存在（唯一性校验）
+                        boolean hasDuplicate = hasDuplicateRole(
+                                AuthRoleDO.builder()
+                                .roleKey(authRolePO.getRoleKey())
+                                .roleName(authRolePO.getRoleName())
+                                .status(authRolePO.getStatus())
+                                .id(authRolePO.getId())
+                                .build());
+
+                        if (hasDuplicate) {
+                            // ====================== 3.1 业务唯一性校验失败 ======================
+                            try {
+                                // 将当前行数据序列化，方便导出错误信息
+                                String jsonStr = objectMapper.writeValueAsString(authRolePO);
+                                WinterExcelBusinessErrorModel errorModel =
+                                        WinterExcelBusinessErrorModel.builder()
+                                                .errorMessage("角色名称/标识已存在")
+                                                .entityRowInfo(jsonStr)
+                                                .build();
+
+                                winterExcelBusinessErrorModelList.add(errorModel);
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+
+                        } else {
+                            // ====================== 3.2 业务校验通过，执行入库 ======================
+                            /*
+                             * 注意：
+                             * 这里必须逐条插入，不能批量插入
+                             * 原因：批量插入无法校验“当前批次内部”是否存在重复数据
+                             */
+                            Boolean dbSuccess = transactionTemplate.execute(status -> {
+                                // 保存国际化消息
+                                 return authRoleMpService.save(authRolePO);
+                            });
+                        }
+                    }
+                }, fastFalseValidator, CollUtil.toList(AuthRolePO.Import.class));
+
+        // ====================== 4. 执行 Excel 读取 ======================
+        FastExcel.read(file.getInputStream(), AuthRolePO.class, i18nMessagePOAnalysisValidReadListener)
+                .excelType(ExcelTypeEnum.XLSX)
+                .password("")
+                .sheet(0)
+                .doRead();
+
+        // ====================== 5. 收集校验错误信息 ======================
+        // JSR-303 校验错误
+        List<WinterExcelValidateErrorModel> errorList =
+                i18nMessagePOAnalysisValidReadListener.getErrorList();
+
+        // ====================== 6. 构建业务逻辑错误 Sheet ======================
+        if (!ObjectUtils.isEmpty(winterExcelBusinessErrorModelList)) {
+
+            WinterExcelExportParam<WinterExcelBusinessErrorModel> businessParam =
+                    WinterExcelExportParam.<WinterExcelBusinessErrorModel>builder()
+                            .sheetName("业务逻辑错误信息")
+                            .excludeColumnFieldNames(new ArrayList<>())
+                            .writeHandlers(new ArrayList<>())
+                            .password("")
+                            .dataList(winterExcelBusinessErrorModelList)
+                            .head(WinterExcelBusinessErrorModel.class)
+                            .build();
+
+            excelExportParamList.add(businessParam);
+        }
+
+        // ====================== 7. 构建校验逻辑错误 Sheet（支持国际化） ======================
+        if (!ObjectUtils.isEmpty(errorList)) {
+
+            // 对校验错误信息进行国际化处理
+            errorList.forEach(error -> {
+                String message = error.getMessage();
+                StringBuilder stringBuilder = new StringBuilder();
+
+                // 判断是否为国际化 key 格式：{xxx}
+                if (message != null && message.startsWith("{") && message.endsWith("}")) {
+                    String messageKey = message.substring(1, message.length() - 1);
+                    try {
+                        stringBuilder.append(winterI18nTemplate.message(messageKey, new Object[]{}, message));
+                    } catch (Exception ex) {
+                        // 国际化失败，使用原始消息
+                        stringBuilder.append(message);
+                    }
+                } else {
+                    stringBuilder.append(message);
+                }
+                error.setMessage(stringBuilder.toString());
+            });
+
+            WinterExcelExportParam<WinterExcelValidateErrorModel> validateParam =
+                    WinterExcelExportParam.<WinterExcelValidateErrorModel>builder()
+                            .sheetName("校验逻辑错误信息")
+                            .excludeColumnFieldNames(new ArrayList<>())
+                            .writeHandlers(new ArrayList<>())
+                            .password("")
+                            .dataList(errorList)
+                            .head(WinterExcelValidateErrorModel.class)
+                            .build();
+
+            excelExportParamList.add(validateParam);
+        }
+
+        // ====================== 8. 返回结果 ======================
+        if (ObjectUtils.isEmpty(winterExcelBusinessErrorModelList)
+            && ObjectUtils.isEmpty(errorList)) {
+
+            // 无任何错误，直接返回成功结果
+            Response<Object> build = Response.build(null, "200", "导入成功！");
+            WebUtil.renderString(response, objectMapper.writeValueAsString(build));
+
+        } else {
+            // 存在错误，导出多 Sheet 的错误 Excel
+            winterExcelTemplate.exportMultiSheet(
+                    response,
+                    "错误信息.xlsx",
+                    "",
+                    excelExportParamList
+            );
+        }
+    }
+
+
+    /**
+     * 根据字典类型获取字典键值对
+     *
+     * <p>
+     * 默认返回：label -> value
+     * 当 reverse = true 时返回：value -> label
+     * </p>
+     *
+     * <p>
+     * 查询优先级：
+     * 1. 先从 Redis 缓存中获取
+     * 2. 缓存不存在或解析失败，则调用远程字典服务获取
+     * </p>
+     *
+     * @param dictType 字典类型（字典类型 ID）
+     * @param reverse  是否反转 key / value
+     * @return 字典键值 Map，不存在则返回空 Map
+     */
+    public Map<String, String> dictCache(String dictType, boolean reverse) {
+
+        // Redis 中字典缓存的 key，格式：DICT_KEY:dictType
+        String redisKey = CommonConstants.Redis.DICT_KEY
+                          + CommonConstants.Redis.SPLIT
+                          + dictType;
+
+        // ====================== 1. 优先从 Redis 中获取字典数据 ======================
+        Object cache = winterRedisTemplate.get(redisKey);
+
+        // 将 Redis 中的缓存数据反序列化为字典列表
+        List<DictDataDTO> dictList = parseFromCache(cache);
+
+        // ====================== 2. 缓存未命中或解析失败时，调用远程服务 ======================
+        if (CollUtil.isEmpty(dictList)) {
+            dictList = fetchFromRemote(dictType);
+        }
+
+        // ====================== 3. 按是否反转构建返回的 Map ======================
+        return buildResultMap(dictList, reverse);
+    }
+
+    /**
+     * 从 Redis 缓存中解析字典数据
+     *
+     * <p>
+     * Redis 中存储的是字典数据的 JSON 字符串，
+     * 这里负责将其反序列化为 List<DictDataDTO>
+     * </p>
+     *
+     * @param cache Redis 获取到的缓存对象
+     * @return 字典列表，解析失败或缓存为空时返回空集合
+     */
+    private List<DictDataDTO> parseFromCache(Object cache) {
+
+        // 缓存为空，直接返回空集合
+        if (ObjectUtil.isEmpty(cache)) {
+            return Collections.emptyList();
+        }
+
+        try {
+            // 将 JSON 字符串反序列化为字典数据列表
+            return objectMapper.readValue(
+                    cache.toString(),
+                    new TypeReference<List<DictDataDTO>>() {
+                    }
+            );
+        } catch (Exception e) {
+            // JSON 解析失败时记录日志，避免问题被悄悄吞掉
+            log.warn("解析字典缓存失败，缓存内容：{}", cache, e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 从远程字典服务中获取字典数据
+     *
+     * <p>
+     * 远程接口返回的是：
+     * Map<dictType, List<DictDataDTO>>
+     * 这里需要将所有字典数据打平，并过滤出当前 dictType 对应的数据
+     * </p>
+     *
+     * @param dictType 字典类型（字典类型 ID）
+     * @return 字典列表，远程调用失败时返回空集合
+     */
+    private List<DictDataDTO> fetchFromRemote(String dictType) {
+
+        // 调用字典微服务，根据字典类型查询字典数据
+        Response<Map<String, List<DictDataDTO>>> response =
+                dictFacade.getDictDataByType(new DictCommand(Long.valueOf(dictType), "1"));
+
+        // 接口返回为空，直接返回空集合，避免空指针
+        if (ObjectUtil.isEmpty(response) || ObjectUtil.isEmpty(response.getData())) {
+            return Collections.emptyList();
+        }
+
+        // 将 Map 中的所有字典列表打平，并过滤出当前 dictType 的字典数据
+        return response.getData()
+                .values()
+                .stream()
+                .flatMap(List::stream)
+                .filter(d -> dictType.equals(String.valueOf(d.getDictTypeId())))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据字典列表构建最终返回的 Map
+     *
+     * <p>
+     * 不反转（reverse = false）：label -> value
+     * 反转（reverse = true）：value -> label
+     * </p>
+     *
+     * @param list    字典数据列表
+     * @param reverse 是否反转 key / value
+     * @return 构建好的字典 Map
+     */
+    private Map<String, String> buildResultMap(List<DictDataDTO> list, boolean reverse) {
+
+        // 字典列表为空时，返回空 Map
+        if (CollUtil.isEmpty(list)) {
+            return Collections.emptyMap();
+        }
+
+        return list.stream()
+                .collect(Collectors.toMap(
+                        // 根据 reverse 决定 key 的取值
+                        reverse ? DictDataDTO::getDictValue : DictDataDTO::getDictLabel,
+                        // 根据 reverse 决定 value 的取值
+                        reverse ? DictDataDTO::getDictLabel : DictDataDTO::getDictValue,
+                        // 当 key 冲突时，保留第一个值，防止抛出异常
+                        (v1, v2) -> v1
+                ));
     }
 }

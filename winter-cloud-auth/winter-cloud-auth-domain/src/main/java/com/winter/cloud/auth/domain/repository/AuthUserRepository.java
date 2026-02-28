@@ -42,4 +42,6 @@ public interface AuthUserRepository {
     boolean hasDuplicateUser(UserRegisterCommand command);
 
     PageDTO<AuthUserDO> userPage(UserQuery userQuery);
+
+    Boolean userSave(AuthUserDO aDo);
 }

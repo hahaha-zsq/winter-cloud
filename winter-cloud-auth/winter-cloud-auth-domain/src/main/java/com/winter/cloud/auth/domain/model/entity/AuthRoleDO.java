@@ -1,9 +1,10 @@
 package com.winter.cloud.auth.domain.model.entity;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-
+@Builder
 @Data
 public class AuthRoleDO {
     private Long id;
