@@ -24,7 +24,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 /**
  * 认证控制器
@@ -35,6 +34,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @DubboService
+@Validated
 @RequestMapping("/auth")
 public class AuthUserController implements AuthValidationFacade {
     private final AuthUserAppService authUserAppService;

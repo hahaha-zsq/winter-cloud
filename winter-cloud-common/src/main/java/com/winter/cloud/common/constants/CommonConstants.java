@@ -247,6 +247,14 @@ public final class CommonConstants {
         public static final String I18N_MESSAGE = "i18n.message";
         /**国际化导出模版名称*/
         public static final String I18N_MESSAGE_TEMPLATE = "i18n.message.template";
+        /**用户信息username/phone/email存在重复*/
+        public static final String USER_INFO_DUPLICATED = "userInfo.duplicated";
+        /**用户信息保存失败*/
+        public static final String USER_INFO_SAVE_FAILED  = "userInfo.save.failed";
+        /**用户角色保存失败*/
+        public static final String USER_ROLE_SAVE_FAILED  = "user.role.save.failed";
+        /**用户部门保存失败*/
+        public static final String USER_DEPT_SAVE_FAILED  = "user.dept.save.failed";
 
 
     }

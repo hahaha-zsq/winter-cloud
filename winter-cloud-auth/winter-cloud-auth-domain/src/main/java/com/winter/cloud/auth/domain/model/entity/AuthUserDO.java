@@ -3,6 +3,7 @@ package com.winter.cloud.auth.domain.model.entity;
 import com.zsq.winter.encrypt.util.CryptoUtil;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户领域实体
@@ -11,16 +12,20 @@ import java.time.LocalDateTime;
 @Data
 public class AuthUserDO {
     private Long id;
-    private String userName;
-    private String nickName;
-    private String email;
-    private String phone;
-    private String sex;
     private String avatar;
+    private List<Long>deptIds;
+    private String email;
+    private String introduction;
+    private String nickName;
     private String password;
+    private String phone;
+    private Long postId;
+    private List<Long>roleIds;
+    private String sex;
     private String status;
+    private String userName;
     private String delFlag;
-    
+
     // 审计字段通常在领域层也可以保留，或者封装成 ValueObject
     private Long createBy;
     private LocalDateTime createTime;
@@ -28,9 +33,7 @@ public class AuthUserDO {
     private LocalDateTime updateTime;
     
     private String remark;
-    private Long postId;
     private String countryId;
-    private String introduction;
     private String bgImg;
 
     // --- 可以添加领域行为方法 ---

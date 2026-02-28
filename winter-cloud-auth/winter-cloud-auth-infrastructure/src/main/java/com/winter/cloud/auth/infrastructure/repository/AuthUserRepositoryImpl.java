@@ -10,26 +10,36 @@ import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.auth.domain.repository.AuthUserRepository;
 import com.winter.cloud.auth.infrastructure.assembler.AuthUserInfraAssembler;
 import com.winter.cloud.auth.infrastructure.entity.AuthRolePO;
+import com.winter.cloud.auth.infrastructure.entity.AuthUserDeptPO;
 import com.winter.cloud.auth.infrastructure.entity.AuthUserPO;
+import com.winter.cloud.auth.infrastructure.entity.AuthUserRolePO;
 import com.winter.cloud.auth.infrastructure.mapper.AuthUserMapper;
+import com.winter.cloud.auth.infrastructure.service.IAuthUserDeptMpService;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserMpService;
+import com.winter.cloud.auth.infrastructure.service.IAuthUserRoleMpService;
 import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
 import com.zsq.i18n.template.WinterI18nTemplate;
+import com.zsq.winter.encrypt.util.CryptoUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.winter.cloud.common.enums.ResultCodeEnum.DUPLICATE_KEY;
+import static com.winter.cloud.common.enums.ResultCodeEnum.FAIL;
 
 @Repository
 @RequiredArgsConstructor
 public class AuthUserRepositoryImpl implements AuthUserRepository {
     private final IAuthUserMpService authUserMpService;
+    private final IAuthUserRoleMpService authUserRoleMpService;
+    private final IAuthUserDeptMpService authUserDeptMpService;
     private final AuthUserMapper authUserMapper;
     private final AuthUserInfraAssembler authUserInfraAssembler;
     private final WinterI18nTemplate winterI18nTemplate;
@@ -98,15 +108,53 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
         return new PageDTO<>(doList, userPage.getTotal());
     }
 
+
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean userSave(AuthUserDO aDo) {
-        boolean b = this.hasDuplicateUser(authUserInfraAssembler.toUserRegisterCommand(aDo))    ;
-        if (b) {
-            throw new BusinessException(DUPLICATE_KEY.getCode(), winterI18nTemplate.message("用户信息username/phone/email存在重复"));
+
+        if (this.hasDuplicateUser(authUserInfraAssembler.toUserRegisterCommand(aDo))) {
+            throw new BusinessException(DUPLICATE_KEY.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.USER_INFO_DUPLICATED));
         }
+
         AuthUserPO authUserPO = authUserInfraAssembler.toPO(aDo);
-        // todo 将用户和角色关联的信息、用户和部门关联的信息也要存入表中
-        return authUserMpService.save(authUserPO);
+        String encryptedPwd = CryptoUtil.winterMd5Hex16(authUserPO.getPassword());
+        authUserPO.setPassword(encryptedPwd);
+        authUserPO.setDelFlag("0");
+        boolean saved = authUserMpService.save(authUserPO);
+        if (!saved) {
+            throw new BusinessException(FAIL.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.USER_INFO_SAVE_FAILED));
+        }
+
+        Long userId = authUserPO.getId();
+
+        List<AuthUserRolePO> roleList =
+                Optional.ofNullable(aDo.getRoleIds())
+                        .orElse(List.of())
+                        .stream()
+                        .map(item -> AuthUserRolePO.builder()
+                                .userId(userId)
+                                .roleId(item)
+                                .build())
+                        .collect(Collectors.toList());
+
+        if (!roleList.isEmpty() && !authUserRoleMpService.saveBatch(roleList)) {
+            throw new BusinessException(FAIL.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.USER_ROLE_SAVE_FAILED));
+        }
+
+        List<AuthUserDeptPO> deptList =
+                Optional.ofNullable(aDo.getDeptIds())
+                        .orElse(List.of())
+                        .stream()
+                        .map(item -> AuthUserDeptPO.builder()
+                                .userId(userId)
+                                .deptId(item)
+                                .build())
+                        .collect(Collectors.toList());
+
+        if (!deptList.isEmpty() && !authUserDeptMpService.saveBatch(deptList)) {
+            throw new BusinessException(FAIL.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.USER_DEPT_SAVE_FAILED));
+        }
+        return true;
     }
 }
