@@ -255,8 +255,12 @@ public final class CommonConstants {
         public static final String USER_ROLE_SAVE_FAILED  = "user.role.save.failed";
         /**用户部门保存失败*/
         public static final String USER_DEPT_SAVE_FAILED  = "user.dept.save.failed";
-
-
+        /**用户部门更新失败*/
+        public static final String USER_INFO_UPDATE_FAILED  = "userInfo.update.failed";
+        /**用户角色更新失败*/
+        public static final String USER_ROLE_UPDATE_FAILED  = "user.role.update.failed";
+        /**用户部门更新失败*/
+        public static final String USER_DEPT_UPDATE_FAILED  = "user.dept.update.failed";
     }
 
     public static final class Delimiter{

@@ -4,6 +4,7 @@ import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.common.response.PageDTO;
+import com.winter.cloud.common.response.Response;
 
 import java.util.List;
 
@@ -44,4 +45,10 @@ public interface AuthUserRepository {
     PageDTO<AuthUserDO> userPage(UserQuery userQuery);
 
     Boolean userSave(AuthUserDO aDo);
+
+    Boolean userUpdate(AuthUserDO aDo);
+
+    Boolean userDelete(List<Long> id);
+
+    Response<Boolean> updatePasswordBySuperMan(Long id, String password);
 }

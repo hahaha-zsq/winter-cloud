@@ -25,7 +25,7 @@ public class AuthUserRolePO implements Serializable {
      * 主键
      */
     @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     /**
      * 用户id

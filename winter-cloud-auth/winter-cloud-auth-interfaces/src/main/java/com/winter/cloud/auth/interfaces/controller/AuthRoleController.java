@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import java.io.IOException;
 import java.util.List;
@@ -114,7 +115,7 @@ public class AuthRoleController {
      * @param roleIds 角色id集合
      */
     @DeleteMapping("/roleDelete")
-    public Response<Boolean> roleDelete(@RequestBody @NotEmpty(message = "{delete.data.notEmpty}") List<Long> roleIds) {
+    public Response<Boolean> roleDelete(@RequestBody @Valid @NotEmpty(message = "{delete.data.notEmpty}") List<Long> roleIds) {
         Boolean data = authRoleAppService.roleDelete(roleIds);
         return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(), winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()), data);
     }

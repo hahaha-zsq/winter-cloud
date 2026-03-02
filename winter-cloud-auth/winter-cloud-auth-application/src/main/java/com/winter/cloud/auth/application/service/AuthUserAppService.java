@@ -10,6 +10,11 @@ import com.winter.cloud.auth.api.dto.response.LoginResponseDTO;
 import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
 import com.winter.cloud.auth.api.dto.response.ValidateTokenDTO;
 import com.winter.cloud.common.response.PageDTO;
+import com.winter.cloud.common.response.Response;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * 认证应用服务接口
@@ -39,4 +44,16 @@ public interface AuthUserAppService {
     PageDTO<UserResponseDTO> userPage(UserQuery userQuery);
 
     Boolean userSave(UpsertUserCommand upsertUserCommand);
+
+    Boolean userUpdate(UpsertUserCommand upsertUserCommand);
+
+    Boolean userDelete(List<Long> idList);
+
+    Response<Boolean> updatePasswordBySuperMan(Long id, String password);
+
+    void userExportExcel(HttpServletResponse response);
+
+    void userExportExcelTemplate(HttpServletResponse response);
+
+    void userImportExcel(HttpServletResponse response, MultipartFile file);
 }

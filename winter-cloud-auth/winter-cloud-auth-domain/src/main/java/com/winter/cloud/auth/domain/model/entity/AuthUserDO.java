@@ -24,7 +24,6 @@ public class AuthUserDO {
     private String sex;
     private String status;
     private String userName;
-    private String delFlag;
 
     // 审计字段通常在领域层也可以保留，或者封装成 ValueObject
     private Long createBy;

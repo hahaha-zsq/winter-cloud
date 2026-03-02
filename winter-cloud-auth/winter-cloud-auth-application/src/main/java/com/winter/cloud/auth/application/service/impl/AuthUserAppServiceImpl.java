@@ -26,6 +26,7 @@ import com.winter.cloud.common.enums.StatusEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageAndOrderDTO;
 import com.winter.cloud.common.response.PageDTO;
+import com.winter.cloud.common.response.Response;
 import com.winter.cloud.common.util.JwtUtil;
 import com.zsq.winter.encrypt.util.CryptoUtil;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate; // 使用你的 Redis 工具
@@ -34,7 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -72,10 +75,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
         // 3. 密码加密
         String encryptedPwd = CryptoUtil.winterMd5Hex16(authUserDO.getPassword());
         authUserDO.setPassword(encryptedPwd);
-
         authUserDO.setStatus(StatusEnum.ENABLE.getCode()); // 正常
-        authUserDO.setDelFlag("0"); // 未删除
-
         // 4. 保存
         return authUserRepository.save(authUserDO);
     }
@@ -212,5 +212,37 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
     public Boolean userSave(UpsertUserCommand upsertUserCommand) {
         AuthUserDO aDo = authUserAppAssembler.toDO(upsertUserCommand);
         return authUserRepository.userSave(aDo);
+    }
+
+    @Override
+    public Boolean userUpdate(UpsertUserCommand upsertUserCommand) {
+        AuthUserDO aDo = authUserAppAssembler.toDO(upsertUserCommand);
+        return authUserRepository.userUpdate(aDo);
+    }
+
+    @Override
+    public Boolean userDelete(List<Long> idList) {
+        return authUserRepository.userDelete(idList);
+    }
+
+    @Override
+    public Response<Boolean> updatePasswordBySuperMan(Long id, String password) {
+        return authUserRepository.updatePasswordBySuperMan(id, password);
+    }
+
+    // todo     用户模块的导入，导出还没实现
+    @Override
+    public void userExportExcel(HttpServletResponse response) {
+
+    }
+
+    @Override
+    public void userExportExcelTemplate(HttpServletResponse response) {
+
+    }
+
+    @Override
+    public void userImportExcel(HttpServletResponse response, MultipartFile file) {
+
     }
 }
