@@ -217,10 +217,10 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     @Override
     public void roleExportExcel(HttpServletResponse response) {
         // 状态
-        Response<List<DictDataDTO>> listLocaleResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(110L).build());
-        List<DictDataDTO> statuList = listLocaleResponse.getData();
+        Response<List<DictDataDTO>> statusListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(110L).build());
+        List<DictDataDTO> statusList = statusListResponse.getData();
         // 语言环境映射
-        Map<String, String> statusMap = statuList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+        Map<String, String> statusMap = statusList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
         List<AuthRolePO> collect = authRoleMpService.list().stream()
                 .map(item -> {
                     item.setStatus(statusMap.get(item.getStatus()));

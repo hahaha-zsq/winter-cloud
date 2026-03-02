@@ -9,6 +9,7 @@ import java.util.List;
 public class PageAndOrderDTO {
     private Integer pageNum = 1;
     private Integer pageSize = 10;
+    private Boolean exportAll = false;
     private List<OrderDTO> orders = new ArrayList<>(); // 修复：添加字段名 'orders' 并初始化
 
     @Data

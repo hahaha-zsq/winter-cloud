@@ -1,5 +1,8 @@
 package com.winter.cloud.auth.application.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.map.MapBuilder;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +42,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -230,19 +235,23 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
         return authUserRepository.updatePasswordBySuperMan(id, password);
     }
 
-    // todo     用户模块的导入，导出还没实现
     @Override
-    public void userExportExcel(HttpServletResponse response) {
-
+    public void userExportExcel(HttpServletResponse response, UserQuery userQuery) {
+        Boolean exportAll = userQuery.getExportAll();
+        if (exportAll) {
+            userQuery.setPageSize(1000000);
+        }
+        List<UserResponseDTO> records = this.userPage(userQuery).getRecords();
+        authUserRepository.userExportExcel(response,records);
     }
 
     @Override
     public void userExportExcelTemplate(HttpServletResponse response) {
-
+        authUserRepository.userExportExcelTemplate(response);
     }
 
     @Override
     public void userImportExcel(HttpServletResponse response, MultipartFile file) {
-
+        authUserRepository.userImportExcel(response, file);
     }
 }

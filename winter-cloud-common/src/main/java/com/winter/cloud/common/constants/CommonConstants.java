@@ -229,8 +229,12 @@ public final class CommonConstants {
         public static final String ROLE_DICT_MAPPING_ERROR = "role.dict.mapping.error";
         /**角色信息(角色导出excel文件的名称)*/
         public static final String ROLE_INFORMATION = "role.information";
+        /**用户信息(用户导出excel文件的名称)*/
+        public static final String USER_INFORMATION = "user.information";
         /**角色信息模版(角色模版导出excel文件的名称)*/
         public static final String ROLE_INFORMATION_TEMPLATE = "role.information.template";
+        /**用户信息(用户导出excel文件的名称)*/
+        public static final String USER_INFORMATION_TEMPLATE = "user.information.template";
         /**业务逻辑错误*/
         public static final String BUSINESS_LOGIC_ERROR = "business.logic.error";
         /**验证逻辑错误*/

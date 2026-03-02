@@ -51,7 +51,7 @@ public interface AuthUserAppService {
 
     Response<Boolean> updatePasswordBySuperMan(Long id, String password);
 
-    void userExportExcel(HttpServletResponse response);
+    void userExportExcel(HttpServletResponse response, UserQuery userQuery);
 
     void userExportExcelTemplate(HttpServletResponse response);
 

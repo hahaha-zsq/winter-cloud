@@ -1,53 +1,77 @@
 package com.winter.cloud.auth.infrastructure.repository;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.map.MapBuilder;
 import cn.hutool.core.util.ObjectUtil;
+import cn.idev.excel.write.handler.WriteHandler;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.query.UserQuery;
+import com.winter.cloud.auth.api.dto.response.DeptResponseDTO;
+import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
+import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.auth.domain.repository.AuthUserRepository;
 import com.winter.cloud.auth.infrastructure.assembler.AuthUserInfraAssembler;
-import com.winter.cloud.auth.infrastructure.entity.AuthRolePO;
-import com.winter.cloud.auth.infrastructure.entity.AuthUserDeptPO;
-import com.winter.cloud.auth.infrastructure.entity.AuthUserPO;
-import com.winter.cloud.auth.infrastructure.entity.AuthUserRolePO;
+import com.winter.cloud.auth.infrastructure.entity.*;
 import com.winter.cloud.auth.infrastructure.mapper.AuthUserMapper;
+import com.winter.cloud.auth.infrastructure.service.IAuthPostMPService;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserDeptMpService;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserMpService;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserRoleMpService;
 import com.winter.cloud.common.constants.CommonConstants;
-import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
+import com.winter.cloud.dict.api.dto.command.DictCommand;
+import com.winter.cloud.dict.api.dto.query.DictQuery;
+import com.winter.cloud.dict.api.dto.response.DictDataDTO;
+import com.winter.cloud.dict.api.facade.DictFacade;
 import com.zsq.i18n.template.WinterI18nTemplate;
 import com.zsq.winter.encrypt.util.CryptoUtil;
+import com.zsq.winter.office.entity.excel.WinterExcelExportParam;
+import com.zsq.winter.office.entity.excel.WinterExcelSelectedModel;
+import com.zsq.winter.office.entity.excel.handler.CustomMatchColumnWidthStyleHandler;
+import com.zsq.winter.office.entity.excel.handler.CustomSelectHandler;
+import com.zsq.winter.office.entity.excel.handler.CustomStyleHandler;
+import com.zsq.winter.office.service.excel.WinterExcelTemplate;
+import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.i18n.LocaleContextHolder;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Validator;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.winter.cloud.common.enums.ResultCodeEnum.DUPLICATE_KEY;
 import static com.winter.cloud.common.enums.ResultCodeEnum.FAIL;
-
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class AuthUserRepositoryImpl implements AuthUserRepository {
     private final IAuthUserMpService authUserMpService;
     private final IAuthUserRoleMpService authUserRoleMpService;
     private final IAuthUserDeptMpService authUserDeptMpService;
+    private final IAuthPostMPService authPostMpService;
     private final AuthUserMapper authUserMapper;
     private final AuthUserInfraAssembler authUserInfraAssembler;
     private final WinterI18nTemplate winterI18nTemplate;
-
+    private final WinterExcelTemplate winterExcelTemplate;
+    private final WinterRedisTemplate winterRedisTemplate;
+    private final ObjectMapper objectMapper;
+    private final Validator fastFalseValidator;
+    @DubboReference(check = false)
+    private DictFacade dictFacade;
     @Override
     public AuthUserDO findById(Long id) {
         return null;
@@ -88,16 +112,15 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
     public boolean hasDuplicateUser(UserRegisterCommand command) {
         LambdaQueryWrapper<AuthUserPO> authUserPOLambdaQueryWrapper = new LambdaQueryWrapper<>();
         authUserPOLambdaQueryWrapper.nested(
-                e -> e.eq(AuthUserPO::getUserName, command.getUserName())
-                        .or()
-                        .eq(AuthUserPO::getPhone, command.getPhone())
-                        .or()
-                        .eq(AuthUserPO::getEmail, command.getEmail()))
+                        e -> e.eq(AuthUserPO::getUserName, command.getUserName())
+                                .or()
+                                .eq(AuthUserPO::getPhone, command.getPhone())
+                                .or()
+                                .eq(AuthUserPO::getEmail, command.getEmail()))
                 .ne(ObjectUtil.isNotEmpty(command.getId()), AuthUserPO::getId, command.getId());
         long count = authUserMpService.count(authUserPOLambdaQueryWrapper);
         return count > 0;
     }
-
 
 
     @Override
@@ -286,7 +309,7 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
      * 1. 删除用户角色关联信息
      * 2. 删除用户部门关联信息
      * 3. 删除用户基本信息
-     *
+     * <p>
      * 【重要】删除顺序说明：
      * 必须先删除关联数据（角色、部门），最后删除用户信息
      * 原因：如果先删除用户，关联数据将无法通过 userId 查询到，导致关联数据残留
@@ -339,4 +362,244 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
     }
 
 
+    @Override
+    public void userExportExcelTemplate(HttpServletResponse response) {
+        String[] postArr = authPostMpService.list(new LambdaQueryWrapper<AuthPostPO>().select(AuthPostPO::getPostName)).stream().map(AuthPostPO::getPostName).toArray(String[]::new);
+        Map<Integer, WinterExcelSelectedModel> selectedModelHashMap = new HashMap<>();
+        selectedModelHashMap.put(9, WinterExcelSelectedModel
+                .builder()
+                .firstRow(2)
+                .lastRow(5000)
+                .source(postArr)
+                .build());
+
+        ArrayList<WriteHandler> writeHandlers = new ArrayList<>();
+
+        // 自定义职位下拉框数据，因为不是单独的字典数据
+        CustomSelectHandler customSelectHandler = new CustomSelectHandler(selectedModelHashMap);
+        // 自定义样式处理器
+        CustomStyleHandler cellStyleSheetWriteHandler = new CustomStyleHandler(null, null);
+        writeHandlers.add(cellStyleSheetWriteHandler);
+        writeHandlers.add(customSelectHandler);
+        writeHandlers.add(new CustomMatchColumnWidthStyleHandler());
+        WinterExcelExportParam<AuthUserPO> builder = WinterExcelExportParam.<AuthUserPO>builder()
+                .response(response)
+                .batchSize(1000)
+                .password("")
+                .fileName(winterI18nTemplate.message(CommonConstants.I18nKey.USER_INFORMATION_TEMPLATE) + ".xlsx")
+                // 导出的模版不需要创建时间这个列
+                .excludeColumnFieldNames(List.of("createTime"))
+                .converters(null)
+                .writeHandlers(writeHandlers)
+                .head(AuthUserPO.class)
+                .dataList(null)
+                .build();
+        winterExcelTemplate.export(builder);
+    }
+
+    @Override
+    public void userImportExcel(HttpServletResponse response, MultipartFile file) {
+
+    }
+
+    @Override
+    public void userExportExcel(HttpServletResponse response, List<UserResponseDTO> records) {
+        Response<List<DictDataDTO>> statusListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(110L).build());
+        List<DictDataDTO> statusList = statusListResponse.getData();
+        //映射
+        Map<String, String> statusMap = statusList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+
+        Response<List<DictDataDTO>> sexListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(1L).build());
+        List<DictDataDTO> sexList = sexListResponse.getData();
+        //映射
+        Map<String, String> sexMap = sexList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+
+        // 构建多级别表头
+        Map<String, List<String>> headMap = new LinkedHashMap<>();
+        headMap.put("userName", List.of("用户信息","用户名称"));
+        headMap.put("nickName", List.of("用户信息","用户昵称"));
+        headMap.put("email", List.of("用户信息","用户邮箱"));
+        headMap.put("phone", List.of("用户信息","手机号码"));
+        headMap.put("status", List.of("用户信息","用户状态"));
+        headMap.put("sex", List.of("用户信息","性别"));
+        headMap.put("avatar", List.of("用户信息","头像地址"));
+        headMap.put("remark", List.of("用户信息","用户备注"));
+        headMap.put("postName", List.of("用户信息","职位名称"));
+        headMap.put("deptName", List.of("用户信息","部门名称"));
+        headMap.put("roleName", List.of("用户信息","角色名称"));
+        // 构建数据
+        List<Map<String, Object>> mapDataList = records.stream()
+                .map((item) -> {
+                    String status = statusMap.get(item.getStatus());
+                    String sex = sexMap.get(item.getSex());
+                    String postName = item.getPostDTO().getPostName();
+                    String deptName = item.getDeptListDTO().stream().map(DeptResponseDTO::getDeptName).collect(Collectors.joining(","));
+                    String roleName = item.getRoleListDTO().stream().map(RoleResponseDTO::getRoleName).collect(Collectors.joining(","));
+                    return MapBuilder
+                            .create(new HashMap<String, Object>())
+                            .put("userName", item.getUserName())
+                            .put("nickName", item.getNickName())
+                            .put("email", item.getEmail())
+                            .put("phone", item.getPhone())
+                            .put("status", status)
+                            .put("sex", sex)
+                            .put("avatar", item.getAvatar())
+                            .put("remark", item.getRemark())
+                            .put("postName", postName)
+                            .put("deptName", deptName)
+                            .put("roleName", roleName)
+                            .map();
+                }).collect(Collectors.toList());
+        ArrayList<WriteHandler> writeHandlers = new ArrayList<>();
+        // 自定义样式处理器
+        CustomStyleHandler cellStyleSheetWriteHandler = new CustomStyleHandler(null, null);
+        writeHandlers.add(cellStyleSheetWriteHandler);
+        writeHandlers.add(new CustomMatchColumnWidthStyleHandler());
+        WinterExcelExportParam<AuthUserPO> builder = WinterExcelExportParam.<AuthUserPO>builder()
+                .response(response)
+                .batchSize(1000)
+                .password("")
+                .fileName(winterI18nTemplate.message(CommonConstants.I18nKey.USER_INFORMATION)+".xlsx")
+                .excludeColumnFieldNames(null)
+                .writeHandlers(writeHandlers)
+                .converters(null)
+                .headColumnMap(headMap)
+                .mapDataList(mapDataList)
+                .build();
+        winterExcelTemplate.export(builder);
+    }
+
+    /**
+     * 根据字典类型获取字典键值对
+     *
+     * <p>
+     * 默认返回：label -> value
+     * 当 reverse = true 时返回：value -> label
+     * </p>
+     *
+     * <p>
+     * 查询优先级：
+     * 1. 先从 Redis 缓存中获取
+     * 2. 缓存不存在或解析失败，则调用远程字典服务获取
+     * </p>
+     *
+     * @param dictType 字典类型（字典类型 ID）
+     * @param reverse  是否反转 key / value
+     * @return 字典键值 Map，不存在则返回空 Map
+     */
+    public Map<String, String> dictCache(String dictType, boolean reverse) {
+
+        // Redis 中字典缓存的 key，格式：DICT_KEY:dictType
+        String redisKey = CommonConstants.Redis.DICT_KEY
+                          + CommonConstants.Redis.SPLIT
+                          + dictType;
+
+        // ====================== 1. 优先从 Redis 中获取字典数据 ======================
+        Object cache = winterRedisTemplate.get(redisKey);
+
+        // 将 Redis 中的缓存数据反序列化为字典列表
+        List<DictDataDTO> dictList = parseFromCache(cache);
+
+        // ====================== 2. 缓存未命中或解析失败时，调用远程服务 ======================
+        if (CollUtil.isEmpty(dictList)) {
+            dictList = fetchFromRemote(dictType);
+        }
+
+        // ====================== 3. 按是否反转构建返回的 Map ======================
+        return buildResultMap(dictList, reverse);
+    }
+
+    /**
+     * 从 Redis 缓存中解析字典数据
+     *
+     * <p>
+     * Redis 中存储的是字典数据的 JSON 字符串，
+     * 这里负责将其反序列化为 List<DictDataDTO>
+     * </p>
+     *
+     * @param cache Redis 获取到的缓存对象
+     * @return 字典列表，解析失败或缓存为空时返回空集合
+     */
+    private List<DictDataDTO> parseFromCache(Object cache) {
+
+        // 缓存为空，直接返回空集合
+        if (ObjectUtil.isEmpty(cache)) {
+            return Collections.emptyList();
+        }
+
+        try {
+            // 将 JSON 字符串反序列化为字典数据列表
+            return objectMapper.readValue(
+                    cache.toString(),
+                    new TypeReference<List<DictDataDTO>>() {
+                    }
+            );
+        } catch (Exception e) {
+            // JSON 解析失败时记录日志，避免问题被悄悄吞掉
+            log.warn("解析字典缓存失败，缓存内容：{}", cache, e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 从远程字典服务中获取字典数据
+     *
+     * <p>
+     * 远程接口返回的是：
+     * Map<dictType, List<DictDataDTO>>
+     * 这里需要将所有字典数据打平，并过滤出当前 dictType 对应的数据
+     * </p>
+     *
+     * @param dictType 字典类型（字典类型 ID）
+     * @return 字典列表，远程调用失败时返回空集合
+     */
+    private List<DictDataDTO> fetchFromRemote(String dictType) {
+
+        // 调用字典微服务，根据字典类型查询字典数据
+        Response<Map<String, List<DictDataDTO>>> response =
+                dictFacade.getDictDataByType(new DictCommand(Long.valueOf(dictType), "1"));
+
+        // 接口返回为空，直接返回空集合，避免空指针
+        if (ObjectUtil.isEmpty(response) || ObjectUtil.isEmpty(response.getData())) {
+            return Collections.emptyList();
+        }
+
+        // 将 Map 中的所有字典列表打平，并过滤出当前 dictType 的字典数据
+        return response.getData()
+                .values()
+                .stream()
+                .flatMap(List::stream)
+                .filter(d -> dictType.equals(String.valueOf(d.getDictTypeId())))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据字典列表构建最终返回的 Map
+     *
+     * <p>
+     * 不反转（reverse = false）：label -> value
+     * 反转（reverse = true）：value -> label
+     * </p>
+     *
+     * @param list    字典数据列表
+     * @param reverse 是否反转 key / value
+     * @return 构建好的字典 Map
+     */
+    private Map<String, String> buildResultMap(List<DictDataDTO> list, boolean reverse) {
+
+        // 字典列表为空时，返回空 Map
+        if (CollUtil.isEmpty(list)) {
+            return Collections.emptyMap();
+        }
+
+        return list.stream()
+                .collect(Collectors.toMap(
+                        // 根据 reverse 决定 key 的取值
+                        reverse ? DictDataDTO::getDictValue : DictDataDTO::getDictLabel,
+                        // 根据 reverse 决定 value 的取值
+                        reverse ? DictDataDTO::getDictLabel : DictDataDTO::getDictValue,
+                        // 当 key 冲突时，保留第一个值，防止抛出异常
+                        (v1, v2) -> v1
+                ));
+    }
 }

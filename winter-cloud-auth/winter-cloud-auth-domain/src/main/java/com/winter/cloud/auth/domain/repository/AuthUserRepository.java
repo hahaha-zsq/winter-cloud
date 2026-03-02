@@ -2,11 +2,15 @@ package com.winter.cloud.auth.domain.repository;
 
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.query.UserQuery;
+import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户仓储接口 (面向领域)
@@ -51,4 +55,10 @@ public interface AuthUserRepository {
     Boolean userDelete(List<Long> id);
 
     Response<Boolean> updatePasswordBySuperMan(Long id, String password);
+
+    void userExportExcelTemplate(HttpServletResponse response);
+
+    void userImportExcel(HttpServletResponse response, MultipartFile file);
+
+    void userExportExcel(HttpServletResponse response, List<UserResponseDTO> records);
 }

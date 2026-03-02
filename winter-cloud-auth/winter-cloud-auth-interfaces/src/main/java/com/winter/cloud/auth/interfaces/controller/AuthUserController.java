@@ -361,8 +361,8 @@ public class AuthUserController implements AuthValidationFacade {
      * @param response 响应
      */
     @PostMapping(value = "/userExportExcel")
-    public void userExportExcel(HttpServletResponse response) {
-        authUserAppService.userExportExcel(response);
+    public void userExportExcel(HttpServletResponse response, @RequestBody UserQuery userQuery) {
+        authUserAppService.userExportExcel(response, userQuery);
     }
 
     /**
