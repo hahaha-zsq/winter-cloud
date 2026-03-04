@@ -20,6 +20,7 @@ import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -272,6 +273,7 @@ public class AuthUserController implements AuthValidationFacade {
      *                         使用 {@link UpsertUserCommand.Save} 分组进行参数校验
      * @return Response&lt;Boolean&gt; 操作结果，成功返回 true
      */
+    @PreAuthorize("hasAuthority('sys:user:userSave')")
     @PostMapping("/userSave")
     public Response<Boolean> userSave(@RequestBody @Validated(UpsertUserCommand.Save.class) UpsertUserCommand upsertUserCommand) {
         Boolean data = authUserAppService.userSave(upsertUserCommand);
@@ -299,6 +301,7 @@ public class AuthUserController implements AuthValidationFacade {
      * @return Response&lt;Boolean&gt; 操作结果，成功返回 true
      * @throws BusinessException 更新失败时抛出业务异常（用户不存在、重复校验失败等）
      */
+    @PreAuthorize("hasAuthority('sys:user:userUpdate')")
     @PutMapping("/userUpdate")
     public Response<Boolean> userUpdate(@RequestBody @Validated(UpsertUserCommand.Update.class) UpsertUserCommand upsertUserCommand) {
         Boolean data = authUserAppService.userUpdate(upsertUserCommand);
@@ -324,6 +327,7 @@ public class AuthUserController implements AuthValidationFacade {
      * @return Response&lt;Boolean&gt; 操作结果，成功返回 true
      * @throws BusinessException 删除失败时抛出业务异常
      */
+    @PreAuthorize("hasAuthority('sys:user:userDelete')")
     @DeleteMapping("/userDelete")
     public Response<Boolean> userDelete(@RequestBody @Valid @NotEmpty(message = "{delete.data.notEmpty}") List<Long> idList) {
         Boolean data = authUserAppService.userDelete(idList);
@@ -349,6 +353,7 @@ public class AuthUserController implements AuthValidationFacade {
      * @return Response&lt;Boolean&gt; 操作结果，成功返回 true
      * @throws BusinessException 重置失败时抛出业务异常（用户不存在、密码强度不足等）
      */
+    @PreAuthorize("hasAuthority('sys:user:updatePasswordBySuperMan')")
     @PutMapping("/updatePasswordBySuperMan")
     public Response<Boolean> updatePasswordBySuperMan(@RequestBody @Validated(UpsertUserCommand.ResetPassword.class) UpsertUserCommand upsertUserCommand) {
         return authUserAppService.updatePasswordBySuperMan(upsertUserCommand.getId(), upsertUserCommand.getPassword());
@@ -360,6 +365,7 @@ public class AuthUserController implements AuthValidationFacade {
      *
      * @param response 响应
      */
+    @PreAuthorize("hasAuthority('sys:user:userExportExcel')")
     @PostMapping(value = "/userExportExcel")
     public void userExportExcel(HttpServletResponse response, @RequestBody UserQuery userQuery) {
         authUserAppService.userExportExcel(response, userQuery);
@@ -370,6 +376,7 @@ public class AuthUserController implements AuthValidationFacade {
      *
      * @param response 响应
      */
+    @PreAuthorize("hasAuthority('sys:user:userExportExcelTemplate')")
     @PostMapping(value = "/userExportExcelTemplate")
     public void userExportExcelTemplate(HttpServletResponse response) {
         authUserAppService.userExportExcelTemplate(response);
@@ -381,6 +388,7 @@ public class AuthUserController implements AuthValidationFacade {
      * @param response 响应
      * @param file     文件
      */
+    @PreAuthorize("hasAuthority('sys:user:userImportExcel')")
     @PostMapping(value = "/userImportExcel")
     public void userImportExcel(HttpServletResponse response, @RequestParam(value = "file") MultipartFile file) throws IOException {
         authUserAppService.userImportExcel(response,file);

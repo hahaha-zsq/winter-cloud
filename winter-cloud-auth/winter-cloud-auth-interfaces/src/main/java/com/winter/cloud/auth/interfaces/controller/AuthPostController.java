@@ -10,6 +10,7 @@ import com.winter.cloud.common.response.Response;
 import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,6 +79,7 @@ public class AuthPostController {
      * @throws IllegalArgumentException 如果职位信息验证失败
      * @throws com.winter.cloud.common.exception.BusinessException 如果职位名称已存在
      */
+    @PreAuthorize("hasAuthority('sys:post:postSave')")
     @PostMapping("/postSave")
     public Response<Boolean> postSave(@RequestBody @Validated(UpsertPostCommand.Save.class) UpsertPostCommand command) {
         Boolean data = authPostAppService.postSave(command);
@@ -94,6 +96,7 @@ public class AuthPostController {
      * @throws IllegalArgumentException 如果职位信息验证失败
      * @throws com.winter.cloud.common.exception.BusinessException 如果职位不存在或名称已存在
      */
+    @PreAuthorize("hasAuthority('sys:post:postUpdate')")
     @PutMapping("/postUpdate")
     public Response<Boolean> postUpdate(@RequestBody @Validated(UpsertPostCommand.Update.class) UpsertPostCommand command) {
         Boolean data = authPostAppService.postUpdate(command);
@@ -110,6 +113,7 @@ public class AuthPostController {
      * @throws IllegalArgumentException 如果ID列表为空
      * @throws com.winter.cloud.common.exception.BusinessException 如果职位关联了用户
      */
+    @PreAuthorize("hasAuthority('sys:post:postDelete')")
     @DeleteMapping("/postDelete")
     public Response<Boolean> postDelete(@RequestBody @Valid @NotEmpty(message = "{delete.data.notEmpty}") List<Long> postIdList) {
         Boolean data = authPostAppService.postDelete(postIdList);
@@ -126,6 +130,7 @@ public class AuthPostController {
      * @throws IOException 如果写入Excel文件失败
      * @see #postExportExcelTemplate(HttpServletResponse)
      */
+    @PreAuthorize("hasAuthority('sys:post:postExportExcel')")
     @PostMapping(value = "/postExportExcel")
     public void postExportExcel(HttpServletResponse response, @RequestBody PostQuery postQuery) {
         authPostAppService.postExportExcel(response, postQuery);
@@ -140,6 +145,7 @@ public class AuthPostController {
      * @throws IOException 如果写入Excel文件失败
      * @see #postExportExcel(HttpServletResponse, PostQuery)
      */
+    @PreAuthorize("hasAuthority('sys:post:postExportExcelTemplate')")
     @PostMapping(value = "/postExportExcelTemplate")
     public void postExportExcelTemplate(HttpServletResponse response) {
         authPostAppService.postExportExcelTemplate(response);
@@ -155,6 +161,7 @@ public class AuthPostController {
      * @throws IOException 如果读取Excel文件失败
      * @throws IllegalArgumentException 如果文件格式不正确
      */
+    @PreAuthorize("hasAuthority('sys:post:postImportExcel')")
     @PostMapping(value = "/postImportExcel")
     public void postImportExcel(HttpServletResponse response, @RequestParam(value = "file") MultipartFile file) throws IOException {
         authPostAppService.postImportExcel(response,file);

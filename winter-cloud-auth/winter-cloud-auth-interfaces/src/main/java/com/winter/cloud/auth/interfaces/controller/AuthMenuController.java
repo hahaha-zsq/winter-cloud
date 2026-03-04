@@ -10,6 +10,7 @@ import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,6 +58,7 @@ public class AuthMenuController {
      * @param command 新增
      * @return 是否新增成功
      */
+    @PreAuthorize("hasAuthority('sys:menu:menuSave')")
     @PostMapping("/menuSave")
     public Response<Boolean> menuSave(@RequestBody @Validated(UpsertMenuCommand.Save.class) UpsertMenuCommand command){
         boolean data = authMenuAppService.menuSave(command);
@@ -68,6 +70,7 @@ public class AuthMenuController {
      * @param command 编辑
      * @return 是否编辑成功
      */
+    @PreAuthorize("hasAuthority('sys:menu:menuUpdate')")
     @PutMapping("/menuUpdate")
     public Response<Boolean> menuUpdate(@RequestBody @Validated(UpsertMenuCommand.Update.class) UpsertMenuCommand command){
         boolean data = authMenuAppService.menuUpdate(command);
@@ -79,6 +82,7 @@ public class AuthMenuController {
      * @param id 资源ID
      * @return 是否删除成功
      */
+    @PreAuthorize("hasAuthority('sys:menu:menuDelete')")
     @DeleteMapping("/menuDelete")
     public Response<Boolean> menuDelete(@RequestParam @NotNull Long id){
         boolean data = authMenuAppService.menuDelete(id);

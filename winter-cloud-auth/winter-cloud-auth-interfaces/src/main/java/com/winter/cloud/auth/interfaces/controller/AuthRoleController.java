@@ -3,12 +3,8 @@ package com.winter.cloud.auth.interfaces.controller;
 import com.winter.cloud.auth.api.dto.command.AssignResourcesCommand;
 import com.winter.cloud.auth.api.dto.command.UpsertRoleCommand;
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
-import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
-import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.ResultCodeEnum;
-import com.winter.cloud.common.exception.BusinessException;
-import com.winter.cloud.common.response.PageAndOrderDTO;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.auth.application.service.AuthRoleAppService;
 import com.winter.cloud.common.response.Response;
@@ -16,7 +12,7 @@ import com.zsq.i18n.template.WinterI18nTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.util.ObjectUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,11 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 角色管理控制层，提供角色相关的RESTful接口。
@@ -91,6 +83,7 @@ public class AuthRoleController {
      * @throws IllegalArgumentException 如果角色信息验证失败
      * @throws com.winter.cloud.common.exception.BusinessException 如果角色名称已存在
      */
+    @PreAuthorize("hasAuthority('sys:role:roleSave')")
     @PostMapping("/roleSave")
     public Response<Boolean> roleSave(@RequestBody @Validated(UpsertRoleCommand.Save.class) UpsertRoleCommand command) {
         Boolean data = authRoleAppService.roleSave(command);
@@ -107,6 +100,7 @@ public class AuthRoleController {
      * @throws IllegalArgumentException 如果角色信息验证失败
      * @throws com.winter.cloud.common.exception.BusinessException 如果角色不存在或名称已存在
      */
+    @PreAuthorize("hasAuthority('sys:role:roleUpdate')")
     @PutMapping("/roleUpdate")
     public Response<Boolean> roleUpdate(@RequestBody @Validated(UpsertRoleCommand.Update.class) UpsertRoleCommand command) {
         Boolean data = authRoleAppService.roleUpdate(command);
@@ -123,6 +117,7 @@ public class AuthRoleController {
      * @throws IllegalArgumentException 如果ID列表为空
      * @throws com.winter.cloud.common.exception.BusinessException 如果角色关联了用户
      */
+    @PreAuthorize("hasAuthority('sys:role:roleDelete')")
     @DeleteMapping("/roleDelete")
     public Response<Boolean> roleDelete(@RequestBody @Valid @NotEmpty(message = "{delete.data.notEmpty}") List<Long> roleIds) {
         Boolean data = authRoleAppService.roleDelete(roleIds);
@@ -139,6 +134,7 @@ public class AuthRoleController {
      * @throws IOException 如果写入Excel文件失败
      * @see #roleExportExcelTemplate(HttpServletResponse)
      */
+    @PreAuthorize("hasAuthority('sys:role:roleExportExcel')")
     @PostMapping(value = "/roleExportExcel")
     public void roleExportExcel(HttpServletResponse response,@RequestBody RoleQuery roleQuery ) {
         authRoleAppService.roleExportExcel(response,roleQuery);
@@ -153,6 +149,7 @@ public class AuthRoleController {
      * @throws IOException 如果写入Excel文件失败
      * @see #roleExportExcel(HttpServletResponse, RoleQuery)
      */
+    @PreAuthorize("hasAuthority('sys:role:roleExportExcelTemplate')")
     @PostMapping(value = "/roleExportExcelTemplate")
     public void roleExportExcelTemplate(HttpServletResponse response) {
         authRoleAppService.roleExportExcelTemplate(response);
@@ -168,6 +165,7 @@ public class AuthRoleController {
      * @throws IOException 如果读取Excel文件失败
      * @throws IllegalArgumentException 如果文件格式不正确
      */
+    @PreAuthorize("hasAuthority('sys:role:roleImportExcel')")
     @PostMapping(value = "/roleImportExcel")
     public void roleImportExcel(HttpServletResponse response, @RequestParam(value = "file") MultipartFile file) throws IOException {
         authRoleAppService.roleImportExcel(response,file);
@@ -185,6 +183,7 @@ public class AuthRoleController {
      * @throws IllegalArgumentException 如果参数验证失败
      * @throws com.winter.cloud.common.exception.BusinessException 如果角色不存在
      */
+    @PreAuthorize("hasAuthority('sys:role:assignMenuPermissions')")
     @PostMapping("/assignMenuPermissions")
     public Response<Void> assignMenuPermissions(@RequestBody @Validated AssignResourcesCommand command ) {
         authRoleAppService.assignMenuPermissions(command.getRoleId(), command.getMenuIds());

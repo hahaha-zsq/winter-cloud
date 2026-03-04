@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -66,6 +67,7 @@ public class I18nMessageController implements I18nMessageFacade {
      * @param translateCommand 翻译参数
      * @return 翻译结果
      */
+    @PreAuthorize("hasAuthority('sys:i18nMessage:translate')")
     @PostMapping("/translate")
     @Override
     public Response<TranslateDTO> translate(@RequestBody @Validated TranslateCommand translateCommand) throws ExecutionException, InterruptedException {
@@ -95,6 +97,7 @@ public class I18nMessageController implements I18nMessageFacade {
      * @param upsertI18NCommand 保存参数
      * @return 保存结果
      */
+    @PreAuthorize("hasAuthority('sys:i18nMessage:i18nSave')")
     @PostMapping("/i18nSave")
     public Response<Boolean> i18nSave(@RequestBody @Validated(UpsertI18NCommand.Save.class) UpsertI18NCommand upsertI18NCommand) {
         Boolean data = i18nMessageAppService.i18nSave(upsertI18NCommand);
@@ -107,6 +110,7 @@ public class I18nMessageController implements I18nMessageFacade {
      * @param upsertI18NCommand 保存参数
      * @return 保存结果
      */
+    @PreAuthorize("hasAuthority('sys:i18nMessage:i18nUpdate')")
     @PostMapping("/i18nUpdate")
     public Response<Boolean> i18nUpdate(@RequestBody @Validated(UpsertI18NCommand.Update.class) UpsertI18NCommand upsertI18NCommand) {
         Boolean data = i18nMessageAppService.i18nUpdate(upsertI18NCommand);
@@ -119,6 +123,7 @@ public class I18nMessageController implements I18nMessageFacade {
      * @param ids 要删除的id
      * @return 删除结果
      */
+    @PreAuthorize("hasAuthority('sys:i18nMessage:i18nDelete')")
     @PostMapping("/i18nDelete")
     public Response<Boolean> i18nDelete(@RequestBody @NotEmpty(message = "{delete.data.notEmpty}") List<Long> ids) {
         Boolean data = i18nMessageAppService.i18nDelete(ids);
@@ -130,6 +135,7 @@ public class I18nMessageController implements I18nMessageFacade {
      *
      * @param response 响应
      */
+    @PreAuthorize("hasAuthority('sys:i18nMessage:i18nExportExcel')")
     @PostMapping(value = "/i18nExportExcel")
     public void i18nExportExcel(HttpServletResponse response,@RequestBody I18nMessageQuery i18nMessageQuery) {
         i18nMessageAppService.i18nExportExcel(response,i18nMessageQuery);
@@ -140,6 +146,7 @@ public class I18nMessageController implements I18nMessageFacade {
      *
      * @param response 响应
      */
+    @PreAuthorize("hasAuthority('sys:i18nMessage:i18nExportExcelTemplate')")
     @PostMapping(value = "/i18nExportExcelTemplate")
     public void i18nExportExcelTemplate(HttpServletResponse response) {
         i18nMessageAppService.i18nExportExcelTemplate(response);
@@ -151,6 +158,7 @@ public class I18nMessageController implements I18nMessageFacade {
      * @param response 响应
      * @param file     文件
      */
+    @PreAuthorize("hasAuthority('sys:i18nMessage:i18nImportExcel')")
     @PostMapping(value = "/i18nImportExcel")
     public void i18nImportExcel(HttpServletResponse response, @RequestParam(value = "file") MultipartFile file) throws IOException {
         i18nMessageAppService.i18nImportExcel(response,file);

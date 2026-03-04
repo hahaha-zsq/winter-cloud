@@ -27,7 +27,7 @@ public class UpsertUserCommand implements Serializable {
             groups = {ResetPassword.class}
     )
     @SpelValid(
-            value = "#this = null",
+            value = "#this == null",
             message = "新增用户，ID必须为空",
             groups = {Save.class}
     )

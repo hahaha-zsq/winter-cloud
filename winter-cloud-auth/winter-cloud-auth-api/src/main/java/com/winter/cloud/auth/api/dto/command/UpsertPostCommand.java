@@ -16,7 +16,7 @@ public class UpsertPostCommand implements Serializable {
             groups = {UpsertPostCommand.Update.class}
     )
     @SpelValid(
-            value = "#this = null",
+            value = "#this == null",
             message = "{UpsertPostCommand.save.id.must.null}",
             groups = {UpsertPostCommand.Save.class}
     )
