@@ -226,6 +226,8 @@ public final class CommonConstants {
         public static final String SORT_ORDER_ILLEGAL = "sort.order.Illegal";
         /**角色名称/标识已存在！*/
         public static final String ROLE_NAME_OR_IDENTIFIER_EXISTS = "UpsertRoleCommand.identifier.exists";
+        /**职位名称/标识已存在！*/
+        public static final String POST_NAME_OR_IDENTIFIER_EXISTS = "UpsertPostCommand.identifier.exists";
         public static final String ROLE_DICT_MAPPING_ERROR = "role.dict.mapping.error";
         /**性别字典映射错误！！*/
         public static final String SEX_DICT_MAPPING_ERROR = "sex.dict.mapping.error";
@@ -235,10 +237,14 @@ public final class CommonConstants {
         public static final String POST_DICT_MAPPING_ERROR = "post.dict.mapping.error";
         /**角色信息(角色导出excel文件的名称)*/
         public static final String ROLE_INFORMATION = "role.information";
+        /**职位信息(职位导出excel文件的名称)*/
+        public static final String POST_INFORMATION = "post.information";
         /**用户信息(用户导出excel文件的名称)*/
         public static final String USER_INFORMATION = "user.information";
         /**角色信息模版(角色模版导出excel文件的名称)*/
         public static final String ROLE_INFORMATION_TEMPLATE = "role.information.template";
+        /**职位信息模版(职位模版导出excel文件的名称)*/
+        public static final String POST_INFORMATION_TEMPLATE = "post.information.template";
         /**用户信息(用户导出excel文件的名称)*/
         public static final String USER_INFORMATION_TEMPLATE = "user.information.template";
         /**业务逻辑错误*/

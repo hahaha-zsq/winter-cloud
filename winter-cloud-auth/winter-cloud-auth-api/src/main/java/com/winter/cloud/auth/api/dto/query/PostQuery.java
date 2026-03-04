@@ -9,9 +9,13 @@ import lombok.EqualsAndHashCode;
 @Data
 @Builder
 public class PostQuery extends PageAndOrderDTO {
+//    职位名称
     private String postName;
-    private  Long id;
+//    职位编码
     private String postCode;
+//    状态
     private String status;
+
+    private Long id;
 
 }

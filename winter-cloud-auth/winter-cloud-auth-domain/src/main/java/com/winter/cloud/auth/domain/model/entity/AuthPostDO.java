@@ -19,6 +19,7 @@ public class AuthPostDO implements Serializable {
     private String postName;
     private Integer orderNum;
     private String status;
+    private String remark;
 
     private Long createBy;
     private LocalDateTime createTime;

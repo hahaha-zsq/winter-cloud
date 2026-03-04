@@ -2,4 +2,38 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.winter.cloud.auth.infrastructure.mapper.AuthPostMapper">
 
+    <select id="selectPostPage" resultType="com.winter.cloud.auth.infrastructure.entity.AuthPostPO">
+        SELECT id,
+        post_code,
+        post_name,
+        order_num,
+        status,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        remark
+        FROM sys_post
+        <where>
+            <if test="query.postCode != null and query.postCode != ''">
+                AND post_code LIKE CONCAT('%', #{query.postCode}, '%')
+            </if>
+            <if test="query.postName != null and query.postName != ''">
+                AND post_name LIKE CONCAT('%', #{query.postName}, '%')
+            </if>
+            <!-- 精确匹配：status -->
+            <if test="query.status != null and query.status != ''">
+                AND status = #{query.status}
+            </if>
+        </where>
+        <if test="query.orders != null and query.orders.size() > 0">
+            ORDER BY
+            <foreach collection="query.orders" item="item" separator=",">
+                ${item.field} ${item.order}
+            </foreach>
+        </if>
+        <if test="query.orders == null or query.orders.size() == 0">
+            ORDER BY create_time DESC
+        </if>
+    </select>
 </mapper>

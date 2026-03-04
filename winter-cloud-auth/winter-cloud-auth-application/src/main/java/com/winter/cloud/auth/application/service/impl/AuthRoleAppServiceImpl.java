@@ -38,7 +38,6 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
     private final AuthRoleAppAssembler authRoleAppAssembler;
     private final WinterI18nTemplate winterI18nTemplate;
 
-    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean roleSave(UpsertRoleCommand command) {
         log.info("保存角色信息，command={}", command);
@@ -46,7 +45,6 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
         return authRoleRepository.roleSave(aDo);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean roleUpdate(UpsertRoleCommand command) {
         log.info("更新角色信息，command={}", command);
@@ -54,7 +52,6 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
         return authRoleRepository.roleUpdate(aDo);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean roleDelete(List<Long> roleIds) {
         log.info("删除角色信息，roleIds={}", roleIds);
@@ -108,7 +105,6 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
         authRoleRepository.roleImportExcel(response, file);
 
     }
-
     /**
      * 对排序参数进行【校验 + 标准化】的统一处理方法
      * <p>

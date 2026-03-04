@@ -16,8 +16,8 @@ import java.util.List;
 public interface AuthRoleRepository {
 
     Boolean roleSave(AuthRoleDO aDo);
-    // 检查用户名是否存在
-    boolean hasDuplicateRole(AuthRoleDO aDo);
+
+    Boolean hasDuplicateRole(AuthRoleDO aDo);
 
     Boolean roleUpdate(AuthRoleDO aDo);
 

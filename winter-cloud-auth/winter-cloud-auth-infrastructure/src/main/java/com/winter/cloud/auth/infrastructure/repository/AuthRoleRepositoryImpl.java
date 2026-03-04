@@ -102,7 +102,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
      * 判断是否存在：角色名相同 或 角色编码相同并且（如果是更新）不是自己
      */
     @Override
-    public boolean hasDuplicateRole(AuthRoleDO authRoleDO) {
+    public Boolean hasDuplicateRole(AuthRoleDO authRoleDO) {
         LambdaQueryWrapper<AuthRolePO> authRolePOLambdaQueryWrapper = new LambdaQueryWrapper<>();
         authRolePOLambdaQueryWrapper.nested(
                         e -> e.eq(AuthRolePO::getRoleName, authRoleDO.getRoleName())
@@ -121,6 +121,8 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
             throw new BusinessException(DUPLICATE_KEY.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.ROLE_NAME_OR_IDENTIFIER_EXISTS));
         }
         AuthRolePO authRolePO = authRoleInfraAssembler.toPO(authRoleDO);
+        // 更新角色名时，角色编码不允许修改
+        authRolePO.setRoleKey(null);
         return authRoleMpService.updateById(authRolePO);
     }
 
@@ -220,7 +222,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         List<AuthRolePO> poList = authRoleInfraAssembler.toPOList(records);
         List<AuthRolePO> collect = poList.stream()
                 .map(item -> {
-                    item.setStatus(statusMap.get(item.getStatus()));
+                    item.setStatus(statusMap.getOrDefault(item.getStatus(),""));
                     return item;
                 }).collect(Collectors.toList());
         ArrayList<WriteHandler> writeHandlers = new ArrayList<>();
@@ -303,7 +305,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
                             }
                             WinterExcelBusinessErrorModel errorModel =
                                     WinterExcelBusinessErrorModel.builder()
-                                            .errorMessage(winterI18nTemplate.message(CommonConstants.I18nKey.ROLE_DICT_MAPPING_ERROR))
+                                            .errorMessage(winterI18nTemplate.message(CommonConstants.I18nKey.STATUS_DICT_MAPPING_ERROR))
                                             .entityRowInfo(jsonStr)
                                             .build();
 

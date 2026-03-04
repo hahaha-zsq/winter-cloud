@@ -615,8 +615,8 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
         // 构建数据
         List<Map<String, Object>> mapDataList = records.stream()
                 .map((item) -> {
-                    String status = statusMap.get(item.getStatus());
-                    String sex = sexMap.get(item.getSex());
+                    String status = statusMap.getOrDefault(item.getStatus(), "");
+                    String sex = sexMap.getOrDefault(item.getSex(), "");
                     String postName = "";
                     if (item.getPostDTO() != null)
                         postName = item.getPostDTO().getPostName();
