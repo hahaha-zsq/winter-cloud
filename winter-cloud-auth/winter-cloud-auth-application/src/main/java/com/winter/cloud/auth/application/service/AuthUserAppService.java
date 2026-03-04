@@ -14,6 +14,7 @@ import com.winter.cloud.common.response.Response;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -55,5 +56,5 @@ public interface AuthUserAppService {
 
     void userExportExcelTemplate(HttpServletResponse response);
 
-    void userImportExcel(HttpServletResponse response, MultipartFile file);
+    void userImportExcel(HttpServletResponse response, MultipartFile file) throws IOException;
 }

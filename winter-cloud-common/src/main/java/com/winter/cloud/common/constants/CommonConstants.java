@@ -227,6 +227,12 @@ public final class CommonConstants {
         /**角色名称/标识已存在！*/
         public static final String ROLE_NAME_OR_IDENTIFIER_EXISTS = "UpsertRoleCommand.identifier.exists";
         public static final String ROLE_DICT_MAPPING_ERROR = "role.dict.mapping.error";
+        /**性别字典映射错误！！*/
+        public static final String SEX_DICT_MAPPING_ERROR = "sex.dict.mapping.error";
+        /**状态字典映射错误！！*/
+        public static final String STATUS_DICT_MAPPING_ERROR = "status.dict.mapping.error";
+        /**职位字典映射错误！！*/
+        public static final String POST_DICT_MAPPING_ERROR = "post.dict.mapping.error";
         /**角色信息(角色导出excel文件的名称)*/
         public static final String ROLE_INFORMATION = "role.information";
         /**用户信息(用户导出excel文件的名称)*/

@@ -3,11 +3,14 @@ package com.winter.cloud.auth.infrastructure.repository;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapBuilder;
 import cn.hutool.core.util.ObjectUtil;
+import cn.idev.excel.FastExcel;
+import cn.idev.excel.support.ExcelTypeEnum;
 import cn.idev.excel.write.handler.WriteHandler;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
@@ -15,6 +18,7 @@ import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.api.dto.response.DeptResponseDTO;
 import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
 import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
+import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
 import com.winter.cloud.auth.domain.model.entity.AuthUserDO;
 import com.winter.cloud.auth.domain.repository.AuthUserRepository;
 import com.winter.cloud.auth.infrastructure.assembler.AuthUserInfraAssembler;
@@ -25,6 +29,7 @@ import com.winter.cloud.auth.infrastructure.service.IAuthUserDeptMpService;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserMpService;
 import com.winter.cloud.auth.infrastructure.service.IAuthUserRoleMpService;
 import com.winter.cloud.common.constants.CommonConstants;
+import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
@@ -34,27 +39,37 @@ import com.winter.cloud.dict.api.dto.response.DictDataDTO;
 import com.winter.cloud.dict.api.facade.DictFacade;
 import com.zsq.i18n.template.WinterI18nTemplate;
 import com.zsq.winter.encrypt.util.CryptoUtil;
+import com.zsq.winter.office.entity.excel.WinterExcelBusinessErrorModel;
 import com.zsq.winter.office.entity.excel.WinterExcelExportParam;
 import com.zsq.winter.office.entity.excel.WinterExcelSelectedModel;
+import com.zsq.winter.office.entity.excel.WinterExcelValidateErrorModel;
 import com.zsq.winter.office.entity.excel.handler.CustomMatchColumnWidthStyleHandler;
 import com.zsq.winter.office.entity.excel.handler.CustomSelectHandler;
 import com.zsq.winter.office.entity.excel.handler.CustomStyleHandler;
+import com.zsq.winter.office.entity.excel.listener.WinterAnalysisValidReadListener;
 import com.zsq.winter.office.service.excel.WinterExcelTemplate;
+import com.zsq.winter.office.util.WebUtil;
 import com.zsq.winter.redis.ddc.service.WinterRedisTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Validator;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.winter.cloud.common.enums.ResultCodeEnum.DUPLICATE_KEY;
 import static com.winter.cloud.common.enums.ResultCodeEnum.FAIL;
+
 @Slf4j
 @Repository
 @RequiredArgsConstructor
@@ -72,6 +87,8 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
     private final Validator fastFalseValidator;
     @DubboReference(check = false)
     private DictFacade dictFacade;
+    private final TransactionTemplate transactionTemplate;
+
     @Override
     public AuthUserDO findById(Long id) {
         return null;
@@ -398,53 +415,263 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
     }
 
     @Override
-    public void userImportExcel(HttpServletResponse response, MultipartFile file) {
+    public void userImportExcel(HttpServletResponse response, MultipartFile file) throws IOException {
+        // ====================== 1. 预加载字典数据 ======================
+        Map<String, String> statusMap = dictCache("110", false);
+        Map<String, String> sexMap = dictCache("1", false);
+
+        Map<String, Long> postMap = authPostMpService.list(new LambdaQueryWrapper<AuthPostPO>().select(AuthPostPO::getPostName, AuthPostPO::getId)).stream().collect(Collectors.toMap(AuthPostPO::getPostName, AuthPostPO::getId));
+        // Excel 多 Sheet 导出参数集合
+        List<WinterExcelExportParam<?>> excelExportParamList = new ArrayList<>();
+
+        // 业务逻辑错误集合（唯一性冲突等）
+        List<WinterExcelBusinessErrorModel> winterExcelBusinessErrorModelList = new ArrayList<>();
+
+        WinterAnalysisValidReadListener<AuthUserPO> analysisValidReadListener =
+                new WinterAnalysisValidReadListener<>(1000, (item) -> {
+                    // ====================== 3. 处理每一批校验通过的数据 ======================
+                    for (AuthUserPO authUserPO : item) {
+                        // 将 Excel 中的字典值转换为系统内部值
+                        String statusOrDefault = statusMap.getOrDefault(authUserPO.getStatus(), "");
+                        String sexOrDefault = sexMap.getOrDefault(authUserPO.getSex(), "");
+                        Long postOrDefault = postMap.getOrDefault(authUserPO.getPostName(), null);
+                        List<String> errMsgList = new ArrayList<>();
+                        if (ObjectUtil.isEmpty(sexOrDefault)) {
+                            errMsgList.add(winterI18nTemplate.message(CommonConstants.I18nKey.SEX_DICT_MAPPING_ERROR));
+                        }
+                        if (ObjectUtil.isEmpty(statusOrDefault)) {
+                            errMsgList.add(winterI18nTemplate.message(CommonConstants.I18nKey.STATUS_DICT_MAPPING_ERROR));
+                        }
+                        if (ObjectUtil.isEmpty(postOrDefault)) {
+                            errMsgList.add(winterI18nTemplate.message(CommonConstants.I18nKey.POST_DICT_MAPPING_ERROR));
+                        }
+                        if (!ObjectUtil.isEmpty(errMsgList)) {
+                            String jsonStr = null;
+                            try {
+                                jsonStr = objectMapper.writeValueAsString(authUserPO);
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+                            WinterExcelBusinessErrorModel errorModel =
+                                    WinterExcelBusinessErrorModel.builder()
+                                            .errorMessage(String.join(";", errMsgList))
+                                            .entityRowInfo(jsonStr)
+                                            .build();
+
+//                            winterExcelBusinessErrorModelList.add(errorModel);
+                        } else {
+                            authUserPO.setStatus(statusOrDefault);
+                            authUserPO.setSex(sexOrDefault);
+                            authUserPO.setPostId(postOrDefault);
+                            // 校验是否已存在（唯一性校验）
+                            boolean hasDuplicate = hasDuplicateUser(
+                                    UserRegisterCommand.builder()
+                                            .email(authUserPO.getEmail())
+                                            .sex(authUserPO.getSex())
+                                            .userName(authUserPO.getUserName())
+                                            .password(authUserPO.getPassword())
+                                            .nickName(authUserPO.getNickName())
+                                            .phone(authUserPO.getPhone())
+                                            .id(authUserPO.getId())
+                                            .build());
+
+                            if (hasDuplicate) {
+                                // ====================== 3.1 业务唯一性校验失败 ======================
+                                try {
+                                    // 将当前行数据序列化，方便导出错误信息
+                                    String jsonStr = objectMapper.writeValueAsString(authUserPO);
+                                    WinterExcelBusinessErrorModel errorModel =
+                                            WinterExcelBusinessErrorModel.builder()
+                                                    .errorMessage(winterI18nTemplate.message(CommonConstants.I18nKey.USER_INFO_DUPLICATED))
+                                                    .entityRowInfo(jsonStr)
+                                                    .build();
+
+                                    winterExcelBusinessErrorModelList.add(errorModel);
+                                } catch (JsonProcessingException e) {
+                                    throw new RuntimeException(e);
+                                }
+
+                            } else {
+                                // ====================== 3.2 业务校验通过，执行入库 ======================
+                                /*
+                                 * 注意：
+                                 * 这里必须逐条插入，不能批量插入
+                                 * 原因：批量插入无法校验“当前批次内部”是否存在重复数据
+                                 */
+                                Boolean dbSuccess = transactionTemplate.execute(status -> {
+                                    // 保存国际化消息
+                                    String encryptedPwd = CryptoUtil.winterMd5Hex16(authUserPO.getPassword());
+                                    authUserPO.setPassword(encryptedPwd);
+                                    return authUserMpService.save(authUserPO);
+                                });
+                            }
+                        }
+                    }
+                }, fastFalseValidator, CollUtil.toList(AuthUserPO.Import.class));
+
+        // ====================== 4. 执行 Excel 读取 ======================
+        FastExcel.read(file.getInputStream(), AuthUserPO.class, analysisValidReadListener)
+                .excelType(ExcelTypeEnum.XLSX)
+                .password("")
+                .sheet(0)
+                .doRead();
+
+        // ====================== 5. 收集校验错误信息 ======================
+        // JSR-303 校验错误
+        List<WinterExcelValidateErrorModel> errorList =
+                analysisValidReadListener.getErrorList();
+
+        // ====================== 6. 构建业务逻辑错误 Sheet ======================
+        if (!ObjectUtils.isEmpty(winterExcelBusinessErrorModelList)) {
+
+            WinterExcelExportParam<WinterExcelBusinessErrorModel> businessParam =
+                    WinterExcelExportParam.<WinterExcelBusinessErrorModel>builder()
+                            .sheetName(winterI18nTemplate.message(CommonConstants.I18nKey.BUSINESS_LOGIC_ERROR))
+                            .excludeColumnFieldNames(new ArrayList<>())
+                            .writeHandlers(new ArrayList<>())
+                            .password("")
+                            .dataList(winterExcelBusinessErrorModelList)
+                            .head(WinterExcelBusinessErrorModel.class)
+                            .build();
+
+            excelExportParamList.add(businessParam);
+        }
+
+        // ====================== 7. 构建校验逻辑错误 Sheet（支持国际化） ======================
+        if (!ObjectUtils.isEmpty(errorList)) {
+
+            // 对校验错误信息进行国际化处理
+            errorList.forEach(error -> {
+                String message = error.getMessage();
+                StringBuilder stringBuilder = new StringBuilder();
+
+                // 判断是否为国际化 key 格式：{xxx}
+                if (message != null && message.startsWith("{") && message.endsWith("}")) {
+                    String messageKey = message.substring(1, message.length() - 1);
+                    try {
+                        stringBuilder.append(winterI18nTemplate.message(messageKey, new Object[]{}, message));
+                    } catch (Exception ex) {
+                        // 国际化失败，使用原始消息
+                        stringBuilder.append(message);
+                    }
+                } else {
+                    stringBuilder.append(message);
+                }
+                error.setMessage(stringBuilder.toString());
+            });
+
+            WinterExcelExportParam<WinterExcelValidateErrorModel> validateParam =
+                    WinterExcelExportParam.<WinterExcelValidateErrorModel>builder()
+                            .sheetName(winterI18nTemplate.message(CommonConstants.I18nKey.VALIDATION_LOGIC_ERROR))
+                            .excludeColumnFieldNames(new ArrayList<>())
+                            .writeHandlers(new ArrayList<>())
+                            .password("")
+                            .dataList(errorList)
+                            .head(WinterExcelValidateErrorModel.class)
+                            .build();
+
+            excelExportParamList.add(validateParam);
+        }
+
+        // ====================== 8. 返回结果 ======================
+        if (ObjectUtils.isEmpty(winterExcelBusinessErrorModelList)
+            && ObjectUtils.isEmpty(errorList)) {
+
+            // 无任何错误，直接返回成功结果
+            Response<Object> build = Response.build(null, ResultCodeEnum.SUCCESS.getCode(), winterI18nTemplate.message(CommonConstants.I18nKey.IMPORT_SUCCESSFUL));
+            WebUtil.renderString(response, objectMapper.writeValueAsString(build));
+
+        } else {
+            // 存在错误，导出多 Sheet 的错误 Excel
+            winterExcelTemplate.exportMultiSheet(
+                    response,
+                    winterI18nTemplate.message(CommonConstants.I18nKey.ERROR_MESSAGE) + ".xlsx",
+                    "",
+                    excelExportParamList
+            );
+        }
 
     }
 
     @Override
     public void userExportExcel(HttpServletResponse response, List<UserResponseDTO> records) {
-        Response<List<DictDataDTO>> statusListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(110L).build());
-        List<DictDataDTO> statusList = statusListResponse.getData();
-        //映射
-        Map<String, String> statusMap = statusList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+        Map<String, String> statusMap = dictCache("110", true);
+        Map<String, String> sexMap = dictCache("1", true);
 
-        Response<List<DictDataDTO>> sexListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(1L).build());
-        List<DictDataDTO> sexList = sexListResponse.getData();
-        //映射
-        Map<String, String> sexMap = sexList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+//        Response<List<DictDataDTO>> statusListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(110L).build());
+//        List<DictDataDTO> statusList = statusListResponse.getData();
+//        //映射
+//        Map<String, String> statusMap = statusList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
 
+//        Response<List<DictDataDTO>> sexListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(1L).build());
+//        List<DictDataDTO> sexList = sexListResponse.getData();
+//        //映射
+//        Map<String, String> sexMap = sexList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
         // 构建多级别表头
         Map<String, List<String>> headMap = new LinkedHashMap<>();
-        headMap.put("userName", List.of("用户信息","用户名称"));
-        headMap.put("nickName", List.of("用户信息","用户昵称"));
-        headMap.put("email", List.of("用户信息","用户邮箱"));
-        headMap.put("phone", List.of("用户信息","手机号码"));
-        headMap.put("status", List.of("用户信息","用户状态"));
-        headMap.put("sex", List.of("用户信息","性别"));
-        headMap.put("avatar", List.of("用户信息","头像地址"));
-        headMap.put("remark", List.of("用户信息","用户备注"));
-        headMap.put("postName", List.of("用户信息","职位名称"));
-        headMap.put("deptName", List.of("用户信息","部门名称"));
-        headMap.put("roleName", List.of("用户信息","角色名称"));
+        headMap.put("userName", List.of("用户信息", "用户名称"));
+        headMap.put("nickName", List.of("用户信息", "用户昵称"));
+        headMap.put("email", List.of("用户信息", "用户邮箱"));
+        headMap.put("phone", List.of("用户信息", "手机号码"));
+        headMap.put("sex", List.of("用户信息", "性别"));
+        headMap.put("avatar", List.of("用户信息", "头像地址"));
+        headMap.put("password", List.of("用户信息", "用户密码"));
+        headMap.put("status", List.of("用户信息", "用户状态"));
+        headMap.put("remark", List.of("用户信息", "用户备注"));
+        headMap.put("postName", List.of("用户信息", "职位名称"));
+        headMap.put("deptName", List.of("用户信息", "部门名称"));
+        headMap.put("roleName", List.of("用户信息", "角色名称"));
         // 构建数据
         List<Map<String, Object>> mapDataList = records.stream()
                 .map((item) -> {
                     String status = statusMap.get(item.getStatus());
                     String sex = sexMap.get(item.getSex());
-                    String postName = item.getPostDTO().getPostName();
-                    String deptName = item.getDeptListDTO().stream().map(DeptResponseDTO::getDeptName).collect(Collectors.joining(","));
-                    String roleName = item.getRoleListDTO().stream().map(RoleResponseDTO::getRoleName).collect(Collectors.joining(","));
+                    String postName = "";
+                    if (item.getPostDTO() != null)
+                        postName = item.getPostDTO().getPostName();
+                    String deptName = "";
+                    if (item.getDeptListDTO() != null)
+                        deptName = item.getDeptListDTO().stream().map(DeptResponseDTO::getDeptName).collect(Collectors.joining(","));
+                    String roleName = "";
+                    if (item.getRoleListDTO() != null) {
+                        roleName = item.getRoleListDTO().stream().map(RoleResponseDTO::getRoleName).collect(Collectors.joining(","));
+                    }
+                    //将字符串类型的 URL 包装成 java.net.URL 对象(可选)
+//                    Object avatarValue = "";
+//                    Object bgValue = "";
+//                    if (item.getAvatar() != null && !item.getAvatar().trim().isEmpty()) {
+//                        try {
+//                            // EasyExcel 只要识别到值为 URL 类型，就会自动作为图片处理
+//                            avatarValue = new URL(item.getAvatar());
+//                        } catch (MalformedURLException e) {
+//                            // 如果 URL 格式不合法，降级导出普通字符串
+//                            avatarValue = item.getAvatar();
+//                        }
+//                    }
+//                    if (item.getBgImg() != null && !item.getBgImg().trim().isEmpty()) {
+//                        try {
+//                            // EasyExcel 只要识别到值为 URL 类型，就会自动作为图片处理
+//                            bgValue = new URL(item.getBgImg());
+//                        } catch (MalformedURLException e) {
+//                            // 如果 URL 格式不合法，降级导出普通字符串
+//                            bgValue = item.getBgImg();
+//                        }
+//                    }
                     return MapBuilder
                             .create(new HashMap<String, Object>())
                             .put("userName", item.getUserName())
                             .put("nickName", item.getNickName())
                             .put("email", item.getEmail())
                             .put("phone", item.getPhone())
+                            .put("password", "")
                             .put("status", status)
                             .put("sex", sex)
+//                            .put("avatar", avatarValue)
+//                            .put("bgImg",bgValue)
                             .put("avatar", item.getAvatar())
+                            .put("bgImg", item.getBgImg())
                             .put("remark", item.getRemark())
+                            .put("introduction", item.getIntroduction())
                             .put("postName", postName)
                             .put("deptName", deptName)
                             .put("roleName", roleName)
@@ -459,7 +686,7 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
                 .response(response)
                 .batchSize(1000)
                 .password("")
-                .fileName(winterI18nTemplate.message(CommonConstants.I18nKey.USER_INFORMATION)+".xlsx")
+                .fileName(winterI18nTemplate.message(CommonConstants.I18nKey.USER_INFORMATION) + ".xlsx")
                 .excludeColumnFieldNames(null)
                 .writeHandlers(writeHandlers)
                 .converters(null)

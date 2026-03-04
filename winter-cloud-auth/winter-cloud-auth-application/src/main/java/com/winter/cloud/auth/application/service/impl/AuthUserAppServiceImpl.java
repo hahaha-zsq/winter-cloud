@@ -41,6 +41,7 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -203,10 +204,13 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
             userDTO.setDeptListDTO(deptDTOList);
 
             //2.4 填充岗位信息
-            AuthPostDO authPostDO = authPostRepository.postDynamicQuery(PostQuery.builder().id(userDTO.getPostId()).build());
-            PostResponseDTO postResponseDTO = authPostAppAssembler.toDTO(authPostDO);
-            userDTO.setPostDTO(postResponseDTO);
-
+            if(ObjectUtil.isEmpty(userDTO.getPostId())){
+                userDTO.setPostDTO(null);
+            }else{
+                AuthPostDO authPostDO = authPostRepository.postDynamicQuery(PostQuery.builder().id(userDTO.getPostId()).build());
+                PostResponseDTO postResponseDTO = authPostAppAssembler.toDTO(authPostDO);
+                userDTO.setPostDTO(postResponseDTO);
+            }
             return userDTO;
         }).collect(Collectors.toList());
 
@@ -251,7 +255,7 @@ public class AuthUserAppServiceImpl implements AuthUserAppService {
     }
 
     @Override
-    public void userImportExcel(HttpServletResponse response, MultipartFile file) {
+    public void userImportExcel(HttpServletResponse response, MultipartFile file) throws IOException {
         authUserRepository.userImportExcel(response, file);
     }
 }

@@ -1,5 +1,6 @@
 package com.winter.cloud.auth.domain.repository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.winter.cloud.auth.api.dto.command.UserRegisterCommand;
 import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.api.dto.response.UserResponseDTO;
@@ -9,6 +10,7 @@ import com.winter.cloud.common.response.Response;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +60,7 @@ public interface AuthUserRepository {
 
     void userExportExcelTemplate(HttpServletResponse response);
 
-    void userImportExcel(HttpServletResponse response, MultipartFile file);
+    void userImportExcel(HttpServletResponse response, MultipartFile file) throws IOException;
 
     void userExportExcel(HttpServletResponse response, List<UserResponseDTO> records);
 }

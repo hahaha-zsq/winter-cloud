@@ -217,10 +217,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     @Override
     public void roleExportExcel(HttpServletResponse response) {
         // 状态
-        Response<List<DictDataDTO>> statusListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(110L).build());
-        List<DictDataDTO> statusList = statusListResponse.getData();
-        // 语言环境映射
-        Map<String, String> statusMap = statusList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+        Map<String, String> statusMap = dictCache("110", true);
         List<AuthRolePO> collect = authRoleMpService.list().stream()
                 .map(item -> {
                     item.setStatus(statusMap.get(item.getStatus()));
@@ -289,7 +286,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
          * 注意：
          * EasyExcel 使用反射创建实体对象，实体类必须提供可访问的无参构造器
          */
-        WinterAnalysisValidReadListener<AuthRolePO> i18nMessagePOAnalysisValidReadListener =
+        WinterAnalysisValidReadListener<AuthRolePO> analysisValidReadListener =
                 new WinterAnalysisValidReadListener<>(1000, (item) -> {
                     // ====================== 3. 处理每一批校验通过的数据 ======================
                     for (AuthRolePO authRolePO : item) {
@@ -353,7 +350,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
                 }, fastFalseValidator, CollUtil.toList(AuthRolePO.Import.class));
 
         // ====================== 4. 执行 Excel 读取 ======================
-        FastExcel.read(file.getInputStream(), AuthRolePO.class, i18nMessagePOAnalysisValidReadListener)
+        FastExcel.read(file.getInputStream(), AuthRolePO.class, analysisValidReadListener)
                 .excelType(ExcelTypeEnum.XLSX)
                 .password("")
                 .sheet(0)
@@ -362,7 +359,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
         // ====================== 5. 收集校验错误信息 ======================
         // JSR-303 校验错误
         List<WinterExcelValidateErrorModel> errorList =
-                i18nMessagePOAnalysisValidReadListener.getErrorList();
+                analysisValidReadListener.getErrorList();
 
         // ====================== 6. 构建业务逻辑错误 Sheet ======================
         if (!ObjectUtils.isEmpty(winterExcelBusinessErrorModelList)) {
