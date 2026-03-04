@@ -1,7 +1,6 @@
 package com.winter.cloud.auth.domain.repository;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
 import com.winter.cloud.auth.domain.model.entity.AuthRoleDO;
 import com.winter.cloud.common.response.PageDTO;
@@ -32,7 +31,7 @@ public interface AuthRoleRepository {
 
     void assignMenuPermissions(Long roleId, List<Long> menuIds);
 
-    void roleExportExcel(HttpServletResponse response);
+    void roleExportExcel(HttpServletResponse response, List<AuthRoleDO> records);
 
     void roleExportExcelTemplate(HttpServletResponse response);
 

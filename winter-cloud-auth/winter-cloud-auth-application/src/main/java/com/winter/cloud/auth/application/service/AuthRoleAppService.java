@@ -52,7 +52,7 @@ public interface AuthRoleAppService {
 
     void assignMenuPermissions(@NotNull Long roleId, @NotEmpty List<Long> menuIds);
 
-    void roleExportExcel(HttpServletResponse response);
+    void roleExportExcel(HttpServletResponse response, RoleQuery roleQuery);
 
     void roleExportExcelTemplate(HttpServletResponse response);
 

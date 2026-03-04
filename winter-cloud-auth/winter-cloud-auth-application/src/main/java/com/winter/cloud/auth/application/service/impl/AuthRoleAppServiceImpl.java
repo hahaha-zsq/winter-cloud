@@ -88,8 +88,14 @@ public class AuthRoleAppServiceImpl implements AuthRoleAppService {
     }
 
     @Override
-    public void roleExportExcel(HttpServletResponse response) {
-        authRoleRepository.roleExportExcel(response);
+    public void roleExportExcel(HttpServletResponse response, RoleQuery roleQuery) {
+        Boolean exportAll = roleQuery.getExportAll();
+        if (exportAll) {
+            roleQuery.setPageSize(1000000);
+        }
+        List<RoleResponseDTO> records = this.rolePage(roleQuery).getRecords();
+        List<AuthRoleDO> doList = authRoleAppAssembler.toDOList(records);
+        authRoleRepository.roleExportExcel(response,doList);
     }
 
     @Override

@@ -40,7 +40,7 @@ public interface I18nMessageRepository extends I18nMessageService {
 
     void scheduledRebuildBloomFilter();
 
-    void i18nExportExcel(HttpServletResponse response);
+    void i18nExportExcel(HttpServletResponse response, List<I18nMessageDO> doList);
 
     void i18nImportExcel(HttpServletResponse response, MultipartFile file) throws IOException;
 

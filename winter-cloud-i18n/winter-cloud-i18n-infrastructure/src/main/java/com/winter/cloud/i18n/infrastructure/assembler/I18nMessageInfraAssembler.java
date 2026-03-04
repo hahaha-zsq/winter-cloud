@@ -14,4 +14,6 @@ import java.util.List;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface I18nMessageInfraAssembler {
     List<I18nMessageDO> toDOList(List<I18nMessagePO> i18nMessagePOList);
+    List<I18nMessagePO> toPOList(List<I18nMessageDO> i18nMessageDOList);
+
 }

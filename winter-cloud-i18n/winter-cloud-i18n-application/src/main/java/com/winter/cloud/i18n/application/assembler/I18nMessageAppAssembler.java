@@ -13,6 +13,7 @@ import java.util.List;
 public interface I18nMessageAppAssembler {
 
     List<I18nMessageDTO> toI18nMessageDTOList(List<I18nMessageDO> i18nMessageDOList);
+    List<I18nMessageDO> toI18nMessageDOList(List<I18nMessageDTO> i18nMessageDTOList);
 
     TranslateDTO toTranslateDTO(TranslateDO translateDO);
 }

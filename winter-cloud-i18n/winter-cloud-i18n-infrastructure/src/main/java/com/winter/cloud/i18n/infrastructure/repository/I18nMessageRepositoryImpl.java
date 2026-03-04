@@ -34,9 +34,7 @@ import com.winter.cloud.i18n.infrastructure.assembler.I18nMessageInfraAssembler;
 import com.winter.cloud.i18n.infrastructure.entity.I18nMessagePO;
 import com.winter.cloud.i18n.infrastructure.mapper.I18nMessageMapper;
 import com.winter.cloud.i18n.infrastructure.service.II18nMessageMPService;
-import com.zsq.i18n.template.WinterI18nTemplate;
 import com.zsq.winter.office.entity.excel.*;
-import com.zsq.winter.office.entity.excel.handler.CustomDateValidationWriteHandler;
 import com.zsq.winter.office.entity.excel.handler.CustomMatchColumnWidthStyleHandler;
 import com.zsq.winter.office.entity.excel.handler.CustomStyleHandler;
 import com.zsq.winter.office.entity.excel.listener.WinterAnalysisValidReadListener;
@@ -469,21 +467,15 @@ public class I18nMessageRepositoryImpl implements I18nMessageRepository {
     }
 
     @Override
-    public void i18nExportExcel(HttpServletResponse response) {
-        // 语言环境
-        Response<List<DictDataDTO>> listLocaleResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(115L).build());
-        List<DictDataDTO> localeList = listLocaleResponse.getData();
-        // 语言环境映射
-        Map<String, String> localeMap = localeList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+    public void i18nExportExcel(HttpServletResponse response, List<I18nMessageDO> doList) {
 
-        // 类型
-        Response<List<DictDataDTO>> listTypeResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(116L).build());
-        List<DictDataDTO> typeList = listTypeResponse.getData();
-        // 语言环境映射
-        Map<String, String> typeMap = typeList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
+        // 语言环境字典（如：zh_CN -> 中文）
+        Map<String, String> localeMap = dictCache("115", true);
+        // 国际化类型字典
+        Map<String, String> typeMap = dictCache("116", true);
 
-
-        List<I18nMessagePO> collect = i18nMessageMPService.list().stream()
+        List<I18nMessagePO> poList = i18nMessageInfraAssembler.toPOList(doList);
+        List<I18nMessagePO> collect = poList.stream()
                 .map(item -> {
                     item.setLocale(localeMap.get(item.getLocale()));
                     item.setType(typeMap.get(item.getType()));

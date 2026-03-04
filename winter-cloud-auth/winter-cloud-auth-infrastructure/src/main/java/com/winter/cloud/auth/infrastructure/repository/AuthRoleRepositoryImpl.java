@@ -31,7 +31,6 @@ import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.dict.api.dto.command.DictCommand;
-import com.winter.cloud.dict.api.dto.query.DictQuery;
 import com.winter.cloud.dict.api.dto.response.DictDataDTO;
 import com.winter.cloud.dict.api.facade.DictFacade;
 import com.zsq.i18n.template.WinterI18nTemplate;
@@ -215,10 +214,11 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     }
 
     @Override
-    public void roleExportExcel(HttpServletResponse response) {
+    public void roleExportExcel(HttpServletResponse response, List<AuthRoleDO> records) {
         // 状态
         Map<String, String> statusMap = dictCache("110", true);
-        List<AuthRolePO> collect = authRoleMpService.list().stream()
+        List<AuthRolePO> poList = authRoleInfraAssembler.toPOList(records);
+        List<AuthRolePO> collect = poList.stream()
                 .map(item -> {
                     item.setStatus(statusMap.get(item.getStatus()));
                     return item;

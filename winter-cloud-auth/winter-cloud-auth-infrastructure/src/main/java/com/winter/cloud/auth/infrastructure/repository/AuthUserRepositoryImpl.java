@@ -458,7 +458,7 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
                                             .entityRowInfo(jsonStr)
                                             .build();
 
-//                            winterExcelBusinessErrorModelList.add(errorModel);
+                            winterExcelBusinessErrorModelList.add(errorModel);
                         } else {
                             authUserPO.setStatus(statusOrDefault);
                             authUserPO.setSex(sexOrDefault);
@@ -598,15 +598,6 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
         Map<String, String> statusMap = dictCache("110", true);
         Map<String, String> sexMap = dictCache("1", true);
 
-//        Response<List<DictDataDTO>> statusListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(110L).build());
-//        List<DictDataDTO> statusList = statusListResponse.getData();
-//        //映射
-//        Map<String, String> statusMap = statusList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
-
-//        Response<List<DictDataDTO>> sexListResponse = dictFacade.dictValueDynamicQueryList(DictQuery.builder().dictTypeId(1L).build());
-//        List<DictDataDTO> sexList = sexListResponse.getData();
-//        //映射
-//        Map<String, String> sexMap = sexList.stream().collect(Collectors.toMap(DictDataDTO::getDictValue, DictDataDTO::getDictLabel));
         // 构建多级别表头
         Map<String, List<String>> headMap = new LinkedHashMap<>();
         headMap.put("userName", List.of("用户信息", "用户名称"));

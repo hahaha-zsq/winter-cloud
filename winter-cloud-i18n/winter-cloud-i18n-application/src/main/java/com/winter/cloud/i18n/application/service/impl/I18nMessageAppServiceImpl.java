@@ -1,6 +1,5 @@
 package com.winter.cloud.i18n.application.service.impl;
 
-import com.winter.cloud.common.constants.CommonConstants;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.exception.BusinessException;
 import com.winter.cloud.common.response.PageAndOrderDTO;
@@ -11,14 +10,12 @@ import com.winter.cloud.i18n.api.dto.query.I18nMessageQuery;
 import com.winter.cloud.i18n.api.dto.response.I18nMessageDTO;
 import com.winter.cloud.i18n.api.dto.response.TranslateDTO;
 import com.winter.cloud.i18n.application.assembler.I18nMessageAppAssembler;
-import com.winter.cloud.i18n.application.runner.I18nMessageRunner;
 import com.winter.cloud.i18n.application.service.I18nMessageAppService;
 import com.winter.cloud.i18n.domain.model.entity.I18nMessageDO;
 import com.winter.cloud.i18n.domain.model.entity.TranslateDO;
 import com.winter.cloud.i18n.domain.repository.I18nMessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RLock;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -110,8 +107,14 @@ public class I18nMessageAppServiceImpl implements I18nMessageAppService {
     }
 
     @Override
-    public void i18nExportExcel(HttpServletResponse response) {
-        i18nMessageRepository.i18nExportExcel(response);
+    public void i18nExportExcel(HttpServletResponse response, I18nMessageQuery i18nMessageQuery) {
+        Boolean exportAll = i18nMessageQuery.getExportAll();
+        if (exportAll) {
+            i18nMessageQuery.setPageSize(1000000);
+        }
+        List<I18nMessageDTO> records = this.i18nPage(i18nMessageQuery).getRecords();
+        List<I18nMessageDO> doList = i18nMessageAppAssembler.toI18nMessageDOList(records);
+        i18nMessageRepository.i18nExportExcel(response, doList);
     }
 
     @Override

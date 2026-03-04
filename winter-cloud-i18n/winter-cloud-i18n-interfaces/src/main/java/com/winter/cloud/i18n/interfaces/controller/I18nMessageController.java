@@ -131,8 +131,8 @@ public class I18nMessageController implements I18nMessageFacade {
      * @param response 响应
      */
     @PostMapping(value = "/i18nExportExcel")
-    public void i18nExportExcel(HttpServletResponse response) {
-        i18nMessageAppService.i18nExportExcel(response);
+    public void i18nExportExcel(HttpServletResponse response,@RequestBody I18nMessageQuery i18nMessageQuery) {
+        i18nMessageAppService.i18nExportExcel(response,i18nMessageQuery);
     }
 
     /**

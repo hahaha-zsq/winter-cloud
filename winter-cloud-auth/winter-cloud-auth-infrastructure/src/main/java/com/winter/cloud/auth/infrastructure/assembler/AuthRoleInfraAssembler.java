@@ -20,6 +20,7 @@ public interface AuthRoleInfraAssembler {
 
     // Entity 转 PO
     AuthRolePO toPO(AuthRoleDO authRoleDO);
+    List<AuthRolePO> toPOList(List<AuthRoleDO> authRoleDOList);
 
     // 也可以定义 List 的转换
     List<AuthRoleDO> toDOList(List<AuthRolePO> authRolePOList);

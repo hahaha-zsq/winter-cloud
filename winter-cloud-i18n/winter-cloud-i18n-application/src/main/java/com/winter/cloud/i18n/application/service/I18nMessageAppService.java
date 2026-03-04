@@ -56,7 +56,7 @@ public interface I18nMessageAppService {
 
     void scheduledRebuildBloomFilter();
 
-    void i18nExportExcel(HttpServletResponse response);
+    void i18nExportExcel(HttpServletResponse response, I18nMessageQuery i18nMessageQuery);
 
     void i18nImportExcel(HttpServletResponse response, MultipartFile file) throws IOException;
 

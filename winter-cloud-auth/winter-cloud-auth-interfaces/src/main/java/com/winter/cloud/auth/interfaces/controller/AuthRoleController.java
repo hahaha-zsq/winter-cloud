@@ -3,6 +3,7 @@ package com.winter.cloud.auth.interfaces.controller;
 import com.winter.cloud.auth.api.dto.command.AssignResourcesCommand;
 import com.winter.cloud.auth.api.dto.command.UpsertRoleCommand;
 import com.winter.cloud.auth.api.dto.query.RoleQuery;
+import com.winter.cloud.auth.api.dto.query.UserQuery;
 import com.winter.cloud.auth.api.dto.response.RoleResponseDTO;
 import com.winter.cloud.common.enums.ResultCodeEnum;
 import com.winter.cloud.common.response.PageDTO;
@@ -83,8 +84,8 @@ public class AuthRoleController {
      * @param response 响应
      */
     @PostMapping(value = "/roleExportExcel")
-    public void roleExportExcel(HttpServletResponse response) {
-        authRoleAppService.roleExportExcel(response);
+    public void roleExportExcel(HttpServletResponse response,@RequestBody RoleQuery roleQuery ) {
+        authRoleAppService.roleExportExcel(response,roleQuery);
     }
 
     /**
