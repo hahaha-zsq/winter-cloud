@@ -1,6 +1,9 @@
 package com.winter.cloud.dict.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.winter.cloud.dict.api.dto.query.DictDataQuery;
 import com.winter.cloud.dict.domain.model.entity.DictDataDO;
 import com.winter.cloud.dict.infrastructure.entity.DictDataPO;
 import org.apache.ibatis.annotations.Param;
@@ -14,4 +17,6 @@ import java.util.List;
  */
 public interface DictDataMapper extends BaseMapper<DictDataPO> {
     List<DictDataDO> getDictDataByType(@Param("dictType") Long dictType, @Param("status") String status);
+
+    IPage<DictDataPO> selectDictDataPage(Page<DictDataPO> page,  @Param("query") DictDataQuery dictDataQuery);
 }

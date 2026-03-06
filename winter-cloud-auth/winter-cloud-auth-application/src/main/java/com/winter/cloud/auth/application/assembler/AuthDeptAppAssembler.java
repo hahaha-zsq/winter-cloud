@@ -1,5 +1,6 @@
 package com.winter.cloud.auth.application.assembler;
 
+import com.winter.cloud.auth.api.dto.command.UpsertDeptCommand;
 import com.winter.cloud.auth.api.dto.response.DeptResponseDTO;
 import com.winter.cloud.auth.domain.model.entity.AuthDeptDO;
 import org.mapstruct.Mapper;
@@ -13,5 +14,6 @@ public interface AuthDeptAppAssembler {
 
     List<DeptResponseDTO> toDTOList(List<AuthDeptDO> authDeptDOList);
     DeptResponseDTO toDTO(AuthDeptDO authDeptDO);
+    AuthDeptDO toDO(UpsertDeptCommand command);
 
 }

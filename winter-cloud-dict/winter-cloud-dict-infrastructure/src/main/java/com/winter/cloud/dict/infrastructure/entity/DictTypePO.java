@@ -34,18 +34,6 @@ public class DictTypePO implements Serializable {
     private String dictName;
 
     /**
-     * 字典类型编码
-     */
-    @TableField(value = "dict_type")
-    private String dictType;
-
-    /**
-     * 状态（1正常 0停用）
-     */
-    @TableField(value = "status")
-    private String status;
-
-    /**
      * 创建者
      */
     @TableField(value = "create_by", fill = FieldFill.INSERT)

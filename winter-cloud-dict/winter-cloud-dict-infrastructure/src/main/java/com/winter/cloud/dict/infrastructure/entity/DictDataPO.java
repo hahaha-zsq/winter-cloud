@@ -5,7 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.Length;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -37,18 +40,21 @@ public class DictDataPO implements Serializable {
      * 字典标签
      */
     @TableField(value = "dict_label")
+    @NotBlank(message = "{dictData.dictLabel.notBlank}", groups = {Import.class})
     private String dictLabel;
 
     /**
      * 字典键值
      */
     @TableField(value = "dict_value")
+    @NotBlank(message = "{dictData.dictValue.notBlank}", groups = {Import.class})
     private String dictValue;
 
     /**
      * 字典类型ID
      */
     @TableField(value = "dict_type_id")
+    @NotNull(message = "{dictData.dictTypeId.notNull}", groups = {Import.class})
     private Long dictTypeId;
 
     /**
@@ -88,4 +94,6 @@ public class DictDataPO implements Serializable {
     private String remark;
 
     private static final long serialVersionUID = 1L;
+
+    public interface Import {}
 }

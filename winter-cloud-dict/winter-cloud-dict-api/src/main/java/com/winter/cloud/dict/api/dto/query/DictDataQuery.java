@@ -10,7 +10,7 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
-public class DictQuery extends PageAndOrderDTO implements Serializable {
+public class DictDataQuery extends PageAndOrderDTO implements Serializable {
     private static final long serialVersionUID = 1L;
     /**
      * 字典类型

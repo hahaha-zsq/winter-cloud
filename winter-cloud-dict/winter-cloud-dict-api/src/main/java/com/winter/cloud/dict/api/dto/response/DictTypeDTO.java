@@ -1,4 +1,4 @@
-package com.winter.cloud.auth.domain.model.entity;
+package com.winter.cloud.dict.api.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,25 +7,25 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class AuthDeptDO implements Serializable {
+@AllArgsConstructor
+public class DictTypeDTO implements Serializable {
     private static final long serialVersionUID = 1L;
+
     private Long id;
-    private Long parentId;
-    private String deptName;
-    private Integer orderNum;
-    private String status;
+
+    private String dictName;
+
     private String remark;
 
     private Long createBy;
-    private LocalDateTime createTime;
-    private Long updateBy;
-    private LocalDateTime updateTime;
 
-    private List<AuthDeptDO> children;
+    private LocalDateTime createTime;
+
+    private Long updateBy;
+
+    private LocalDateTime updateTime;
 }

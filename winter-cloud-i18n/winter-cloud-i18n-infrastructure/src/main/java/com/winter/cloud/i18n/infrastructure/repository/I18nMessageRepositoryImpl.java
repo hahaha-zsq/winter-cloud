@@ -21,7 +21,6 @@ import com.winter.cloud.common.response.PageDTO;
 import com.winter.cloud.common.response.Response;
 import com.winter.cloud.common.util.TtlExecutorUtils;
 import com.winter.cloud.dict.api.dto.command.DictCommand;
-import com.winter.cloud.dict.api.dto.query.DictQuery;
 import com.winter.cloud.dict.api.dto.response.DictDataDTO;
 import com.winter.cloud.dict.api.facade.DictFacade;
 import com.winter.cloud.i18n.api.dto.command.TranslateCommand;

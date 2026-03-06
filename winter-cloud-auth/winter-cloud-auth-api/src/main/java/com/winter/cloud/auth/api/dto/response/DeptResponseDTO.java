@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -21,5 +22,7 @@ public class DeptResponseDTO implements Serializable {
     private String deptName;
     private Integer orderNum;
     private String status;
+    private String remark;
+    private LocalDateTime createTime;
     private List<DeptResponseDTO> children;
 }

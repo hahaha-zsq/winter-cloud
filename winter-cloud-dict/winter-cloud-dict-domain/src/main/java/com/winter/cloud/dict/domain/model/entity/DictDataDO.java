@@ -1,8 +1,11 @@
 package com.winter.cloud.dict.domain.model.entity;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+
+@Builder
 @Data
 public class DictDataDO {
     private Long id;

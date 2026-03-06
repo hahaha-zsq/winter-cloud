@@ -2,6 +2,7 @@ package com.winter.cloud.auth.application.service.impl;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.winter.cloud.auth.api.dto.command.UpsertDeptCommand;
 import com.winter.cloud.auth.api.dto.query.DeptQuery;
 import com.winter.cloud.auth.api.dto.response.DeptResponseDTO;
 import com.winter.cloud.auth.application.assembler.AuthDeptAppAssembler;
@@ -12,10 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -57,5 +55,28 @@ public class AuthDeptAppServiceImpl implements AuthDeptAppService {
             // 注意：这里直接从 Map 取 parentId=0 的列表即可，效率最高
             return parentToChildrenMap.getOrDefault(0L, new ArrayList<>());
         }
+    }
+
+    @Override
+    public List<DeptResponseDTO> deptTree(DeptQuery menuQuery) {
+        List<AuthDeptDO> authDeptDOList = authDeptRepository.deptTree(menuQuery);
+        return authDeptAppAssembler.toDTOList(authDeptDOList);
+    }
+
+    @Override
+    public Boolean deptSave(UpsertDeptCommand command) {
+        AuthDeptDO authDeptDO = authDeptAppAssembler.toDO(command);
+        return authDeptRepository.deptSave(authDeptDO);
+    }
+
+    @Override
+    public Boolean deptUpdate(UpsertDeptCommand command) {
+        AuthDeptDO authDeptDO = authDeptAppAssembler.toDO(command);
+        return authDeptRepository.deptUpdate(authDeptDO);
+    }
+
+    @Override
+    public Boolean deptDelete(Long id) {
+        return authDeptRepository.deptDelete(id);
     }
 }

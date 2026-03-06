@@ -27,4 +27,43 @@
             </if>
         </where>
     </select>
+
+    <select id="selectDictDataPage" resultType="com.winter.cloud.dict.infrastructure.entity.DictDataPO">
+        SELECT id,
+        dict_sort,
+        dict_label,
+        dict_value,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        remark,
+        status,
+        dict_type_id
+        FROM sys_dict_data
+        <where>
+            <if test="query.dictLabel != null and query.dictLabel != ''">
+                AND dict_label LIKE CONCAT('%', #{query.dictLabel}, '%')
+            </if>
+            <if test="query.dictValue != null and query.dictValue != ''">
+                AND dict_value LIKE CONCAT('%', #{query.dictValue}, '%')
+            </if>
+            <!-- 精确匹配：status -->
+            <if test="query.status != null and query.status != ''">
+                AND status = #{query.status}
+            </if>
+            <if test="query.dictTypeId != null and query.dictTypeId != ''">
+                AND dict_type_id = #{query.dictTypeId}
+            </if>
+        </where>
+        <if test="query.orders != null and query.orders.size() > 0">
+            ORDER BY
+            <foreach collection="query.orders" item="item" separator=",">
+                ${item.field} ${item.order}
+            </foreach>
+        </if>
+        <if test="query.orders == null or query.orders.size() == 0">
+            ORDER BY dict_sort DESC
+        </if>
+    </select>
 </mapper>

@@ -17,6 +17,10 @@
             <groupId>com.winter</groupId>
             <artifactId>winter-cloud-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.hahaha-zsq</groupId>
+            <artifactId>winter-validation-spring-boot-starter</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.dubbo</groupId>

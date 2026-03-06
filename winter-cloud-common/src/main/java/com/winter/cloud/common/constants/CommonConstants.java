@@ -226,6 +226,10 @@ public final class CommonConstants {
         public static final String SORT_ORDER_ILLEGAL = "sort.order.Illegal";
         /**角色名称/标识已存在！*/
         public static final String ROLE_NAME_OR_IDENTIFIER_EXISTS = "UpsertRoleCommand.identifier.exists";
+        /**字典类型名称已存在！*/
+        public static final String DICT_TYPE_EXISTS = "UpsertDictTypeCommand.identifier.exists";
+        /**字典数据重复*/
+        public static final String DICT_DATA_DUPLICATED = "dictData.duplicated";
         /**职位名称/标识已存在！*/
         public static final String POST_NAME_OR_IDENTIFIER_EXISTS = "UpsertPostCommand.identifier.exists";
         public static final String ROLE_DICT_MAPPING_ERROR = "role.dict.mapping.error";

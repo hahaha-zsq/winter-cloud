@@ -15,7 +15,10 @@ import java.util.List;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface AuthDeptInfraAssembler {
 
-    // 也可以定义 List 的转换
+    AuthDeptDO toDO(AuthDeptPO authDeptPO);
+
+    AuthDeptPO toPO(AuthDeptDO authDeptDO);
+
     List<AuthDeptDO> toDOList(List<AuthDeptPO> authDeptPOList);
 
     List<DeptResponseDTO> toDTOList(List<AuthDeptPO> authDeptPOList);
