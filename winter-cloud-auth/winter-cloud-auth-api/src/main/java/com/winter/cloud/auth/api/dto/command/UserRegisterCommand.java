@@ -87,14 +87,14 @@ public class UserRegisterCommand implements Serializable {
 
     /**
      * 性别校验
-     * 1. dictType 是必须参数，随便填一个标识即可（如 "gender"）
+     * 1. dictType 是必须参数。
      * 2. fixedValues 定义允许的值列表
      * 3. allowNull = false 表示必填（默认就是 false）
      */
     @DynamicEnum(
             dictType = "1",
-            fixedValues = {"MALE", "FEMALE", "UNKNOWN"},
-            message = "性别必须是 MALE, FEMALE 或 UNKNOWN"
+//            fixedValues = {"MALE", "FEMALE", "UNKNOWN"},
+            message = "性别不合法"
     )
     private String sex;
 }

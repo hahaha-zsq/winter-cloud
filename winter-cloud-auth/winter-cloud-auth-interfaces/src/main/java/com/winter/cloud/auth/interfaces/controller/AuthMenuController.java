@@ -38,7 +38,7 @@ public class AuthMenuController {
     @GetMapping("/getDynamicRouting")
     public Response<List<MenuResponseDTO>> getDynamicRouting(@NotNull @RequestParam(value = "id") Long id) {
         List<MenuResponseDTO> dynamicRouting = authMenuAppService.getDynamicRouting(id);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),dynamicRouting);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),dynamicRouting);
     }
 
     /**
@@ -51,7 +51,7 @@ public class AuthMenuController {
     public Response<List<MenuResponseDTO>> menuTree(@RequestBody MenuQuery menuQuery) {
         // 查询menu(菜单是tree类型的，父子菜单)
         List<MenuResponseDTO> data = authMenuAppService.menuTree(menuQuery);
-        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage(), LocaleContextHolder.getLocale()),data);
+        return Response.ok(ResultCodeEnum.SUCCESS_LANG.getCode(),winterI18nTemplate.message(ResultCodeEnum.SUCCESS_LANG.getMessage()),data);
     }
     /**
      * 新增资源

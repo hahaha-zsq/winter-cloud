@@ -1,12 +1,16 @@
 package com.winter.cloud.dict.domain.model.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Builder
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DictDataDO {
     private Long id;
     private Integer dictSort;

@@ -176,6 +176,7 @@ public class AuthUserController implements AuthValidationFacade {
      *   <li>手机号：中国大陆11位手机号</li>
      *   <li>邮箱：标准邮箱格式</li>
      *   <li>昵称：长度1-8位</li>
+     *   <li>性别：长度1位</li>
      * </ul>
      * </p>
      * <p>

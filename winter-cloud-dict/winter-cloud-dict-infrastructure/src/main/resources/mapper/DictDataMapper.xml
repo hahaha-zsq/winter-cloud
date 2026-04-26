@@ -3,18 +3,18 @@
 <mapper namespace="com.winter.cloud.dict.infrastructure.mapper.DictDataMapper">
 
     <select id="getDictDataByType" resultType="com.winter.cloud.dict.domain.model.entity.DictDataDO">
-        select sdd.id,
-               sdd.dict_type_id,
-               sdd.status,
-               sdd.dict_label,
-               sdd.dict_value,
-               sdd.dict_sort,
-               sdd.remark,
-               sdd.update_by,
-               sdd.create_by,
-               sdd.create_time,
-               sdd.update_time,
-               sdt.dict_name
+        select sdd.id           as id,
+               sdd.dict_sort    as dictSort,
+               sdd.dict_label   as dictLabel,
+               sdd.dict_value   as dictValue,
+               sdd.dict_type_id as dictTypeId,
+               sdd.status       as status,
+               sdd.remark       as remark,
+               sdt.dict_name    as dictName,
+               sdd.create_by    as createBy,
+               sdd.create_time  as createTime,
+               sdd.update_by    as updateBy,
+               sdd.update_time  as updateTime
         from sys_dict_type sdt
                  left join sys_dict_data sdd on sdt.id = sdd.dict_type_id
         <where>
@@ -22,24 +22,24 @@
             <if test="status != null and status != ''">
                 and sdd.status = #{status}
             </if>
-            <if test="dictType !=null and dictType !=''">
+            <if test="dictType != null">
                 and sdd.dict_type_id = #{dictType}
             </if>
         </where>
     </select>
 
     <select id="selectDictDataPage" resultType="com.winter.cloud.dict.infrastructure.entity.DictDataPO">
-        SELECT id,
-        dict_sort,
-        dict_label,
-        dict_value,
-        create_by,
-        create_time,
-        update_by,
-        update_time,
+        SELECT id as id,,
+        dict_sort as dictSort,
+        dict_label as dictLabel,
+        dict_value as dictValue,
+        create_by as createBy,,
+        create_time as createTime,
+        update_by as updateBy,
+        update_time as updateTime,
         remark,
         status,
-        dict_type_id
+        dict_type_id as dictTypeId,
         FROM sys_dict_data
         <where>
             <if test="query.dictLabel != null and query.dictLabel != ''">

@@ -52,7 +52,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
         collect.forEach((k, v) -> {
             String data = null;
             try {
-                data = new ObjectMapper().writeValueAsString(v);
+                data = objectMapper.writeValueAsString(v);
             } catch (Exception e) {
                 log.error("dict data cache error", e);
             }
