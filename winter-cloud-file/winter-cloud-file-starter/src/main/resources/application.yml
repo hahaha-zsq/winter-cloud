@@ -11,10 +11,10 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848  # Nacos 服务器地址
-        namespace: ccfca4f0-0131-497a-95a1-3732131d59a8  # 命名空间（可选，用于环境隔离）
+        namespace: 29d945aa-f370-4c9a-bc05-74bb2831e5ae  # 命名空间（可选，用于环境隔离）
         group: DEFAULT_GROUP  # 分组（可选）
         username: nacos  # Nacos 用户名（如果开启了认证）
-        password: nacos  # Nacos 密码（如果开启了认证）
+        password: nacos666!  # Nacos 密码（如果开启了认证）
   redis:
     host: localhost
     port: 6379
@@ -62,10 +62,10 @@ dubbo:
   registry:
     address: nacos://localhost:8848
     parameters:
-      namespace: ccfca4f0-0131-497a-95a1-3732131d59a8
+      namespace: 29d945aa-f370-4c9a-bc05-74bb2831e5ae
       group: DEFAULT_GROUP
       username: nacos
-      password: nacos
+      password: nacos666!
   protocol:
     name: dubbo
     port: 20884  # Dubbo 协议端口(避免与auth服务的20880冲突)

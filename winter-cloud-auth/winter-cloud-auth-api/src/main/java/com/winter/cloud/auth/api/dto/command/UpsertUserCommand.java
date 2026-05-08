@@ -74,12 +74,12 @@ public class UpsertUserCommand implements Serializable {
     @SpelValid(
             value = "#this != null && !#this.trim().isEmpty()",
             message = "密码不能为空",
-            groups = {Save.class, Update.class, ResetPassword.class}
+            groups = {Save.class,  ResetPassword.class}
     )
     @SpelValid(
             value = "#this == null || #this matches '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,15}$'",
             message = "密码长度必须为8-15位，且必须包含大小写字母、数字和特殊字符",
-            groups = {Save.class, Update.class, ResetPassword.class}
+            groups = {Save.class,  ResetPassword.class}
     )
     private String password;
 
